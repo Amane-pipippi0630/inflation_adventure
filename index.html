@@ -61,6 +61,7 @@ canvas{image-rendering:pixelated;width:84px;height:84px}
 #modal{align-items:center;justify-content:center;padding:20px}
 #modal .win{max-width:420px;width:100%;text-align:center}
 #toast{position:fixed;top:10px;pointer-events:none;left:50%;transform:translateX(-50%);z-index:30;background:linear-gradient(#5a3a00,#2a1a00);border:2px solid #ffe066;border-radius:7px;padding:8px 14px;font-size:14px;max-width:90vw;transition:opacity .3s;pointer-events:none}
+rt{font-size:9px;color:#bcd}
 #casMsg{min-height:1.6em;margin-top:6px;text-align:center}
 #result{font-size:14px}
 .logbox{max-height:50vh;overflow-y:auto;font-size:13px}
@@ -335,6 +336,7 @@ function sanitizeSave(o){
   const r={};
   r.name=String(o.name==null?'ななし':o.name).replace(/[\u0000-\u001f<>&"'`]/g,'').slice(0,10)||'ななし';
   r.job=isJob(o.job)?o.job:'warrior';
+  r.yomi=typeof o.yomi==='string'&&/^[ぁ-ゖー]{1,15}$/.test(o.yomi)?o.yomi:'';
   ['lv','exp','gold','pts','wpn','arm','reb','maxArea','areaWins','champ','kills','maxDmg','battles','earned','maxLv','godTries','godWins','godMaxForm',
    'jackpots','j777','jpin','jrou','hlBest','allInWins','kajiN','miracles'].forEach(k=>r[k]=num(o[k],0));
   r.lv=Math.max(1,int(o.lv,1)); r.wpn=Math.min(GEAR_MAX,int(o.wpn)); r.arm=Math.min(GEAR_MAX,int(o.arm)); r.reb=int(o.reb); r.pts=int(o.pts);
@@ -486,7 +488,7 @@ function renderTitle(){
     c.addEventListener('pointerdown',()=>{ c.classList.remove(ANIM[s]); void c.offsetWidth; c.classList.add(ANIM[s]); if(i===0) tapSlime(c); });
     c.addEventListener('animationend',()=>c.classList.remove(ANIM[s])); ts.appendChild(c)});
   const bc=$('#btnCont'); bc.disabled=!P;
-  $('#contInfo').innerHTML=P?`${esc(P.name)}　${JOBS[P.job].n} Lv${P.lv}${P.reb?`　転生${P.reb}`:''}`:'セーブデータがありません';
+  $('#contInfo').innerHTML=P?`${nameHTML()}　${JOBS[P.job].n} Lv${P.lv}${P.reb?`　転生${P.reb}`:''}`:'セーブデータがありません';
   $('#newWarn').classList.toggle('hide',!P);
   if(!P) $('#newBox').classList.remove('hide');
 }
@@ -494,22 +496,27 @@ let newArm=false;
 function openNew(){ $('#newBox').classList.remove('hide'); $('#newBox').scrollIntoView({behavior:'smooth'}); setTimeout(()=>$('#inName').focus(),300); }
 function startNew(){
   // 空欄なら珍しい苗字からランダム
-  const RARE=['小鳥遊','月見里','四月一日','九十九','栗花落','薬袋','鴨脚','勘解由小路','東西南北','一'];
-  const nm0=$('#inName').value.trim()||RARE[Math.floor(Math.random()*RARE.length)];
+  const RARE=[['小鳥遊','たかなし'],['月見里','やまなし'],['四月一日','わたぬき'],['九十九','つくも'],['栗花落','つゆり'],['薬袋','みない'],['鴨脚','いちょう'],['勘解由小路','かでのこうじ'],['東西南北','よもひろ'],['一','にのまえ']];
+  const typed=$('#inName').value.trim(), pick=RARE[Math.floor(Math.random()*RARE.length)];
+  const nm0=typed||pick[0], yomi0=typed?'':pick[1];
   if(P&&!newArm){ newArm=true; $('#btnStart').textContent='本当に消してはじめる？（もう一度押す）'; $('#btnStart').classList.add('sel'); return; }
   newArm=false; $('#btnStart').textContent='冒険をはじめる'; $('#btnStart').classList.remove('sel');
   const name=nm0.slice(0,10);
   const g=JOBS[pickedJob].g; const base={}; KEYS.forEach(k=>base[k]=Math.round(5+g[k]*4));
-  P={name,job:pickedJob,lv:1,exp:0,gold:100,pts:0,base,wpn:0,arm:0,reb:0,rebMul:1,maxArea:0,areaWins:0,champ:0,kills:0,maxDmg:0,battles:0,secret:{},blessed:{},unlocked:JOBS[pickedJob].hidden?{[pickedJob]:true}:{},jlv:{}};
+  P={name,job:pickedJob,lv:1,exp:0,gold:100,pts:0,base,wpn:0,arm:0,reb:0,rebMul:1,maxArea:0,areaWins:0,champ:0,kills:0,maxDmg:0,battles:0,yomi:yomi0,secret:{},blessed:{},unlocked:JOBS[pickedJob].hidden?{[pickedJob]:true}:{},jlv:{}};
   LOGS=[]; saveLogs(); save(); goMain();
 }
 function goMain(){ closeModal(); holdEnd(); if(!P) return; show('sMain'); renderStatus(); panel(curPanel||'area'); }
+const nameHTML=()=>P.yomi?`<ruby>${esc(P.name)}<rt>${esc(P.yomi)}</rt></ruby>`:esc(P.name);
 function renderStatus(){
   const J=JOBS[P.job];
-  let h=`<div class="row"><b class="y">${esc(P.name)}</b><span>${J.n}<span class="tag">${RANKS[J.rank]}</span> Lv${P.lv}${P.reb?` <span class="c">転生${P.reb}</span>`:''}</span></div>`;
-  h+=`<div class="small">EXP ${fmt(P.exp)} / ${fmt(need(P.lv))}</div><div class="bar"><i style="width:${Math.min(100,P.exp/need(P.lv)*100)}%"></i></div>`;
-  { const j=jl(P.job); h+= j.lv>=JMAX ? `<div class="small"><span class="mir">★${J.n} MASTER</span>　マスター数 ${masterCount()}（全能力×${masterMul().toFixed(2)}）</div>`
-     : `<div class="small">${J.n} JLv${j.lv}/${JMAX}　JEXP ${j.exp}/${jneed(j.lv)}</div><div class="bar"><i style="width:${j.exp/jneed(j.lv)*100}%;background:linear-gradient(90deg,#7de0ff,#a5f)"></i></div>`; }
+  let h=`<div class="row"><b class="y">${nameHTML()}</b><span>${J.n}<span class="tag">${RANKS[J.rank]}</span> Lv${P.lv}${P.reb?` <span class="c">転生${P.reb}</span>`:''}</span></div>`;
+  { const j=jl(P.job);
+    h+=`<div class="grid2" style="gap:10px">`;
+    h+=`<div><div class="small">EXP ${fmt(P.exp)}/${fmt(need(P.lv))}</div><div class="bar"><i style="width:${Math.min(100,P.exp/need(P.lv)*100)}%"></i></div></div>`;
+    h+= j.lv>=JMAX ? `<div><div class="small"><span class="mir">★MASTER</span></div><div class="small">マスター${masterCount()}職（×${masterMul().toFixed(2)}）</div></div>`
+       : `<div><div class="small">JLv${j.lv}/${JMAX}　${j.exp}/${jneed(j.lv)}</div><div class="bar"><i style="width:${j.exp/jneed(j.lv)*100}%;background:linear-gradient(90deg,#7de0ff,#a5f)"></i></div></div>`;
+    h+=`</div>`; }
   h+=`<div class="grid2 small"><div>HP <span class="g">${fmt(maxhp())}</span></div><div>所持金 <span class="y">${fmt(P.gold)}G</span></div>`;
   h+=`<div>攻撃 <span class="r">${fmt(atk())}</span></div><div>防御 <span class="c">${fmt(def())}</span></div></div>`;
   h+=`<div class="grid small" style="margin-top:4px">`+KEYS.map(k=>`<div>${KN[k]} ${fmt(st(k))}</div>`).join('')+`</div>`;

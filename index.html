@@ -563,7 +563,7 @@ let curPanel='area', resetArm=false, areaTab='adv', areaPage=0;
 const AREA_PER_PAGE=6;
 function panel(p,arg){
   curPanel=p; const el=$('#panel'); let h='';
-  const TK_MSG=`<h2>たかしの掟</h2><div class="o">「たかし、ギャンブラーを極めるまでは、外に出ることは許されん」</div><div class="small" style="margin-top:6px">ギャンブラーをマスターするまでは、ギャンブル場のスロットだけ。（現在 JLv${P?jl('gambler').lv:1}/${JMAX}）</div><button class="y" style="width:100%;margin-top:8px" onclick="panel('casino','slot')">ギャンブル場へ</button>`;
+  const TK_MSG=`<h2>たかしの掟</h2><div class="o">「たかし、ギャンブラーを極めるまでは、外に出ることは許されん」</div><div class="small" style="margin-top:6px">ギャンブラーをマスターするまでは、ギャンブル場のスロットと酒場だけ。（現在 JLv${P?jl('gambler').lv:1}/${JMAX}）</div><button class="y" style="width:100%;margin-top:8px" onclick="panel('casino','slot')">ギャンブル場へ</button>`;
   if((p==='area'||p==='champ')&&takashiLock()){ el.innerHTML=TK_MSG; return; }
   if(p==='area'){
     if(arg) areaTab=arg;
@@ -1178,11 +1178,50 @@ function contest(i){ const R=RIVALS[i]; if(!R) return; const fee=Math.max(50,Mat
     if(isTakashi()) msg+=startPersona('gamble','shukuhai'); }
   else msg+=`<div class="r">${nm}は${cup}杯目で潰れた… 参加費 ${fmt(fee)}G は戻らない</div>`;
   barMsg=msg; save(); renderStatus(); panel('bar','contest'); }
-let barTab='drink', barMsg='';
+
+// ---- 隠居じいさん（無料の道しるべ）：今やるべきことを1つだけ教える。ハロワ完走まで ----
+const hasRank=r=>Object.entries(JOBS).some(([k,j])=>j.rank===r&&!j.hidden&&isMaster(k));
+const openRank=r=>Object.entries(JOBS).some(([k,j])=>j.rank===r&&!j.hidden&&canJob(k));
+const openMasters=()=>Object.entries(JOBS).filter(([k,j])=>!j.hidden&&isMaster(k)).length;
+const openTotal=()=>Object.entries(JOBS).filter(([k,j])=>!j.hidden).length;
+function guideSteps(){
+  const J=JOBS[P.job];
+  return [
+   [()=>takashiLock(), `「たかし、まずはギャンブラーを極めるんじゃ。スロットで777を当てるたびに一皮むける。高い設定の台を探して、じっくり回しなされ」（JLv${jl('gambler').lv}/${JMAX}）`],
+   [()=>P.wpn===0||P.arm===0, '「丸腰で外に出るでない。まずは武器屋と防具屋で装備をそろえるんじゃ」'],
+   [()=>P.maxArea<3, `「冒険に出て、いちばん奥のエリアで10回勝つんじゃ。そうすれば次のエリアへ進める」（いま ${areaName(P.maxArea)}・${P.areaWins}/10勝）`],
+   [()=>P.champ<1, '「腕試しに闘技場へ行ってみなされ。王者を倒すと、どっと経験値が入るぞ」'],
+   [()=>!hasRank(0), `「職業を極める時期じゃ。今の${J.n}のジョブレベルを10まで上げるんじゃ。勝てる相手がいなくなったら、修練場がいい」（JLv${jl(P.job).lv}/${JMAX}）`],
+   [()=>!openRank(1)||!hasRank(1), '「下位職を極めたなら、転職所で中位職になれるはずじゃ。極めた職の上の職に就いて、また10まで鍛えなされ」'],
+   [()=>P.reb<1, `「レベルが${rebReq()}を超えたら、転生の祭壇へ行くんじゃ。生まれ変わるたびに、能力に倍率がかかる」（いま Lv${P.lv}）`],
+   [()=>!openRank(2)||!hasRank(2), '「上位職は、2つの職を極めた者だけがなれる。転職所の『？？？』の条件を見て、片方ずつ極めていきなされ」'],
+   [()=>!P.unlocked.apprentice, `「下位も中位も上位も、すべての職を極めるんじゃ。その先に何かが待っとるらしい」（マスター ${openMasters()}/${openTotal()}職）`],
+   [()=>P.job!=='apprentice'&&!isMaster('apprentice')&&!Object.keys(P.blessed||{}).length, '「頼りない見習いが現れたじゃろう？ 転職所で見習い？になってみなされ。案外、化けるかもしれんぞ」'],
+   [()=>!Object.keys(P.blessed||{}).length&&!(P.godWins>0), `「見習い？のまま、神々の座に何度も挑むんじゃ。何度も、何度もな」（挑戦 ${P.secret&&P.secret.apprentice||0}回）`],
+   [()=>!isMaster('apprentice'), `「見習い？を極めるんじゃ。奇跡の加護があれば、どこへでも行ける」（JLv${jl('apprentice').lv}/${JMAX}）`],
+   [()=>P.champ<CHAMPS.length, `「闘技場の王者を10人、すべて倒すんじゃ」（いま ${P.champ}/${CHAMPS.length}人）`],
+   [()=>!P.unlocked.neet, `「神々の座でもう一度勝つか、合わせて100回挑むんじゃ。そうすれば、最後の道が開ける」（勝利${P.godWins||0}回・挑戦${P.godTries||0}回）`],
+   [()=>P.job!=='neet', '「…ついに、働かずしてすべてを極めた者『無職』への道が開けたな。転職所へ行きなされ」'],
+   [()=>!(P.work&&P.work.cleared), ()=>{ const w=workState(); return `「冒険の『ハローワーク』で社会に挑むんじゃ。ここではダメージが縮む。転生、闘技場、神々の座、ギャンブルの大当たりで社会的信用を上げると、ぐっと楽になる」（第${w.floor+1}/${WORK.length}関門・信用×${trust().toFixed(2)}）`; }],
+  ];
+}
+function guideHTML(){
+  const steps=guideSteps(); const i=steps.findIndex(([c])=>c());
+  if(i<0) return '<div class="mir">隠居じいさん「内定おめでとう。もうわしから言うことは何もない。あとは好きに生きなされ。次元の果てを目指すもよし、酒場で飲むもよしじゃ」</div>';
+  const t=typeof steps[i][1]==='function'?steps[i][1]():steps[i][1];
+  // 本筋とは別の、ひとことアドバイス（進行は止めない）
+  const tips=[]; if(P.pts>0) tips.push(`能力ポイントが${P.pts}余っとる。『能力振り』で${KN[mainKey()]}に振るといい。`);
+  if(!takashiLock()&&P.maxArea>0&&/無謀|強敵/.test(danger(enemyStats(P.maxArea)))) tips.push('奥のエリアがきつそうじゃな。修練場で稼ぐか、装備を買い直すか、エールや火酒を一杯ひっかけるのも手じゃ。');
+  return `<div class="small" style="color:#9ab">隠居じいさん（相談は無料）</div><div class="c" style="margin-top:4px">${t}</div>`+
+    (tips.length?`<div class="small o" style="margin-top:6px">ついでに：${tips.join('<br>')}</div>`:'')+
+    `<div class="small" style="margin-top:6px;color:#789">道のり ${i+1} / ${steps.length}</div>`;
+}
+let barTab='guide', barMsg='';
 function barHTML(){
-  const tabs=[['drink','お酒'],['rumor','噂話'],['contest','飲み比べ']];
-  let h=`<h2>酒場</h2><div class="grid" style="margin-bottom:6px">`+tabs.map(([k,n])=>`<button class="${barTab===k?'sel':''}" onclick="barMsg='';panel('bar','${k}')">${n}</button>`).join('')+`</div>`;
-  if(barTab==='drink'){
+  const tabs=[['guide','相談'],['drink','お酒'],['rumor','噂話'],['contest','飲み比べ']];
+  let h=`<h2>酒場</h2><div class="grid" style="margin-bottom:6px;grid-template-columns:repeat(4,1fr)">`+tabs.map(([k,n])=>`<button class="${barTab===k?'sel':''}" onclick="barMsg='';panel('bar','${k}')">${n}</button>`).join('')+`</div>`;
+  if(barTab==='guide'){ h+=guideHTML(); }
+  else if(barTab==='drink'){
     h+=`<div class="small">${isTakashi()?'<span class="o">たかしが飲むと…もう一人のたかしが出てくる。エール・火酒は戦闘、ワイン・神酒は博打。</span>':'お酒は1度に1杯だけ効く（新しく飲むと上書き）。冒険・修練場・闘技場・神々の座の戦闘で効く。'}</div>`;
     DRINKS.forEach(D=>{ const pr=drinkPrice(D); h+=`<div class="row"><div>${D.n}<div class="small">${D.d}　${fmt(pr)}G</div></div><button ${P.gold<pr?'disabled':''} onclick="buyDrink('${D.id}')">飲む</button></div>`; });
   } else if(barTab==='rumor'){

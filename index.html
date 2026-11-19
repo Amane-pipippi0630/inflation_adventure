@@ -346,7 +346,7 @@ function sanitizeSave(o){
    'jackpots','j777','jpin','jrou','setHits','hlBest','allInWins','kajiN','miracles'].forEach(k=>r[k]=num(o[k],0));
   r.lv=Math.max(1,int(o.lv,1)); r.wpn=Math.min(GEAR_MAX,int(o.wpn)); r.arm=Math.min(GEAR_MAX,int(o.arm)); r.reb=int(o.reb); r.pts=int(o.pts);
   r.maxArea=Math.min(AREA_MAX,int(o.maxArea)); r.areaWins=int(o.areaWins); r.champ=int(o.champ);
-  r.rebMul=Math.max(1,num(o.rebMul,1)); r.oneG=bool(o.oneG); r.areaDone=bool(o.areaDone);
+  r.rebMul=Math.max(1,num(o.rebMul,1)); r.oneG=bool(o.oneG); r.areaDone=bool(o.areaDone); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA);
   r.base={}; KEYS.forEach(k=>r.base[k]=Math.max(0,num(o.base&&o.base[k],1)));
   r.jlv={}; if(o.jlv&&typeof o.jlv==='object') for(const k of Object.keys(o.jlv)) if(isJob(k)&&o.jlv[k]) r.jlv[k]={lv:Math.min(JMAX,Math.max(1,int(o.jlv[k].lv,1))),exp:int(o.jlv[k].exp)};
   r.acc=numMap(o.acc,k=>ACC.some(a=>a[0]===k)); Object.keys(r.acc).forEach(k=>r.acc[k]=Math.min(ACC_LIMIT,int(r.acc[k])));
@@ -432,14 +432,21 @@ const RMUL=[1,3,10,10]; const rmul=()=>RMUL[JOBS[P.job].rank];
 const GEAR_MAX=119;
 const LEG_W='桁あふれの剣 オーバーフロー', LEG_A='桁あふれの鎧 アンダーフロー';
 const legW=()=>P.wpn>=GEAR_MAX, legA=()=>P.arm>=GEAR_MAX;
+// 無職専用の装備：ハロワ完走で武器、次元の果て踏破で防具。無職のときだけ、伝説装備の上位版として働く（オーバーフロー等の効果も引き継ぐ）
+const NEET_W='伝家の宝刀・辞表', NEET_A='一張羅のリクルートスーツ';
+const neetW=()=>P.job==='neet'&&!!P.neetW, neetA=()=>P.job==='neet'&&!!P.neetA;
+function grantNeetGear(L){ let t='';
+  if(!P.neetW&&P.work&&P.work.cleared){ P.neetW=true; t+=`<div class="mir">★ 内定祝いに「${NEET_W}」を授かった！（無職専用：攻撃力×1000・会心×30） ★</div>`; }
+  if(!P.neetA&&P.areaDone){ P.neetA=true; t+=`<div class="mir">★ 次元の果てで「${NEET_A}」を見つけた！（無職専用：受けるダメージ1/1000・HP×100） ★</div>`; }
+  if(t&&L) L.push(t); return t; }
 const wpnPow=w=>w>=GEAR_MAX?12*Math.pow(5,GEAR_MAX)*1e4:w?12*Math.pow(5,w):0;
 const armPow=a=>a>=GEAR_MAX?6*Math.pow(5,GEAR_MAX)*1e4:a?6*Math.pow(5,a):0;
 const wpnPrice=w=>100*Math.pow(7,w);
 const armPrice=a=>80*Math.pow(7,a);
 const itemName=(list,i)=>i<=0?'なし':i>=GEAR_MAX?(list===WPN?LEG_W:LEG_A):(i<=list.length?list[i-1]:list[list.length-1]+'+'+(i-list.length));
-function atk(){return (st(mainKey())+wpnPow(P.wpn))*(1+P.lv*0.08)*(1+0.05*(jl(P.job).lv-1))*rmul()}
+function atk(){return (st(mainKey())+wpnPow(P.wpn))*(1+P.lv*0.08)*(1+0.05*(jl(P.job).lv-1))*rmul()*(neetW()?1000:1)}
 function def(){return (st('vit')*0.5+armPow(P.arm))*rmul()}
-function maxhp(){return Math.floor((st('vit')*12+P.lv*10*P.rebMul+armPow(P.arm)*3)*rmul())}
+function maxhp(){return Math.floor((st('vit')*12+P.lv*10*P.rebMul+armPow(P.arm)*3)*rmul()*(neetA()?100:1))}
 const need=lv=>Math.floor(15*Math.pow(1.3,lv-1));
 const rebReq=()=>30+20*P.reb;
 function enemyStats(t){return {hp:30*Math.pow(5.5,t),atk:10*Math.pow(5.2,t),def:4*Math.pow(5,t),agi:6+t*9,exp:12*Math.pow(4.3,t),gold:25*Math.pow(6,t)}}
@@ -597,7 +604,8 @@ function panel(p,arg){
     h+=`<div class="small">目安Lv${c.lv} / 危険度 ${danger(c)}</div><div class="small">HP ${fmt(c.hp)}　攻撃 ${fmt(c.atk)}　防御 ${fmt(c.def)}</div><div class="small">撃破した王者：${P.champ}人</div>`;
   } else if(p==='wpn'||p==='arm'){
     const isW=p==='wpn', cur=isW?P.wpn:P.arm;
-    h=`<h2>${isW?'武器屋':'防具屋'}</h2><div class="small">装備中：${gearHTML(isW)}（${isW?'攻撃':'防御'}+${fmt(isW?wpnPow(cur):armPow(cur))}）</div>`;
+    h=`<h2>${isW?'武器屋':'防具屋'}</h2><div class="small">装備中：${gearHTML(isW)}（${(isW?neetW():neetA())?(isW?'攻撃力×1000':'被ダメージ1/1000'):(isW?'攻撃':'防御')+'+'+fmt(isW?wpnPow(cur):armPow(cur))}）</div>`;
+    if(isW?neetW():neetA()){ h+=`<div class="mir" style="margin:8px 0">★ 無職専用の${isW?'武器':'防具'}を装備中 ★</div><div class="small">${isW?NEET_W+'：攻撃力×1000、会心の一撃のダメージ×30。':NEET_A+'：受けるダメージ1/1000、HP×100。'}無職でいる間だけ、伝説装備の上位版として働く。</div>`; el.innerHTML=h; return; }
     if(cur>=GEAR_MAX){ h+=`<div class="mir" style="margin:8px 0">★ 伝説の${isW?'剣':'鎧'}を装備中 ★</div><div class="small">${isW?'攻撃力×1万、会心の一撃のダメージがさらに×10。':'防御力×1万、受けるダメージ1/10。'}この先に、もう装備は存在しない。</div>`; el.innerHTML=h; return; }
     { const mx=maxTier(isW); if(mx>cur) h+=`<button class="y" style="width:100%;margin:6px 0" onclick="buy('${p}',${mx})">買えるだけ買う → ${mx>=GEAR_MAX?(isW?'インフレソード':'インフレアーマー')+'+99 → ？？？':itemName(isW?WPN:ARM,mx)}（${fmt(isW?wpnPrice(mx):armPrice(mx))}G）</button>`; }
     for(let i=cur+1;i<=Math.min(cur+3,GEAR_MAX);i++){const pr=isW?wpnPrice(i):armPrice(i);
@@ -671,7 +679,7 @@ function panel(p,arg){
 // 今の所持金で買える一番上の段階（1回分の値段だけ払って直接その段階へ）
 function maxTier(isW){ const base=isW?100:80; if(P.gold<base*7) return isW?P.wpn:P.arm; return Math.min(GEAR_MAX, Math.max(isW?P.wpn:P.arm, Math.floor(Math.log(P.gold/base)/Math.log(7)+1e-9))); }
 // +99（伝説装備）は【伝説】付きで表示
-function gearHTML(isW){ const i=isW?P.wpn:P.arm; return i>=GEAR_MAX?`<span class="mir">【伝説】${itemName(isW?WPN:ARM,i)}</span>`:itemName(isW?WPN:ARM,i); }
+function gearHTML(isW){ if(isW?neetW():neetA()) return `<span class="mir">【無職専用】${isW?NEET_W:NEET_A}</span>`; const i=isW?P.wpn:P.arm; return i>=GEAR_MAX?`<span class="mir">【伝説】${itemName(isW?WPN:ARM,i)}</span>`:itemName(isW?WPN:ARM,i); }
 function buy(p,i){ if(i>GEAR_MAX) return; const wasW=legW(), wasA=legA();const pr=p==='wpn'?wpnPrice(i):armPrice(i); if(P.gold<pr)return; P.gold-=pr; if(p==='wpn')P.wpn=i; else P.arm=i; save(); renderStatus(); panel(p);}
 function buyAcc(k){const lv=accLv(k), pr=accPrice(lv); if(lv>=accCap()||P.gold<pr) return; P.gold-=pr; P.acc=P.acc||{}; accEqList(); P.acc[k]=lv+1; const l=accEqList(); if(!l.includes(k)&&l.length<accSlots()) l.push(k); save(); renderStatus(); panel('acc');}
 function eqAcc(k){ if(!accLv(k)) return; const l=accEqList(), i=l.indexOf(k); if(i>=0) l.splice(i,1); else if(l.length<accSlots()) l.push(k); save(); renderStatus(); panel('acc');}
@@ -945,7 +953,7 @@ function simulateWork(e,fast){
        '<span class="y">数えきれない転生、すべての職業、神々との戦い、ギャンブル…</span>',
        '<span class="y">そのすべてが、たった一枚の内定通知書のためにあった。</span>',
        `<span class="mir">${nm}は「社会人」の称号を手に入れた！</span>`,
-       '<span class="small">― 完 ―　…しかし冒険（と残業）はこれからだ。</span>'].forEach(x=>L.push(x));
+       '<span class="small">― 完 ―　…しかし冒険（と残業）はこれからだ。</span>'].forEach(x=>L.push(x)); grantNeetGear(L);
       sum='<span class="mir">★ 内定！ ハローワーク完走 ★</span>';
     } else { w.hp=WORK[w.floor].hp; sum=`<span class="mir">${F.n}を突破！</span> 次は「${WORK[w.floor].n}」`; }
   }
@@ -1022,6 +1030,9 @@ function buildAch(){
   A.push(T('w99','装備','インフレソード+99','武器を極限まで鍛え上げ、伝説の剣「オーバーフロー」を手にした',()=>legW()));
   A.push(T('a99','装備','インフレアーマー+99','防具を極限まで鍛え上げ、伝説の鎧「アンダーフロー」を身にまとった',()=>legA()));
   A.push(T('leg','装備','桁あふれの勇者','伝説の剣と鎧をそろえた',()=>legW()&&legA()));
+  A.push(T('neetW','装備',NEET_W,'内定祝いに無職専用の武器を授かった',()=>!!P.neetW));
+  A.push(T('neetA','装備',NEET_A,'次元の果てで無職専用の防具を見つけた',()=>!!P.neetA));
+  A.push(T('neetWA','装備','最強の無職','無職専用の武器と防具をそろえた',()=>!!(P.neetW&&P.neetA)));
   A.push(T('areaDone','冒険','完全踏破','次元の果て（第300層）を踏破した',()=>!!P.areaDone));
   LACC.forEach(([k,n])=>A.push(T('la_'+k,'装飾品',n,`伝説の装飾品「${n}」を手に入れた`,()=>!!(P.lacc&&P.lacc[k]))));
   A.push(T('laall','装飾品','社会人の身だしなみ','伝説の装飾品をすべてそろえた',()=>LACC.every(a=>P.lacc&&P.lacc[a[0]])));
@@ -1042,6 +1053,7 @@ function buildAch(){
 }
 let ACHS=null, toastT=null, toastQ=[];
 function checkAch(){
+  try{ if(P) grantNeetGear(null); }catch(e){}
   if(!P) return; try{grantLacc(null)}catch(e){} P.been=P.been||{}; P.been[P.job]=true; if(!ACHS) ACHS=buildAch(); P.ach=P.ach||{};
   for(const a of ACHS){ if(!P.ach[a.id] && a.f()){ P.ach[a.id]=Date.now(); toastQ.push(a.n); } }
   if(toastQ.length&&!toastT) nextToast();
@@ -1233,7 +1245,7 @@ function playerHit(c){
   }
   const mirP=.004+luk/(luk+5000)*.02+(P.blessed[P.job]?.12:0)+accMir()+(drinkOn('mir')?.1:0);
   if(chance(mirP)){mult*=100; P.miracles=(P.miracles||0)+1; L.push(`<span class="mir">★☆ 奇跡が起きた！ ☆★</span>`);}
-  else if(!sure&&chance(.04+luk/(luk+300)*.25+ps('crit',0))){mult*=legW()?30:3; L.push(legW()?`<span class="crit">会心の一撃！ オーバーフローが桁をあふれさせる！</span>`:`<span class="crit">会心の一撃！</span>`);}
+  else if(!sure&&chance(.04+luk/(luk+300)*.25+ps('crit',0))){mult*=(legW()||neetW())?30:3; L.push(neetW()?`<span class="crit">会心の一撃！ 辞表が叩きつけられた！</span>`:legW()?`<span class="crit">会心の一撃！ オーバーフローが桁をあふれさせる！</span>`:`<span class="crit">会心の一撃！</span>`);}
   const a=atk()*c.buff*rnd(1.3,1.7)*mult+flat;
   const d=Math.floor(pierce?Math.max(a,1):Math.max(a-e.def*.5,a*.08,1));
   if(c.work){ const cd=compress(d,c.M); c.ehp-=cd; c.dealt+=cd; if(d>P.maxDmg) P.maxDmg=d;
@@ -1248,7 +1260,7 @@ function enemyHit(c){
   if(c.stun){c.stun=false; L.push(`${e.name}は見とれて動けない！`); return;}
   if(chance(Math.min(.4,ag/(ag+e.agi)*.15+lk/(lk+3000)*.05+ps('eva',0)))){L.push(`${nm}は身をかわした！`);return;}
   let m=1; if(chance(.04)){m=2.5; L.push(`<span class="crit">${e.name}の痛恨の一撃！</span>`);}
-  const a=e.atk*rnd(1.3,1.7)*m*ps('taken',1)*(c.kaji?.1:1)*(legA()?.1:1); const d=Math.floor(Math.max(a-def()*.5,a*.08,1));
+  const a=e.atk*rnd(1.3,1.7)*m*ps('taken',1)*(c.kaji?.1:1)*(neetA()?.001:legA()?.1:1); const d=Math.floor(Math.max(a-def()*.5,a*.08,1));
   c.php-=d; L.push(`${e.name}の攻撃！ ${nm}は<span class="edmg">${fmt(d)}</span>のダメージ！`);
 }
 function simulate(e,t,fast){
@@ -1304,7 +1316,7 @@ function simulate(e,t,fast){
     if(e.secret && !P.blessed[P.job]){P.blessed[P.job]=true; L.push(`<span class="mir">★ ${nm}は「奇跡の加護」を授かった！ ★</span>`); L.push(`<span class="mir">${JOBS[P.job].n}でいるかぎり、奇跡が頻繁に起きるようになった！</span>`);}
     if(t>=0&&t===P.maxArea&&!P.areaDone){P.areaWins++;
       if(P.areaWins>=AREA_WINS&&P.maxArea>=AREA_MAX){ P.areaDone=true; c.trainMile=true;
-        L.push(`<span class="mir">★★★ 次元の果てを踏破した！ ★★★</span>`); L.push(`<span class="mir">これより先に、世界は存在しない。</span>`); }
+        L.push(`<span class="mir">★★★ 次元の果てを踏破した！ ★★★</span>`); grantNeetGear(L); L.push(`<span class="mir">これより先に、世界は存在しない。</span>`); }
       else if(P.areaWins>=AREA_WINS){P.maxArea++; P.areaWins=0; c.newArea=P.maxArea; L.push(`<span class="y">新エリア「${areaName(P.maxArea)}」が解放された！</span>`);}}
     sum=`<span class="g">勝利！</span> EXP+${fmt(exp)} / ${fmt(gold)}G${P.lv>lv0?` / <span class="lv">Lv${lv0}→${P.lv}</span>`:''}${drop?` / <span class="g">${drop}</span>`:''}${e.secret?' / <span class="mir">奇跡の加護</span>':''}${c.kaji?' / <span class="mir">火事場のクソ力</span>':''}${jg?` / <span class="c">${jg}</span>`:''}`;
   } else if(res==='lose'){

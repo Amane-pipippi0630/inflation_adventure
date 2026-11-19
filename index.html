@@ -729,7 +729,9 @@ function slotSpin(){
       if(fin[0]===fin[1]&&fin[1]===fin[2]){ m=SYM.find(x=>x[0]===fin[0])[2]; t=fin[0]==='7'?'<span class="mir">★★ 777 大当たり！！ ★★</span>':`${fin[0]}が揃った！ ×${m}`; if(fin[0]==='7'){ P.jackpots=(P.jackpots||0)+1; P.j777=(P.j777||0)+1;
         if(isTakashi()){ const lv0=P.lv, L=[]; for(let i=0;i<3;i++) gainExp(Math.max(0,need(P.lv)-P.exp),L);
           const nb=100; P.battles+=nb; P.jobB=P.jobB||{}; P.jobB[P.job]=(P.jobB[P.job]||0)+nb;
-          t+=`<div class="lv">たかしの魂が震える！ Lv${lv0}→${P.lv}、戦闘数+${nb}</div>`; } } }
+          const j=jl(P.job), jl0=j.lv; let jt='';
+          if(j.lv<JMAX){ gainJob(jneed(j.lv)-j.exp,L); jt= isMaster(P.job)?`、<span class="mir">${JOBS[P.job].n}マスター！</span>`:`、JLv${jl0}→${jl(P.job).lv}`; }
+          t+=`<div class="lv">たかしの魂が震える！ Lv${lv0}→${P.lv}、戦闘数+${nb}${jt}</div>`; } } }
       else if(fin.filter(x=>x==='🍒').length===2){ m=2; t='🍒が2つ！ ×2'; }
       settle(b,m,t); if(curPanel==='casino') panel('casino'); }
   },50);

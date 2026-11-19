@@ -910,6 +910,7 @@ function diceRoll(odd){
 // 出発 → ハロワ（ルート選択）→ 登録（履歴書）→ 面談 → 面接（一次・二次・最終）→ 内定
 // 長押しなし。面接は「質問に答える」形式で、印象ポイント（圧縮ダメージ）を積み上げる。
 const HW_STAGES=['出発','ハロワ','登録','面談','面接','内定'];
+const ED_N={sales:'自由のほうが性に合う',metal:'冷めた鉄',account:'人生の帳尻',it:'ログアウト',estate:'ハロワの椅子'};
 const ROUTES={
  sales:  {n:'営業',   key:'luk', who:'営業部長', ending:'笑顔と根性で、今日も契約をもぎ取る。気づけば支店のトップ営業になっていた。', twist:'…が、3日目の朝。上司の机に、そっと辞表を叩きつけた。ノルマより、自由のほうが性に合っていた。'},
  metal:  {n:'金属業', key:'vit', who:'工場長',   ending:'火花の散る現場で、黙々と鉄を打つ。手に職がつき、親方と呼ばれる日も近い。', twist:'…が、ある朝。親方に辞表を手渡した。鉄は熱いうちに打てと言うが、自分はもう冷めていた。'},
@@ -1041,8 +1042,6 @@ function buildAch(){
   A.push(T('work1','隠し職業','書類選考通過','ハローワークで履歴書を出した',()=>!!(P.work&&((P.work.stage||0)>=3||P.work.cleared))));
   A.push(T('oinori','隠し職業','お祈りメール','面接に落ちた',()=>(P.oinori||0)>=1));
   A.push(T('work','隠し職業','内定','はじめて内定をもらった',()=>!!(P.work&&P.work.cleared)));
-  Object.entries(ROUTES).forEach(([k,r])=>A.push(T('rt_'+k,'隠し職業',`${r.n}で内定`,`${r.n}ルートで内定をもらった`,()=>!!(P.work&&P.work.endings&&P.work.endings[k]))));
-  A.push(T('rtall','隠し職業','引く手あまた','5つの業界すべてで内定をもらった',()=>Object.keys(ROUTES).every(k=>P.work&&P.work.endings&&P.work.endings[k])));
   // ギャンブル
   A.push(T('j777','ギャンブル','777','スロットで777を揃えた',()=>(P.j777||0)>=1));
   A.push(T('jpin','ギャンブル','ピンゾロの丁','丁半でピンゾロを出した',()=>(P.jpin||0)>=1));
@@ -1101,6 +1100,11 @@ function buildAch(){
   A.push(T('kwall','修練場','百芸の達人','すべての職業の極意を会得した',()=>Object.keys(JOBS).every(k=>P.kiwami&&P.kiwami[k])));
   Object.keys(JOB_SECRETS).forEach(k=>A.push(T('js_'+k,'職業の秘密',`${JOBS[k].n}の秘密`,`${JOBS[k].n}の秘密「${JOB_SECRETS[k].n}」を見つけた`,()=>jobSecretFound(k))));
   A.push(T('jsall','職業の秘密','すべての職の秘密','すべての職業の秘密を見つけた',()=>Object.keys(JOB_SECRETS).every(jobSecretFound)));
+  // エンディング（ハロワの5ルート＋桁の神）
+  const edGot=k=>!!(P.work&&P.work.endings&&P.work.endings[k]);
+  Object.entries(ROUTES).forEach(([k,r])=>A.push(T('rt_'+k,'エンディング',ED_N[k],`${r.n}ルートのエンディングを見た`,()=>edGot(k))));
+  A.push(T('rtall','エンディング','そして、また無職に','ハロワの5ルートすべてのエンディングを見た',()=>Object.keys(ROUTES).every(edGot)));
+  A.push(T('edall','エンディング','全エンディング制覇','ハロワの5ルートと桁の神、すべてのエンディングを見た',()=>Object.keys(ROUTES).every(edGot)&&!!(P.final&&P.final.cleared)));
   A.push(T('all','マスター','インフレの果て','すべての実績を解除した',()=>ACHS.filter(a=>a.id!=='all').every(a=>P.ach[a.id])));
   return A;
 }

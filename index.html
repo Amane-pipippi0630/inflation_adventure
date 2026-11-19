@@ -578,7 +578,7 @@ function panel(p,arg){
   if((p==='area'||p==='champ')&&takashiLock()){ el.innerHTML=TK_MSG; return; }
   if(p==='area'){
     if(arg) areaTab=arg;
-    const tabs=[['adv','冒険'],['train','修練場'],['god','神々の座']].concat(P.unlocked.neet?[['work','ハローワーク']]:[]).concat(finalOpen()?[['final','桁の神']]:[]);
+    const tabs=[['adv','冒険'],['train','修練場'],['god','神々の座']].concat(hwOpen()?[['work','ハローワーク']]:[]).concat(finalOpen()?[['final','桁の神']]:[]);
     if(!tabs.some(x=>x[0]===areaTab)) areaTab='adv';
     h=`<div class="grid" style="grid-template-columns:repeat(${tabs.length},1fr);margin-bottom:8px">`+tabs.map(([k,n])=>`<button class="${areaTab===k?'sel':''}" style="font-size:13px;padding:7px 2px" onclick="panel('area','${k}')">${n}</button>`).join('')+`</div>`;
     if(areaTab==='final'){ const f=finalState();
@@ -930,6 +930,8 @@ const QUESTIONS={
  estate:[{q:'「飛び込み営業はできますか？」',best:'appeal',bad:'honest'},{q:'「この物件、いくらで売りますか？」',best:'ask',bad:'honest'}],
 };
 const ROUND_N=["一次面接","二次面接","最終面接"], ROUND_HP=[60000,120000,240000], STRIKES=3;
+// ハローワークのタブは、初めて無職になった瞬間から見える（一度見えたら転職しても残る）
+const hwOpen=()=>P.job==='neet'||!!(P.pops&&P.pops.work)||!!(P.work&&(P.work.cleared||(P.work.stage||0)>0));
 function workState(){ if(!P.work||P.work.stage===undefined) P.work={stage:0,route:null,round:0,hp:ROUND_HP[0],strikes:0,flags:{},cleared:!!(P.work&&P.work.cleared),endings:(P.work&&P.work.endings)||{},log:[],q:null,tries:0}; return P.work; }
 function trustParts(){
   return [

@@ -130,7 +130,8 @@ rt{font-size:9px;color:#bcd}
         <button onclick="panel('stat')">能力振り</button>
         <button onclick="panel('casino')" class="y">ギャンブル場</button>
       </div>
-      <div class="grid" style="margin-top:6px">
+      <div class="grid" style="margin-top:6px;grid-template-columns:repeat(4,1fr)">
+        <button onclick="panel('bar')" class="y">酒場</button>
         <button onclick="panel('ach')" class="y">実績</button>
         <button onclick="panel('log')">戦闘ログ</button>
         <button onclick="panel('rec')">記録</button>
@@ -355,6 +356,10 @@ function sanitizeSave(o){
   r.blessed=boolMap(o.blessed,isJob); r.unlocked=boolMap(o.unlocked,isJob); r.kiwami=boolMap(o.kiwami,isJob); r.been=boolMap(o.been,isJob);
   r.locB=numMap(o.locB,k=>/^(a\d+|god|champ|work|train_\w+)$/.test(k));
   r.ach=boolMap(o.ach);
+  ['drinks','personaN','yakeN','shukuhaiN','memLoss','contestTries','contestWins','loseStreak','hangover'].forEach(k=>r[k]=int(o[k]));
+  if(o.drink&&DRINKS.some(D=>D.id===o.drink.type)) r.drink={type:o.drink.type,left:int(o.drink.left)};
+  if(o.persona&&PERSONA[o.persona.mode]) r.persona={mode:o.persona.mode,left:int(o.persona.left)};
+  r.rumors=boolMap(o.rumors,k=>RUMORS.some(x=>x.id===k)); r.contest=numMap(o.contest,k=>RIVALS.some(x=>x.id===k));
   if(o.work&&typeof o.work==='object'){ const f=Math.min(WORK.length-1,int(o.work.floor)); r.work={floor:f,hp:Math.min(WORK[f].hp,Math.max(0,num(o.work.hp,WORK[f].hp))),cleared:bool(o.work.cleared),dmg:num(o.work.dmg)}; }
   return r;
 }
@@ -535,6 +540,9 @@ function renderStatus(){
   { const l=accEqs(); h+=`<div class="small">装飾品（${l.length}/${accSlots()}枠）：${l.length?l.map(a=>`${a.n}+${a.lv}`).join('、'):'なし'}</div>`;
     const lg=LACC.filter(a=>hasL(a[0])); if(lg.length) h+=`<div class="small mir">伝説：${lg.map(a=>a[1]).join('、')}</div>`; }
   if(P.blessed[P.job]) h+=`<div class="small mir">★ 奇跡の加護を受けている ★</div>`;
+  if(persona()) h+=`<div class="small mir">🍶 ${PERSONA[P.persona.mode].n}：${PERSONA[P.persona.mode].d}（あと${P.persona.left}回）</div>`;
+  else if(P.drink&&P.drink.left>0){ const D=DRINKS.find(x=>x.id===P.drink.type); if(D) h+=`<div class="small o">🍺 ${D.n}：${D.d.replace(/次の\d+戦、/,'')}（あと${P.drink.left}戦）</div>`; }
+  if(P.hangover>0) h+=`<div class="small r">二日酔い：攻撃力半分（あと${P.hangover}戦）</div>`;
   if(P.pts>0) h+=`<div class="small y">ステータスポイントが ${P.pts} 残っています</div>`;
   $('#status').innerHTML=h;
 }
@@ -631,6 +639,8 @@ function panel(p,arg){
     }
   } else if(p==='casino'){
     if(arg) casinoGame=arg; h=casinoHTML();
+  } else if(p==='bar'){
+    if(arg) barTab=arg; h=barHTML();
   } else if(p==='ach'){
     h=achHTML();
   } else if(p==='rec'){
@@ -676,6 +686,8 @@ function settle(bet,mult,txt){ const ret=payout(bet,mult); P.gold+=ret; if(ret>b
   casMsg = mult>0 ? `${txt} <span class="g">+${fmt(ret-bet)}G</span>` : `${txt} <span class="r">-${fmt(bet)}G</span>`;
   if(P.gold===1) casMsg+=`<div class="small o">所持金がちょうど1Gになった…</div>`;
   if(betNote){ casMsg=betNote+casMsg; betNote=''; }
+  casMsg+=personaTick(null,true);
+  if(mult>0) P.loseStreak=0; else { P.loseStreak=(P.loseStreak||0)+1; if(P.loseStreak>=5&&isTakashi()){ const t=startPersona('battle','yake'); if(t){ casMsg+=t; P.loseStreak=0; } } }
   save(); renderStatus(); }
 function betUI(lock){
   const o=[[.01,'1%'],[.1,'10%'],[.5,'半分'],[1,'全額']];
@@ -721,8 +733,8 @@ function hlReward(n){ const B=HL_BONUS[n]; if(!B) return ''; const lv0=P.lv, L=[
   save(); renderStatus(); return t+'</div>'; }
 function hlGuess(hi){
   const [n,s]=drawCard(); hl.prev=[hl.card,hl.suit];
-  if(n===hl.card){ casMsg='同じ数字！ 引き分け、続行。'; }
-  else if(hi?n>hl.card:n<hl.card){ hl.pot*=2; hl.streak++; P.hlBest=Math.max(P.hlBest||0,hl.streak); casMsg=`<span class="g">当たり！ 賞金 ${fmt(hl.pot)}G</span>`+hlReward(hl.streak);
+  if(n===hl.card&&!persona('gamble')){ casMsg='同じ数字！ 引き分け、続行。'; }
+  else if(n===hl.card||(hi?n>hl.card:n<hl.card)){ hl.pot*=2; hl.streak++; P.hlBest=Math.max(P.hlBest||0,hl.streak); casMsg=`<span class="g">当たり！ 賞金 ${fmt(hl.pot)}G</span>`+hlReward(hl.streak);
     if(hl.streak>=HL_MAX){ hl.card=n; hl.suit=s; const bonus=casMsg; hl.active=false; settle(hl.bet,hl.pot/hl.bet,`<span class="mir">★ ${HL_MAX}連勝パーフェクト！ ★</span>`); casMsg=bonus+casMsg; hl.prev=null; panel('casino'); return; } }
   else { hl.card=n; hl.suit=s; hl.active=false; settle(hl.bet,0,`ハズレ…（${hl.streak}連勝で終了）`); panel('casino'); return; }
   hl.card=n; hl.suit=s; panel('casino');
@@ -747,7 +759,7 @@ function newMachine(){ const tk=isTakashi(); let set;
   if(tk){ let r=Math.random(); set=6; for(let i=0;i<6;i++){ r-=TK_W[i]; if(r<0){ set=i+1; break; } } } else set=1+Math.floor(Math.random()*6);
   mach={set,spins:0,cnt:{},lose:0,answered:false,result:''}; }
 function machine(){ if(!mach) newMachine(); return mach; }
-function rollRole(){ const m=machine(), pr=roleProbs(m.set,isTakashi()); let r=Math.random(); for(const [k] of ROLES){ r-=pr[k]||0; if(r<0) return k; } return null; }
+function rollRole(){ const m=machine(), pr=roleProbs(persona('gamble')?6:m.set,isTakashi()); let r=Math.random(); for(const [k] of ROLES){ r-=pr[k]||0; if(r<0) return k; } return null; }
 function reelsFor(role){ const o=()=>{ const n=['BAR','★','🔔','🍉']; return n[Math.floor(Math.random()*n.length)]; };
   if(role==='777') return ['7','7','7']; if(role==='🍒3') return ['🍒','🍒','🍒'];
   if(role==='🍒2'){ const a=['🍒','🍒',o()]; return a.sort(()=>Math.random()-.5); }
@@ -801,7 +813,7 @@ function slotSpin(fast){
       const mlt=payOf(role), is777=role==='777', nm=role?ROLES.find(r=>r[0]===role)[2]:'';
       let t= is777?'<span class="mir">★★ 777 大当たり！！ ★★</span>' : role?`${nm}！ ×${mlt}`:'ハズレ…';
       if(tkLock&&!is777){ const lv0=P.lv, L=[]; gainExp(Math.floor(need(P.lv)*(role?.2:.05)),L); if(P.lv>lv0) t+=`<div class="lv">レベルアップ！ Lv${P.lv}</div>`; }
-      if(is777){ P.jackpots=(P.jackpots||0)+1; P.j777=(P.j777||0)+1; if(isTakashi()) t+=takashiBonus(); if(slotHold){ slotHold=false; t+='<div class="small y">777！ 連続スピンを止めました</div>'; } }
+      if(is777){ P.jackpots=(P.jackpots||0)+1; P.j777=(P.j777||0)+1; if(isTakashi()){ t+=takashiBonus(); t+=startPersona('gamble','shukuhai'); } if(slotHold){ slotHold=false; t+='<div class="small y">777！ 連続スピンを止めました</div>'; } }
       settle(b,mlt,t); if(curPanel==='casino') panel('casino');
       res({stop:is777});
     }
@@ -973,6 +985,16 @@ function buildAch(){
   A.push(T('allin','ギャンブル','全額勝負','全額を賭けて勝った',()=>(P.allInWins||0)>=1));
   A.push(T('set1','ギャンブル','設定看破','スロットの設定を見抜いた',()=>(P.setHits||0)>=1));
   A.push(T('set10','ギャンブル','設定判別の達人','スロットの設定を10回見抜いた',()=>(P.setHits||0)>=10));
+  A.push(T('bar1','酒場','一杯目','酒場でお酒を飲んだ',()=>(P.drinks||0)>=1));
+  A.push(T('bar100','酒場','酒場の常連','お酒を100杯飲んだ',()=>(P.drinks||0)>=100));
+  A.push(T('mem','酒場','記憶がない','飲みすぎて記憶が飛んだ',()=>(P.memLoss||0)>=1));
+  A.push(T('rumorAll','酒場','情報通','酒場の噂をすべて聞いた',()=>RUMORS.every(r=>P.rumors&&P.rumors[r.id])));
+  A.push(T('cw1','酒場','飲み比べ初勝利','飲み比べで勝った',()=>(P.contestWins||0)>=1));
+  RIVALS.forEach(R=>A.push(T('cv_'+R.id,'酒場',`${R.n}に勝つ`,`飲み比べで${R.n}を倒した`,()=>!!(P.contest&&P.contest[R.id]))));
+  A.push(T('cw100','酒場','底なし','飲み比べで100回勝った',()=>(P.contestWins||0)>=100));
+  A.push(T('drunk','酒場','もう一人のたかし','酔いどれたかしが目を覚ました',()=>(P.personaN||0)>=1));
+  A.push(T('yake','酒場','やけ酒','負けが込んで、やけ酒をあおった',()=>(P.yakeN||0)>=1));
+  A.push(T('shuku','酒場','祝杯','勝利の祝杯をあげた',()=>(P.shukuhaiN||0)>=1));
   A.push(T('jp30','ギャンブル','ギャンブル狂','大当たりを30回出した',()=>(P.jackpots||0)>=30));
   A.push(T('one','ギャンブル','残り1G','所持金がちょうど1Gになった',()=>!!P.oneG));
   A.push(T('kaji','ギャンブル','火事場のクソ力','火事場のクソ力を発動させた',()=>(P.kajiN||0)>=1));
@@ -1045,6 +1067,104 @@ function makeTrain(){
   return e;
 }
 function fightTrain(f){ if(takashiLock()) return; last={type:'train'}; runBattle(makeTrain(),-4,f); }
+// ============ 酒場 ============
+// お酒：次のN戦だけ効く。1度に1杯（新しく飲むと上書き）
+const DRINKS=[
+ {id:'ale', n:'エール',   d:'次の30戦、経験値×1.5', left:30, k:'exp',  v:1.5, price:20},
+ {id:'wine',n:'赤ワイン', d:'次の30戦、お金×2',     left:30, k:'gold', v:2,   price:20},
+ {id:'fire',n:'火酒',     d:'次の20戦、攻撃力×3',   left:20, k:'atk',  v:3,   price:30},
+ {id:'miki',n:'神酒',     d:'次の10戦、奇跡率+10%', left:10, k:'mir',  v:.1,  price:400},
+];
+const drinkPrice=D=>Math.max(50,Math.floor(enemyStats(P.maxArea).gold*D.price));
+const drinkOn=k=>{ const d=P.drink; if(!d||d.left<=0) return null; const D=DRINKS.find(x=>x.id===d.type); return D&&D.k===k?D:null; };
+const drinkMul=k=>{ const D=drinkOn(k); return D?D.v:1; };
+// 酔いどれたかし（第二人格）
+const PERSONA={battle:{n:'酔いどれたかし（戦闘）',left:50,d:'攻撃力×10'},gamble:{n:'酔いどれたかし（博打）',left:30,d:'スロットは設定6、ハイ&ローの引き分けも勝ち'}};
+const persona=m=>!!(P.persona&&P.persona.left>0&&(!m||P.persona.mode===m));
+const DRUNK_LINES=['「おぉ？ やんのかコラァ！」','「ひっく…まとめてかかってこいやぁ！」','「たかし様をなめんなよぉ～」','「今日の俺は、ちょっと違うぜぇ…ひっく」'];
+function startPersona(mode,why){ if(!isTakashi()||persona()) return ''; P.persona={mode,left:PERSONA[mode].left}; P.personaN=(P.personaN||0)+1;
+  if(why==='yake') P.yakeN=(P.yakeN||0)+1; if(why==='shukuhai') P.shukuhaiN=(P.shukuhaiN||0)+1;
+  const head= why==='yake'?'負けが込んだたかしは、やけ酒をあおった…！':why==='shukuhai'?'たかしは祝杯をあげた…！':'たかしは酒を飲み干した…！';
+  return `<div class="mir">${head} もう一人のたかしが目を覚ます。【${PERSONA[mode].n}】${PERSONA[mode].d}・あと${PERSONA[mode].left}回</div>`; }
+function personaTick(L,isGamble){ // 戦闘1回・ギャンブル1回ごとに減らす
+  let t='';
+  if(P.persona&&P.persona.left>0&&(P.persona.mode==='gamble')===!!isGamble){ P.persona.left--; if(P.persona.left<=0){ P.persona=null; P.hangover=5; t='<div class="o">…酔いが覚めた。頭が痛い。二日酔いで次の5戦は攻撃力が半分。</div>'; } }
+  if(L&&t) L.push(t); return t; }
+function drinkTick(L){
+  if(P.drink&&P.drink.left>0){ P.drink.left--; if(P.drink.left<=0){ const D=DRINKS.find(x=>x.id===P.drink.type); P.drink=null; L.push(`<span class="small">${D?D.n:'お酒'}の効き目が切れた。</span>`); } }
+  if(P.hangover>0){ P.hangover--; if(!P.hangover) L.push('<span class="small">二日酔いが治った。</span>'); }
+  personaTick(L,false);
+}
+function battleBuffs(L){ let m=drinkMul('atk'); const nm=esc(P.name);
+  if(persona('battle')){ m*=10; L.push(`<span class="mir">${nm}${DRUNK_LINES[Math.floor(Math.random()*DRUNK_LINES.length)]}（酔いどれ あと${P.persona.left}戦）</span>`); }
+  else if(drinkOn('atk')) L.push(`<span class="small o">火酒が効いている…（あと${P.drink.left}戦）</span>`);
+  if(P.hangover>0){ m*=.5; L.push(`<span class="small o">二日酔いで力が出ない…（あと${P.hangover}戦）</span>`); }
+  return m; }
+function buyDrink(id){ const D=DRINKS.find(x=>x.id===id), pr=drinkPrice(D); if(!D||P.gold<pr) return;
+  P.gold-=pr; P.drinks=(P.drinks||0)+1; let msg='';
+  if(isTakashi()){ const mode=(id==='wine'||id==='miki')?'gamble':'battle'; msg=startPersona(mode,'bar') || `<div class="o">たかしは${D.n}を飲んだが、もう一人のたかしはすでに起きている…</div>`; }
+  else { P.drink={type:id,left:D.left}; msg=`<div class="g">${D.n}を飲んだ！ ${D.d}</div>`; }
+  if(chance(.05)){ const lost=Math.floor(P.gold*.1); P.gold-=lost; P.memLoss=(P.memLoss||0)+1; msg+=`<div class="r">…気がつくと朝だった。記憶が飛んでいる。財布が軽い…（-${fmt(lost)}G）</div>`; }
+  barMsg=msg; save(); renderStatus(); panel('bar'); }
+// 噂話：条件を満たすと聞ける。自力で見つけたものは出てこない
+const RUMORS=[
+ {id:'kaji',t:'「格闘家ってのは、財布が空っぽになるほど強くなるらしい。1枚残すのがコツだとか」',when:()=>true,found:()=>(P.kajiN||0)>0},
+ {id:'takashi',t:'「たかしって名前のやつは、どうも賭け事から逃げられないらしいぜ」',when:()=>true,found:()=>isTakashi()},
+ {id:'setting',t:'「スロットの台にはクセがある。🍒の出方をよく見てりゃ、店の考えが読めるって話だ」',when:()=>true,found:()=>(P.setHits||0)>0},
+ {id:'hl',t:'「ハイ&ローで10回続けて当てた奴には、カードの神様がご褒美をくれるんだと」',when:()=>true,found:()=>(P.hlBest||0)>=10},
+ {id:'kiwami',t:'「修練場で千回勝つと、その道の“極意”ってのが身につくらしい」',when:()=>P.maxArea>=3,found:()=>Object.keys(P.kiwami||{}).length>0},
+ {id:'legend',t:'「武器屋の剣を99まで鍛えると、桁があふれて別物になるって噂だ」',when:()=>P.maxArea>=30,found:()=>legW()||legA()},
+ {id:'slime',t:'「はじまりの画面のスライム、つつかれると喜ぶらしいよ。何度もつつくと…いや、なんでもない」',when:()=>upperOpen(),found:()=>!!P.unlocked.apprentice},
+ {id:'appr',t:'「すべての職を極めた者の前に、なんとも頼りない見習いが現れるそうだ。“？”付きのな」',when:()=>upperOpen(),found:()=>!!P.unlocked.apprentice},
+ {id:'god100',t:'「神々の座に百回も通ったバカな見習いがいてな。百回目に何かが起きたらしい」',when:()=>!!P.unlocked.apprentice,found:()=>Object.keys(P.blessed||{}).length>0||(P.godWins||0)>0},
+ {id:'neet',t:'「全部極めて、闘技場のてっぺんに立って、神様にも会った奴は…最後には働かなくなるらしい」',when:()=>upperOpen(),found:()=>!!P.unlocked.neet},
+ {id:'hellowork',t:'「無職がハロワで関門を越えると、いい身なりの品を贈られるって話だ」',when:()=>!!P.unlocked.neet,found:()=>!!(P.lacc&&P.lacc.tie)},
+];
+const upperOpen=()=>Object.entries(JOBS).some(([k,j])=>j.rank===2&&canJob(k));
+const rumorPrice=()=>Math.max(100,Math.floor(enemyStats(P.maxArea).gold*10));
+function buyRumor(){ const pr=rumorPrice(); if(P.gold<pr) return;
+  const pool=RUMORS.filter(r=>r.when()&&!r.found()&&!(P.rumors&&P.rumors[r.id]));
+  if(!pool.length){ barMsg='<div class="small">マスター「今は特に、面白い噂はないねぇ」（お金は取られなかった）</div>'; panel('bar','rumor'); return; }
+  P.gold-=pr; const r=pool[Math.floor(Math.random()*pool.length)]; P.rumors=P.rumors||{}; P.rumors[r.id]=true;
+  barMsg=`<div class="c">マスターが小声で教えてくれた。<br>${r.t}</div>`; save(); renderStatus(); panel('bar','rumor'); }
+// 飲み比べ：体力と運で勝負。勝つと賞金
+const RIVALS=[
+ {id:'gen',n:'常連のゲン',t:2},{id:'oba',n:'酒豪のオババ',t:8},{id:'don',n:'樽男ドンゴ',t:20},{id:'uwa',n:'蟒蛇（うわばみ）の姐さん',t:45},{id:'bacchus',n:'酒神バッカス',t:90},
+];
+// 酒の強さ：冒険の進み具合＋体力と運（桁数）。相手の強さ t とほぼ同じ物差し
+const tolerance=()=>P.maxArea*.8+Math.log10(st('vit')+st('luk')+10)*1.5+P.lv/100;
+function rivalTol(R){ return R.t; }
+function contest(i){ const R=RIVALS[i]; if(!R) return; const fee=Math.max(50,Math.floor(enemyStats(Math.min(R.t,P.maxArea)).gold*5)); if(P.gold<fee) return;
+  P.gold-=fee; P.contestTries=(P.contestTries||0)+1;
+  let me=tolerance(), you=rivalTol(R), cup=0, lines=[], res=null; const nm=esc(P.name);
+  while(res===null&&cup<40){ cup++; me-=rnd(.4,1.6)*(1+cup*.05); you-=rnd(.4,1.6)*(1+cup*.05);
+    if(cup%3===0||me<=0||you<=0) lines.push(`${cup}杯目… ${nm}${me<2?'の目が泳いでいる':'はまだ平気そうだ'}／${R.n}${you<2?'がふらついている':'は涼しい顔'}`);
+    if(me<=0&&you<=0) res=chance(.5); else if(me<=0) res=false; else if(you<=0) res=true; }
+  let msg=lines.slice(-4).join('<br>');
+  if(res){ const prize=Math.floor(fee*(8+i*4)); P.gold+=prize; P.earned=(P.earned||0)+prize; P.contest=P.contest||{}; P.contest[R.id]=(P.contest[R.id]||0)+1; P.contestWins=(P.contestWins||0)+1;
+    msg+=`<div class="mir">★ ${R.n}が先に倒れた！ ${nm}の勝ち！ ★ 賞金 ${fmt(prize)}G</div>`;
+    if(isTakashi()) msg+=startPersona('gamble','shukuhai'); }
+  else msg+=`<div class="r">${nm}は${cup}杯目で潰れた… 参加費 ${fmt(fee)}G は戻らない</div>`;
+  barMsg=msg; save(); renderStatus(); panel('bar','contest'); }
+let barTab='drink', barMsg='';
+function barHTML(){
+  const tabs=[['drink','お酒'],['rumor','噂話'],['contest','飲み比べ']];
+  let h=`<h2>酒場</h2><div class="grid" style="margin-bottom:6px">`+tabs.map(([k,n])=>`<button class="${barTab===k?'sel':''}" onclick="barMsg='';panel('bar','${k}')">${n}</button>`).join('')+`</div>`;
+  if(barTab==='drink'){
+    h+=`<div class="small">${isTakashi()?'<span class="o">たかしが飲むと…もう一人のたかしが出てくる。エール・火酒は戦闘、ワイン・神酒は博打。</span>':'お酒は1度に1杯だけ効く（新しく飲むと上書き）。冒険・修練場・闘技場・神々の座の戦闘で効く。'}</div>`;
+    DRINKS.forEach(D=>{ const pr=drinkPrice(D); h+=`<div class="row"><div>${D.n}<div class="small">${D.d}　${fmt(pr)}G</div></div><button ${P.gold<pr?'disabled':''} onclick="buyDrink('${D.id}')">飲む</button></div>`; });
+  } else if(barTab==='rumor'){
+    const pr=rumorPrice(); h+=`<div class="small">マスターにお金を払うと、まだ知らない噂を1つ教えてくれる。</div><button style="width:100%;margin:6px 0" ${P.gold<pr?'disabled':''} onclick="buyRumor()">噂を聞く（${fmt(pr)}G）</button>`;
+    const heard=RUMORS.filter(r=>P.rumors&&P.rumors[r.id]); if(heard.length) h+=`<div class="small y">これまでに聞いた噂</div>`+heard.map(r=>`<div class="small" style="margin:3px 0">${r.found()?'✓ ':'・'}${r.t}</div>`).join('');
+  } else {
+    h+=`<div class="small">体力と運で勝負。参加費を払って、先に潰れたほうの負け。</div>`;
+    RIVALS.forEach((R,i)=>{ const fee=Math.max(50,Math.floor(enemyStats(Math.min(R.t,P.maxArea)).gold*5)), w=(P.contest&&P.contest[R.id])||0;
+      const r=tolerance()/rivalTol(R); const tag=r>1.25?'<span class="g">余裕</span>':r>.95?'<span class="c">互角</span>':r>.7?'<span class="o">手強い</span>':'<span class="r">無謀</span>';
+      h+=`<div class="row"><div>${R.n}${w?` <span class="small y">${w}勝</span>`:''}<div class="small">参加費 ${fmt(fee)}G　酒の強さ：${tag}</div></div><button ${P.gold<fee?'disabled':''} onclick="contest(${i})">勝負</button></div>`; });
+  }
+  if(barMsg) h+=`<div style="margin-top:8px">${barMsg}</div>`;
+  return h;
+}
 // ============ 戦闘 ============
 let last=null;
 function fightArea(t,f){ if(takashiLock()) return;last={type:'area',t}; runBattle(makeEnemy(t),t,f)}
@@ -1091,7 +1211,7 @@ function playerHit(c){
     else if(s.coin){flat=P.gold*rnd(.005,.02)*(s.cm||1); L.push(`<span class="sk">${nm}の${s.n}！ 小銭が宙を舞う！</span>`);}
     else {mult=s.m; L.push(`<span class="sk">${nm}の${s.n}！</span>`);}
   }
-  const mirP=.004+luk/(luk+5000)*.02+(P.blessed[P.job]?.12:0)+accMir();
+  const mirP=.004+luk/(luk+5000)*.02+(P.blessed[P.job]?.12:0)+accMir()+(drinkOn('mir')?.1:0);
   if(chance(mirP)){mult*=100; P.miracles=(P.miracles||0)+1; L.push(`<span class="mir">★☆ 奇跡が起きた！ ☆★</span>`);}
   else if(!sure&&chance(.04+luk/(luk+300)*.25+ps('crit',0))){mult*=legW()?30:3; L.push(legW()?`<span class="crit">会心の一撃！ オーバーフローが桁をあふれさせる！</span>`:`<span class="crit">会心の一撃！</span>`);}
   const a=atk()*c.buff*rnd(1.3,1.7)*mult+flat;
@@ -1115,6 +1235,7 @@ function simulate(e,t,fast){
   const mhp=maxhp(); const c={e,L:[],php:mhp,mhp,ehp:e.hp,gold:0,buff:1,stun:false,forceMiracle:false,kaji:false};
   const L=c.L, nm=esc(P.name);
   if(P.job==='fighter'&&P.gold===1){c.kaji=true; c.buff=10000; P.kajiN=(P.kajiN||0)+1;}
+  c.buff*=battleBuffs(L);
   if(e.secret){
     P.secret[P.job]=(P.secret[P.job]||0)+1; P.godTries=(P.godTries||0)+1;
     if(isSecretJob(P.job) && P.secret[P.job]===SECRET_TRIES && !P.blessed[P.job]) c.forceMiracle=true;
@@ -1135,14 +1256,14 @@ function simulate(e,t,fast){
     }
     L.push(`<span class="hpl">${nm} HP ${fmt(Math.max(0,c.php))}/${fmt(mhp)}　|　${e.name} HP ${fmt(Math.max(0,c.ehp))}</span>`);
   }
-  P.battles++;
+  P.battles++; drinkTick(L);
   P.jobB=P.jobB||{}; P.jobB[P.job]=(P.jobB[P.job]||0)+1;
   if(e.secret) checkMasterUnlock(L);
   let sum='';
   if(res==='win'){
     P.kills++;
     const lk=st('luk');
-    const exp=Math.floor(e.exp*rnd(.9,1.1)*ps('exp',1)); const gold=Math.floor(e.gold*rnd(.8,1.2)*(1+lk/(lk+200))*ps('gold',1))+c.gold;
+    const exp=Math.floor(e.exp*rnd(.9,1.1)*ps('exp',1)*drinkMul('exp')); const gold=Math.floor(e.gold*rnd(.8,1.2)*(1+lk/(lk+200))*ps('gold',1)*drinkMul('gold'))+c.gold;
     L.push(`<span class="y">${e.name}を倒した！</span>`);
     L.push(`<span class="rw">${fmt(exp)}の経験値と ${fmt(gold)}G を手に入れた！</span>`);
     P.gold+=gold; P.earned=(P.earned||0)+gold;

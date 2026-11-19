@@ -14,7 +14,7 @@
 
 ## ライセンス
 - このゲームのコードは [MIT License](LICENSE) で公開しています。© 2026 Amane-pipippi0630
-- ドット絵・文章はすべてオリジナルです。
+- 文章はすべてオリジナルです。キャラクターの絵は、作者が [PixelLab](https://www.pixellab.ai/)（AIによるドット絵の生成ツール）で作った素材をもとにしています。
 
 ## 使用している外部素材
 - フォント「DotGothic16」（© Fontworks Inc.）… [SIL Open Font License 1.1](https://openfontlicense.org/)。Google Fonts から読み込んでおり、フォントファイル自体は同梱していません。

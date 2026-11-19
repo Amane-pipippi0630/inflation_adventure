@@ -118,6 +118,7 @@ rt{font-size:9px;color:#bcd}
   <!-- メイン -->
   <div id="sMain" class="hide">
     <div class="win" id="status"></div>
+    <div id="goal" class="win" style="padding:6px 10px;cursor:pointer" onclick="panel('bar','guide')"></div>
     <div class="win">
       <div class="grid">
         <button onclick="panel('area')">冒険</button>
@@ -346,7 +347,7 @@ function sanitizeSave(o){
    'jackpots','j777','jpin','jrou','setHits','hlBest','allInWins','kajiN','miracles'].forEach(k=>r[k]=num(o[k],0));
   r.lv=Math.max(1,int(o.lv,1)); r.wpn=Math.min(GEAR_MAX,int(o.wpn)); r.arm=Math.min(GEAR_MAX,int(o.arm)); r.reb=int(o.reb); r.pts=int(o.pts);
   r.maxArea=Math.min(AREA_MAX,int(o.maxArea)); r.areaWins=int(o.areaWins); r.champ=int(o.champ);
-  r.rebMul=Math.max(1,num(o.rebMul,1)); r.oneG=bool(o.oneG); r.areaDone=bool(o.areaDone); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA);
+  r.rebMul=Math.max(1,num(o.rebMul,1)); r.oneG=bool(o.oneG); r.areaDone=bool(o.areaDone); if(o.guideHeard!==undefined&&o.guideHeard!==null) r.guideHeard=Math.floor(num(o.guideHeard,-1)); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA);
   r.base={}; KEYS.forEach(k=>r.base[k]=Math.max(0,num(o.base&&o.base[k],1)));
   r.jlv={}; if(o.jlv&&typeof o.jlv==='object') for(const k of Object.keys(o.jlv)) if(isJob(k)&&o.jlv[k]) r.jlv[k]={lv:Math.min(JMAX,Math.max(1,int(o.jlv[k].lv,1))),exp:int(o.jlv[k].exp)};
   r.acc=numMap(o.acc,k=>ACC.some(a=>a[0]===k)); Object.keys(r.acc).forEach(k=>r.acc[k]=Math.min(ACC_LIMIT,int(r.acc[k])));
@@ -557,6 +558,7 @@ function renderStatus(){
   if(P.hangover>0) h+=`<div class="small r">二日酔い：攻撃力半分（あと${P.hangover}戦）</div>`;
   if(P.pts>0) h+=`<div class="small y">ステータスポイントが ${P.pts} 残っています</div>`;
   $('#status').innerHTML=h;
+  const gl=$('#goal'); if(gl){ const g=goalHTML(); gl.innerHTML=g; gl.classList.toggle('hide',!g); }
 }
 
 let curPanel='area', resetArm=false, areaTab='adv', areaPage=0;
@@ -1205,8 +1207,37 @@ function guideSteps(){
    [()=>!(P.work&&P.work.cleared), ()=>{ const w=workState(); return `「冒険の『ハローワーク』で社会に挑むんじゃ。ここではダメージが縮む。転生、闘技場、神々の座、ギャンブルの大当たりで社会的信用を上げると、ぐっと楽になる」（第${w.floor+1}/${WORK.length}関門・信用×${trust().toFixed(2)}）`; }],
   ];
 }
+// メイン画面に出す短い目標（guideSteps と同じ順番）
+function guideGoals(){ const J=JOBS[P.job]; return [
+  `スロットで777を当てて、ギャンブラーを極める（JLv${jl('gambler').lv}/${JMAX}）`,
+  '武器屋と防具屋で装備をそろえる',
+  `冒険でエリア3まで進む（${areaName(P.maxArea)}・${P.areaWins}/10勝）`,
+  '闘技場で王者を1人倒す',
+  `${J.n}をJLv${JMAX}まで鍛える（JLv${jl(P.job).lv}）`,
+  '中位職になって極める',
+  `Lv${rebReq()}で転生する（いま Lv${P.lv}）`,
+  '上位職になって極める',
+  `すべての職を極める（${openMasters()}/${openTotal()}職）`,
+  '転職所で見習い？になる',
+  `見習い？で神々の座に何度も挑む`,
+  `見習い？を極める（JLv${jl('apprentice').lv}/${JMAX}）`,
+  `闘技場の王者を10人倒す（${P.champ}/${CHAMPS.length}人）`,
+  `神々の座で勝つか、100回挑む（勝利${P.godWins||0}・挑戦${P.godTries||0}）`,
+  '転職所で無職になる',
+  ()=>{ const w=workState(); return `ハローワークで社会に挑む（第${w.floor+1}/${WORK.length}関門）`; },
+]; }
+const guideIndex=()=>guideSteps().findIndex(([c])=>c());
+function goalHTML(){
+  if(!P) return '';
+  const cur=guideIndex(), heard=P.guideHeard;
+  if(heard===undefined||heard===null) return `<div class="small y">💡 困ったら、酒場の隠居じいさんに相談してみよう（タップで酒場へ）</div>`;
+  if(cur<0) return heard>=0?`<div class="small y">🍶 酒場で隠居じいさんにひとこと報告しよう（タップで酒場へ）</div>`:'';
+  if(cur>heard) return `<div class="small mir">★ 目標達成！ 酒場で隠居じいさんに次の話を聞こう（タップで酒場へ）</div>`;
+  const g=guideGoals()[cur]; return `<div class="small c">🎯 目標：${typeof g==='function'?g():g}</div>`;
+}
 function guideHTML(){
   const steps=guideSteps(); const i=steps.findIndex(([c])=>c());
+  if(P.guideHeard!==i){ P.guideHeard=i; save(); setTimeout(renderStatus,0); }
   if(i<0) return '<div class="mir">隠居じいさん「内定おめでとう。もうわしから言うことは何もない。あとは好きに生きなされ。次元の果てを目指すもよし、酒場で飲むもよしじゃ」</div>';
   const t=typeof steps[i][1]==='function'?steps[i][1]():steps[i][1];
   // 本筋とは別の、ひとことアドバイス（進行は止めない）

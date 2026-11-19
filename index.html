@@ -1270,7 +1270,11 @@ function secretListHTML(){ return `<div class="y" style="margin-top:8px">隠し�
 function guideHTML(){
   const steps=guideSteps(); const i=steps.findIndex(([c])=>c());
   if(P.guideHeard!==i){ P.guideHeard=i; save(); setTimeout(renderStatus,0); }
-  if(i<0&&postMode()) return `<div class="mir">隠居じいさん「…驚いた。この世界の隠し事を、すべて見つけてしもうたか。もう本当に、わしから言うことは何もない」</div>`+secretListHTML();
+  if(i<0&&postMode()) return `<div class="mir">隠居じいさん「…驚いた。この世界の隠し事を、すべて見つけてしもうたか。もう本当に、わしから言うことは何もない」</div>`+secretListHTML()+
+    `<div style="margin-top:12px;background:#000;border:1px solid #3f3;border-radius:4px;padding:8px;font-family:monospace;color:#3f3;font-size:12px;line-height:1.7">`+
+    `<div style="color:#7f7">&gt; DEBUG MODE ― message from developer</div>`+
+    `<div>開発者です。全部やり切ったんだね。すごいです！</div><div>古き良き某WebCGIのことをふと思い出して、試しに作ってみたら楽しくなってしまいました。</div><div>プレイしてくれてありがとう！！</div>`+
+    `<div style="color:#7f7">&gt; _</div></div>`;
   if(i<0) return '<div class="mir">隠居じいさん「内定おめでとう。もうわしから言うことは何もない。あとは好きに生きなされ。次元の果てを目指すもよし、酒場で飲むもよしじゃ」</div>';
   const t=typeof steps[i][1]==='function'?steps[i][1]():steps[i][1];
   // 本筋とは別の、ひとことアドバイス（進行は止めない）

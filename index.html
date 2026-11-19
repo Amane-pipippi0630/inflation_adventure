@@ -1343,7 +1343,7 @@ function barHTML(){
 // ============ 最後のエンドコンテンツ：桁の神 ============
 // 伝説の品（オーバーフロー・アンダーフロー・伝説装飾品4種・辞表・リクルートスーツ）をすべてそろえると現れる。
 // 「輪廻の結界」は転生 FINAL_REB 回以上でないと破れない。ダメージは桁数（log10）で入り、HPは持ち越し。
-const FINAL_REB=50, FINAL_HP=1000000, FINAL_TURNS=15;
+const FINAL_REB=180, FINAL_HP=1000000, FINAL_TURNS=15;
 const FINAL_NAME='桁の神 グーゴルプレックス';
 const legendList=()=>[['桁あふれの剣 オーバーフロー',legW()],['桁あふれの鎧 アンダーフロー',legA()]].concat(LACC.map(a=>[a[1],!!(P.lacc&&P.lacc[a[0]])])).concat([[NEET_W,!!P.neetW],[NEET_A,!!P.neetA]]);
 const legendAll=()=>legendList().every(x=>x[1]);

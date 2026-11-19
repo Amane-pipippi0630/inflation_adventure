@@ -342,7 +342,7 @@ function sanitizeSave(o){
   r.job=isJob(o.job)?o.job:'warrior';
   r.yomi=typeof o.yomi==='string'&&/^[ぁ-ゖー]{1,15}$/.test(o.yomi)?o.yomi:'';
   ['lv','exp','gold','pts','wpn','arm','reb','maxArea','areaWins','champ','kills','maxDmg','battles','earned','maxLv','godTries','godWins','godMaxForm',
-   'jackpots','j777','jpin','jrou','hlBest','allInWins','kajiN','miracles'].forEach(k=>r[k]=num(o[k],0));
+   'jackpots','j777','jpin','jrou','setHits','hlBest','allInWins','kajiN','miracles'].forEach(k=>r[k]=num(o[k],0));
   r.lv=Math.max(1,int(o.lv,1)); r.wpn=Math.min(GEAR_MAX,int(o.wpn)); r.arm=Math.min(GEAR_MAX,int(o.arm)); r.reb=int(o.reb); r.pts=int(o.pts);
   r.maxArea=Math.min(AREA_MAX,int(o.maxArea)); r.areaWins=int(o.areaWins); r.champ=int(o.champ);
   r.rebMul=Math.max(1,num(o.rebMul,1)); r.oneG=bool(o.oneG); r.areaDone=bool(o.areaDone);
@@ -507,9 +507,9 @@ function startNew(){
   if(P&&!newArm){ newArm=true; $('#btnStart').textContent='本当に消してはじめる？（もう一度押す）'; $('#btnStart').classList.add('sel'); return; }
   newArm=false; $('#btnStart').textContent='冒険をはじめる'; $('#btnStart').classList.remove('sel');
   const name=nm0.slice(0,10);
-  if(TAKASHI.includes(name)) pickedJob='gambler';
+  const tkStart=TAKASHI.includes(name); if(tkStart) pickedJob='gambler';
   const g=JOBS[pickedJob].g; const base={}; KEYS.forEach(k=>base[k]=Math.round(5+g[k]*4));
-  P={name,job:pickedJob,lv:1,exp:0,gold:100,pts:0,base,wpn:0,arm:0,reb:0,rebMul:1,maxArea:0,areaWins:0,champ:0,kills:0,maxDmg:0,battles:0,yomi:yomi0,secret:{},blessed:{},unlocked:JOBS[pickedJob].hidden?{[pickedJob]:true}:{},jlv:{}};
+  P={name,job:pickedJob,lv:1,exp:0,gold:tkStart?10000:100,pts:0,base,wpn:0,arm:0,reb:0,rebMul:1,maxArea:0,areaWins:0,champ:0,kills:0,maxDmg:0,battles:0,yomi:yomi0,secret:{},blessed:{},unlocked:JOBS[pickedJob].hidden?{[pickedJob]:true}:{},jlv:{}};
   LOGS=[]; saveLogs(); save(); goMain();
 }
 function goMain(){ closeModal(); holdEnd(); if(!P) return; show('sMain'); renderStatus(); panel(curPanel||'area'); }
@@ -538,6 +538,8 @@ let curPanel='area', resetArm=false, areaTab='adv', areaPage=0;
 const AREA_PER_PAGE=6;
 function panel(p,arg){
   curPanel=p; const el=$('#panel'); let h='';
+  const TK_MSG=`<h2>たかしの掟</h2><div class="o">「たかし、ギャンブラーを極めるまでは、外に出ることは許されん」</div><div class="small" style="margin-top:6px">ギャンブラーをマスターするまでは、ギャンブル場のスロットだけ。（現在 JLv${P?jl('gambler').lv:1}/${JMAX}）</div><button class="y" style="width:100%;margin-top:8px" onclick="panel('casino','slot')">ギャンブル場へ</button>`;
+  if((p==='area'||p==='champ')&&takashiLock()){ el.innerHTML=TK_MSG; return; }
   if(p==='area'){
     if(arg) areaTab=arg;
     const tabs=[['adv','冒険'],['train','修練場'],['god','神々の座']].concat(P.unlocked.neet?[['work','ハローワーク']]:[]);
@@ -662,11 +664,13 @@ function betAmt(){ if(P.gold<1) return 0; if(betLeave1) return Math.max(0,P.gold
 function setBet(v){ if(busy) return; if(v<0) betLeave1=true; else {betLeave1=false; betPct=v;} panel('casino'); }
 // 戻ってくる総額（ギャンブラーは儲け分が1.5倍）
 function payout(bet,mult){ const prof=bet*mult-bet; return Math.floor(bet+(prof>0?prof*casMul():prof)); }
-let lastAllIn=false;
-function takeBet(){ const b=betAmt(); lastAllIn=b>0&&b===P.gold; if(b<1){casMsg='<span class="r">賭けるお金がない！</span>'; return 0;} P.gold-=b; return b; }
+let lastAllIn=false, betNote='';
+function takeBet(){ if(takashiLock()&&P.gold<1){ P.gold=10000; betNote='<div class="o">実家から仕送りが届いた…！ +10000G</div>'; save(); renderStatus(); }
+  const b=betAmt(); lastAllIn=b>0&&b===P.gold; if(b<1){casMsg='<span class="r">賭けるお金がない！</span>'; return 0;} P.gold-=b; return b; }
 function settle(bet,mult,txt){ const ret=payout(bet,mult); P.gold+=ret; if(ret>bet){P.earned=(P.earned||0)+ret-bet; if(lastAllIn) P.allInWins=(P.allInWins||0)+1;} if(P.gold===1) P.oneG=true;
   casMsg = mult>0 ? `${txt} <span class="g">+${fmt(ret-bet)}G</span>` : `${txt} <span class="r">-${fmt(bet)}G</span>`;
   if(P.gold===1) casMsg+=`<div class="small o">所持金がちょうど1Gになった…</div>`;
+  if(betNote){ casMsg=betNote+casMsg; betNote=''; }
   save(); renderStatus(); }
 function betUI(lock){
   const o=[[.01,'1%'],[.1,'10%'],[.5,'半分'],[1,'全額']];
@@ -676,7 +680,8 @@ function betUI(lock){
 }
 function casinoHTML(){
   let h=`<h2>ギャンブル場</h2><div class="small">所持金 <span class="y">${fmt(P.gold)}G</span></div>`;
-  h+=`<div class="grid" style="grid-template-columns:repeat(4,1fr);margin:6px 0">`+[['hl','ハイ&ロー'],['slot','スロット'],['rou','ルーレット'],['dice','丁半']].map(([k,n])=>`<button ${busy?'disabled':''} class="${casinoGame===k?'sel':''}" style="font-size:12px;padding:7px 2px" onclick="casMsg='';panel('casino','${k}')">${n}</button>`).join('')+`</div>`;
+  h+=`<div class="grid" style="grid-template-columns:repeat(4,1fr);margin:6px 0">`+[['hl','ハイ&ロー'],['slot','スロット'],['rou','ルーレット'],['dice','丁半']].map(([k,n])=>`<button ${busy||(takashiLock()&&k!=='slot')?'disabled':''} class="${casinoGame===k?'sel':''}" style="font-size:12px;padding:7px 2px" onclick="casMsg='';panel('casino','${k}')">${n}</button>`).join('')+`</div>`;
+  if(takashiLock()&&casinoGame!=='slot') casinoGame='slot';
   if(casinoGame==='hl') h+=hlHTML();
   if(casinoGame==='slot') h+=slotHTML();
   if(casinoGame==='rou') h+=rouHTML();
@@ -711,31 +716,89 @@ function hlCollect(){ hl.active=false; settle(hl.bet,hl.pot/hl.bet,`${hl.streak}
 const SYM=[['7',1,100],['BAR',2,40],['★',3,20],['🔔',4,10],['🍉',5,8],['🍒',6,5]];
 let reels=['7','7','7'];
 function pickSym(){ const tk=isTakashi(), tot=tk?30:21; let r=Math.random()*tot; for(const x of SYM){ r-=(tk&&x[0]==='7')?10:x[1]; if(r<0) return x[0]} return '🍒'}
-function slotHTML(){
-  return `<div class="small">3つ揃えば配当。777で×100！ 🍒が2つでも×2。</div>`+betUI(busy)+
-   `<div id="reels">${reels.map(r=>`<div class="reel">${r}</div>`).join('')}</div>`+
-   `<button style="width:100%" ${busy?'disabled':''} onclick="slotSpin()">スピン</button>`+
-   `<div class="small" style="margin-top:6px">配当：7=×100　BAR=×40　★=×20　🔔=×10　🍉=×8　🍒=×5</div>`;
+// ---- 設定付きスロット ----
+// 役：[記号, 配当, 表示名]
+const ROLES=[['777',100,'777'],['BAR',40,'BAR'],['★',20,'★'],['🔔',10,'🔔'],['🍉',3,'🍉🍉🍉'],['🍒3',1.5,'🍒🍒🍒'],['🍒2',1.2,'🍒🍒']];
+const WINRATE=[.25,.36,.47,.58,.69,.80];               // 設定1〜6の勝率
+const FIXED={'777':1/5000,'BAR':.002,'★':.005,'🔔':.01}; // 設定で変わらない役
+const SMALL={'🍉':.15,'🍒3':.25,'🍒2':.60};              // 残りを小役で分ける割合（設定が高いほど小役が増える）
+const TK_W=[.05,.05,.10,.20,.25,.35];                   // たかしの台は4〜6が出やすい
+function roleProbs(set,tk){ const pr={...FIXED}; if(tk){ pr['777']=.03; }
+  const fixedSum=Object.values(pr).reduce((a,b)=>a+b,0), small=Math.max(0,WINRATE[set-1]-fixedSum);
+  for(const k in SMALL) pr[k]=small*SMALL[k]; return pr; }
+let mach=null;
+function newMachine(){ const tk=isTakashi(); let set;
+  if(tk){ let r=Math.random(); set=6; for(let i=0;i<6;i++){ r-=TK_W[i]; if(r<0){ set=i+1; break; } } } else set=1+Math.floor(Math.random()*6);
+  mach={set,spins:0,cnt:{},lose:0,answered:false,result:''}; }
+function machine(){ if(!mach) newMachine(); return mach; }
+function rollRole(){ const m=machine(), pr=roleProbs(m.set,isTakashi()); let r=Math.random(); for(const [k] of ROLES){ r-=pr[k]||0; if(r<0) return k; } return null; }
+function reelsFor(role){ const o=()=>{ const n=['BAR','★','🔔','🍉']; return n[Math.floor(Math.random()*n.length)]; };
+  if(role==='777') return ['7','7','7']; if(role==='🍒3') return ['🍒','🍒','🍒'];
+  if(role==='🍒2'){ const a=['🍒','🍒',o()]; return a.sort(()=>Math.random()-.5); }
+  if(role) return [role,role,role];
+  let a; do{ a=[pickSym(),pickSym(),pickSym()]; }while((a[0]===a[1]&&a[1]===a[2])||a.filter(x=>x==='🍒').length>=2); return a; }
+const payOf=role=>!role?0:(role==='777'&&isTakashi())?10:ROLES.find(r=>r[0]===role)[1];
+function slotStatsHTML(){
+  const m=machine(), n=m.spins, wins=n-m.lose;
+  let h=`<div class="row"><b>設定：<span class="${m.answered?'mir':'y'}">${m.answered?m.set:'？？？'}</span></b><span class="small">${fmt(n)}回転　勝率 <span class="y">${n?(wins/n*100).toFixed(1):'0.0'}%</span></span></div>`;
+  h+=`<div class="grid small" style="grid-template-columns:repeat(4,1fr);gap:2px 6px">`+ROLES.map(([k,,nm])=>{ const c=m.cnt[k]||0; return `<div>${nm} ${c}<span style="color:#789">${c?' (1/'+(n/c).toFixed(1)+')':''}</span></div>`; }).join('')+`<div>ハズレ ${m.lose}</div></div>`;
+  if(m.answered) h+=`<div class="small" style="margin-top:4px">${m.result}</div>`;
+  else if(n<SET_MIN) h+=`<div class="small" style="margin-top:4px;color:#9ab">${SET_MIN}回転すると設定を予想できる（あと${SET_MIN-n}回転）</div>`;
+  else h+=`<div class="small y" style="margin-top:4px">この台の設定を予想する（1台1回）</div><div class="grid" style="grid-template-columns:repeat(6,1fr);gap:4px">`+[1,2,3,4,5,6].map(v=>`<button ${busy||slotHold?'disabled':''} onclick="guessSet(${v})">${v}</button>`).join('')+`</div>`;
+  h+=`<details style="margin-top:6px"><summary class="small">設定判別の目安</summary><div class="small">勝率（当たり全体）：`+WINRATE.map((w,i)=>`設定${i+1}=${Math.round(w*100)}%`).join('　')+`<br>BAR・★・🔔・777は設定に関係なく一定。🍒と🍉は設定が高いほど出やすい。</div></details>`;
+  h+=`<button style="width:100%;margin-top:6px;font-size:12px" ${busy||slotHold?'disabled':''} onclick="moveMachine()">台を移る（設定が変わる・記録はリセット）</button>`;
+  return h;
 }
-function slotSpin(){
-  if(busy) return; const b=takeBet(); if(!b){panel('casino');return;}
+const SET_MIN=100;
+function guessSet(v){ const m=machine(); if(m.answered||m.spins<SET_MIN||busy) return; m.answered=true;
+  if(v===m.set){ const g=Math.floor(Math.max(P.gold*.5,enemyStats(P.maxArea).gold*200)), lv0=P.lv, L=[];
+    for(let i=0;i<5;i++) gainExp(Math.max(0,need(P.lv)-P.exp),L); P.gold+=g; P.earned=(P.earned||0)+g; P.setHits=(P.setHits||0)+1;
+    m.result=`<span class="mir">★ 正解！ 設定${m.set}を見抜いた！</span> ${fmt(g)}G と Lv${lv0}→${P.lv}`; }
+  else m.result=`<span class="r">残念… この台は設定${m.set}だった。</span>`;
+  save(); renderStatus(); panel('casino'); }
+function moveMachine(){ if(busy||slotHold) return; const old=mach; newMachine(); casMsg=old&&old.spins&&!old.answered?`さっきの台は設定${old.set}だった。`:''; panel('casino'); }
+function slotHTML(){
+  const tk=takashiLock();
+  return `<div class="small">${tk?'<span class="o">たかし専用：高設定が入りやすい。当たっても外れても経験値が入る。777でLv+3・JLv+1！</span>':'台ごとに設定1〜6が入っている。小役の出方から設定を見抜け！'}</div>`+betUI(busy)+
+   `<div id="reels">${reels.map(r=>`<div class="reel">${r}</div>`).join('')}</div>`+
+   `<button id="spinBtn" style="width:100%;padding:14px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation" ${busy&&!slotHold?'disabled':''} onclick="if(event.detail===0)slotSpin()">${slotHold?'連続スピン中…（指を離すと止まる）':'スピン（長押しで連続）'}</button>`+
+   `<div class="small" style="margin-top:4px">配当：777=×${isTakashi()?10:100}　BAR=×40　★=×20　🔔=×10　🍉🍉🍉=×3　🍒🍒🍒=×1.5　🍒🍒=×1.2</div>`+
+   `<div class="win" style="margin:6px 0 0;padding:8px">${slotStatsHTML()}</div>`;
+}
+function takashiBonus(){ // たかしの777のご褒美
+  const lv0=P.lv, L=[]; for(let i=0;i<3;i++) gainExp(Math.max(0,need(P.lv)-P.exp),L);
+  const nb=100; P.battles+=nb; P.jobB=P.jobB||{}; P.jobB[P.job]=(P.jobB[P.job]||0)+nb;
+  const j=jl(P.job), jl0=j.lv; let jt='';
+  if(j.lv<JMAX){ gainJob(jneed(j.lv)-j.exp,L); jt= isMaster(P.job)?`、<span class="mir">${JOBS[P.job].n}マスター！ 転職・冒険が解禁された！</span>`:`、JLv${jl0}→${jl(P.job).lv}`; }
+  return `<div class="lv">たかしの魂が震える！ Lv${lv0}→${P.lv}、戦闘数+${nb}${jt}</div>`; }
+function slotSpin(fast){
+  return new Promise(res=>{
+  if(busy) return res(null); const b=takeBet(); if(!b){ panel('casino'); return res({stop:true}); }
+  const tkLock=takashiLock(), m=machine();
   busy=true; casMsg=''; renderStatus(); panel('casino');
-  const fin=[pickSym(),pickSym(),pickSym()], stop=[8,13,18]; let tick=0;
+  const role=rollRole(), fin=reelsFor(role), stop=fast?[3,5,7]:[8,13,18], end=stop[2]; let tick=0;
   const iv=setInterval(()=>{ tick++;
     for(let i=0;i<3;i++) reels[i]=tick<stop[i]?pickSym():fin[i];
     const el=document.getElementById('reels'); if(el) el.innerHTML=reels.map(r=>`<div class="reel">${r}</div>`).join('');
-    if(tick>=18){ clearInterval(iv); busy=false;
-      let m=0, t='ハズレ…';
-      if(fin[0]===fin[1]&&fin[1]===fin[2]){ m=SYM.find(x=>x[0]===fin[0])[2]; t=fin[0]==='7'?'<span class="mir">★★ 777 大当たり！！ ★★</span>':`${fin[0]}が揃った！ ×${m}`; if(fin[0]==='7'){ P.jackpots=(P.jackpots||0)+1; P.j777=(P.j777||0)+1;
-        if(isTakashi()){ const lv0=P.lv, L=[]; for(let i=0;i<3;i++) gainExp(Math.max(0,need(P.lv)-P.exp),L);
-          const nb=100; P.battles+=nb; P.jobB=P.jobB||{}; P.jobB[P.job]=(P.jobB[P.job]||0)+nb;
-          const j=jl(P.job), jl0=j.lv; let jt='';
-          if(j.lv<JMAX){ gainJob(jneed(j.lv)-j.exp,L); jt= isMaster(P.job)?`、<span class="mir">${JOBS[P.job].n}マスター！</span>`:`、JLv${jl0}→${jl(P.job).lv}`; }
-          t+=`<div class="lv">たかしの魂が震える！ Lv${lv0}→${P.lv}、戦闘数+${nb}${jt}</div>`; } } }
-      else if(fin.filter(x=>x==='🍒').length===2){ m=2; t='🍒が2つ！ ×2'; }
-      settle(b,m,t); if(curPanel==='casino') panel('casino'); }
-  },50);
+    if(tick>=end){ clearInterval(iv); busy=false;
+      m.spins++; if(role) m.cnt[role]=(m.cnt[role]||0)+1; else m.lose++;
+      const mlt=payOf(role), is777=role==='777', nm=role?ROLES.find(r=>r[0]===role)[2]:'';
+      let t= is777?'<span class="mir">★★ 777 大当たり！！ ★★</span>' : role?`${nm}！ ×${mlt}`:'ハズレ…';
+      if(tkLock&&!is777){ const lv0=P.lv, L=[]; gainExp(Math.floor(need(P.lv)*(role?.2:.05)),L); if(P.lv>lv0) t+=`<div class="lv">レベルアップ！ Lv${P.lv}</div>`; }
+      if(is777){ P.jackpots=(P.jackpots||0)+1; P.j777=(P.j777||0)+1; if(isTakashi()) t+=takashiBonus(); if(slotHold){ slotHold=false; t+='<div class="small y">777！ 連続スピンを止めました</div>'; } }
+      settle(b,mlt,t); if(curPanel==='casino') panel('casino');
+      res({stop:is777});
+    }
+  },fast?40:50);
+  });
 }
+// スロットの長押し連続スピン（777で自動停止）
+let slotHold=false, slotHoldT=null;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+document.addEventListener('pointerdown',e=>{ if(e.target&&e.target.id==='spinBtn'&&!busy){ e.preventDefault(); slotHold=false; clearTimeout(slotHoldT);
+  slotSpin(false); slotHoldT=setTimeout(()=>{ slotHold=true; slotLoop(); },400); } });
+['pointerup','pointercancel'].forEach(t=>document.addEventListener(t,()=>{ clearTimeout(slotHoldT); if(slotHold){ slotHold=false; if(curPanel==='casino'&&!busy) panel('casino'); } }));
+async function slotLoop(){ while(slotHold&&curPanel==='casino'&&casinoGame==='slot'){ if(busy){ await sleep(20); continue; } const r=await slotSpin(true); if(!r||r.stop) break; await sleep(60); } slotHold=false; if(curPanel==='casino'&&!busy) panel('casino'); }
 // --- ルーレット ---
 const REDN=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
 let rouBet='red', rouRes=null;
@@ -892,6 +955,8 @@ function buildAch(){
   A.push(T('jrou','ギャンブル','一点的中','ルーレットの一点賭けを当てた',()=>(P.jrou||0)>=1));
   A.push(T('hl10','ギャンブル','読み切り','ハイ&ローで10連勝した',()=>(P.hlBest||0)>=10));
   A.push(T('allin','ギャンブル','全額勝負','全額を賭けて勝った',()=>(P.allInWins||0)>=1));
+  A.push(T('set1','ギャンブル','設定看破','スロットの設定を見抜いた',()=>(P.setHits||0)>=1));
+  A.push(T('set10','ギャンブル','設定判別の達人','スロットの設定を10回見抜いた',()=>(P.setHits||0)>=10));
   A.push(T('jp30','ギャンブル','ギャンブル狂','大当たりを30回出した',()=>(P.jackpots||0)>=30));
   A.push(T('one','ギャンブル','残り1G','所持金がちょうど1Gになった',()=>!!P.oneG));
   A.push(T('kaji','ギャンブル','火事場のクソ力','火事場のクソ力を発動させた',()=>(P.kajiN||0)>=1));
@@ -963,12 +1028,12 @@ function makeTrain(){
     exp:need(P.lv)*.02, gold:enemyStats(Math.max(0,P.maxArea-1)).gold*.8};
   return e;
 }
-function fightTrain(f){ last={type:'train'}; runBattle(makeTrain(),-4,f); }
+function fightTrain(f){ if(takashiLock()) return; last={type:'train'}; runBattle(makeTrain(),-4,f); }
 // ============ 戦闘 ============
 let last=null;
-function fightArea(t,f){last={type:'area',t}; runBattle(makeEnemy(t),t,f)}
-function fightChamp(f){last={type:'champ'}; runBattle(makeChamp(P.champ),-1,f)}
-function fightSecret(f){last={type:'secret'}; runBattle(makeSecret(),-2,f)}
+function fightArea(t,f){ if(takashiLock()) return;last={type:'area',t}; runBattle(makeEnemy(t),t,f)}
+function fightChamp(f){ if(takashiLock()) return;last={type:'champ'}; runBattle(makeChamp(P.champ),-1,f)}
+function fightSecret(f){ if(takashiLock()) return;last={type:'secret'}; runBattle(makeSecret(),-2,f)}
 function again(f){ if(!last) return; if(last.type==='area') fightArea(last.t,f); else if(last.type==='champ') fightChamp(f); else if(last.type==='work') fightWork(f); else if(last.type==='train') fightTrain(f); else fightSecret(f); }
 // 長押し連戦
 let holdT=null, holdI=null, holdN=0, holdW=0;

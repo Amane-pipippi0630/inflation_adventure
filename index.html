@@ -310,6 +310,18 @@ const SPR={
 };
 const U=['','万','億','兆','京','垓','秭','穣','溝','澗','正','載','極','恒河沙','阿僧祇','那由他','不可思議','無量大数'];
 
+
+// ============ 極意（#38）：その職業での累計戦闘回数で会得する ============
+const KIWAMI_N=3000, JOB_MILES=[1,100,500,1000];
+const jobBN=k=>(P.jobB&&P.jobB[k])||0;
+// その職業での戦闘を n 回数える（鍛錬の酒で2倍）。区切り（1・100・500・1000戦）と極意（3000戦）の知らせを出す
+function jobBattle(n,L,c){ P.jobB=P.jobB||{}; const k=P.job, n0=jobBN(k), n1=P.jobB[k]=n0+n*(typeof drinkOn==='function'&&drinkOn('train')?2:1), J=JOBS[k];
+  if(!L) return; const hit=m=>n0<m&&n1>=m;
+  JOB_MILES.forEach(m=>{ if(hit(m)&&m>1) L.push(`<span class="y">${J.n}で${m}戦目！（極意まで あと${fmt(Math.max(0,KIWAMI_N-n1))}戦）</span>`); });
+  if(n1>=KIWAMI_N&&!(P.kiwami&&P.kiwami[k])){ P.kiwami=P.kiwami||{}; P.kiwami[k]=true; if(c) c.trainMile=true;
+    L.push(`<span class="mir">★ ${J.n}で${KIWAMI_N}戦！「${J.n}の極意」を会得した！ ★</span>`);
+    L.push(`<span class="mir">${(J.main==='best'||J.hidden)?'全能力×1.5':KN[J.main]+'×2'}（永続・全職業に有効）</span>`); } }
+const kiwamiLeft=k=>(P.kiwami&&P.kiwami[k])?0:Math.max(0,KIWAMI_N-jobBN(k));
 // ============ ユーティリティ ============
 const $=s=>document.querySelector(s);
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -447,7 +459,7 @@ async function copyCode(){
 }
 
 // ============ 能力計算 ============
-// マスター報酬：その職業のメイン能力×1.2（無職は全能力×1.1）／修練場1000回：メイン能力×2（無職・見習い？は全能力×1.5）
+// マスター報酬：その職業のメイン能力×1.2（無職は全能力×1.1）／極意（その職業で3000戦）：メイン能力×2（無職・見習い？は全能力×1.5）
 function jobBonus(k){ let m=1; for(const [jk,j] of Object.entries(JOBS)){
     const all=j.main==='best';
     if(isMaster(jk)) m*= all?1.1:(j.main===k?1.2:1);
@@ -807,7 +819,7 @@ function panel(p,arg){
   if((p==='area'||p==='champ')&&takashiLock()){ el.innerHTML=TK_MSG; return; }
   if(p==='area'){
     if(arg) areaTab=arg;
-    const tabs=[['adv','冒険'],['train','修練場'],['god','神々の座'],['book','図鑑']].concat(hwOpen()?[['work','ハローワーク']]:[]).concat(finalOpen()?[['final','桁の神']]:[]);
+    const tabs=[['adv','冒険'],['guild','ギルド'],['god','神々の座'],['book','図鑑']].concat(hwOpen()?[['work','ハローワーク']]:[]).concat(finalOpen()?[['final','桁の神']]:[]);
     if(!tabs.some(x=>x[0]===areaTab)) areaTab='adv';
     h=`<div class="grid" style="grid-template-columns:repeat(${tabs.length},1fr);margin-bottom:8px">`+tabs.map(([k,n])=>`<button class="${areaTab===k?'sel':''}" style="font-size:13px;padding:7px 2px" onclick="panel('area','${k}')">${n}</button>`).join('')+`</div>`;
     if(areaTab==='final'){ const f=finalState();
@@ -822,10 +834,8 @@ function panel(p,arg){
       h+=bookHTML();
     } else if(areaTab==='work'){
       h+=hwHTML();
-    } else if(areaTab==='train'){
-    { const J=JOBS[P.job], n=trainN(P.job), mk=P.kiwami&&P.kiwami[P.job];
-      h+=`<div class="row"><div><span class="c">${J.n}の修練場</span> <span class="small">ジョブ専用</span><div class="small">今の強さに合わせた相手。<span class="o">熟練度は上がらない</span>・実2倍。1000勝でその職業の極意を会得</div><div class="small">修練 ${fmt(n)}${mk?'回 <span class="mir">極意会得済</span>':'/1000'}　${n<100?'(100回で師範の褒美)':n<500?'(500回で秘伝書)':n<1000?'(1000回で極意)':''}</div></div><button onclick="fightTrain()">修練</button></div>`; }
-      h+=`<div class="small" style="margin-top:6px">修練場は今の職業ごとに別。熟練度（ジョブレベル）は冒険で上がる。修練場では極意を目指そう（極意の効果は永続・全職業に有効）。</div>`;
+    } else if(areaTab==='guild'){
+      h+=`<div class="win" style="text-align:center;padding:14px 8px"><div class="y" style="font-size:18px">🚧 冒険者ギルド 🚧</div><div style="margin-top:8px">工事中 ― 依頼の受付は準備中です</div><div class="small" style="margin-top:6px;color:#9ab">「近いうちに、腕の立つ冒険者向けの依頼を出す予定だ。楽しみにしていてくれ」</div></div>`;
     } else if(areaTab==='god'){
     const sec=makeSecret();
     h+=`<div class="row"><div><span class="r">神々の座</span> <span class="small">目安Lv ？？？ / 危険度 <span class="r">無謀</span></span><div class="small">${P.reb?`転生のたびに神は姿を変え、より強大になる…（第${P.reb+1}形態）`:'人の身では到底たどり着けぬ領域…'}</div></div><button onclick="fightSecret()">挑む</button></div>`;
@@ -869,7 +879,7 @@ function panel(p,arg){
     if(takashiLock()){ h=`<h2>転職所</h2><div class="o">「たかし、お前はギャンブラーだ。ギャンブラーを極めるまでは、ほかの道はない」</div><div class="small" style="margin-top:6px">ギャンブラーをマスターすると転職できるようになる。（現在 JLv${jl('gambler').lv}/${JMAX}）</div>`; el.innerHTML=h; return; }
     h=`<h2>転職所</h2><div class="small">ステータスはそのままで、条件を満たした職業ならいつでも転職できます（無料）。中位職は対応する下位職のマスター、上位職は2つの職業のマスターが条件。ジョブレベルは勝つたびに上がり、JLv${JMAX}でマスター。マスターするたびに全能力×1.05（永続）。</div><div class="small">マスター数：${masterCount()}</div>`;
     // 格ごとのタブ（#30）。開いたときは今の職業の格。行は短くして、詳しい中身は折りたたむ
-    const jobDetail=(k,j)=>`${j.d}${jobModText(k)?`<br><span class="c">補正：${jobModText(k)}</span>`:''}<br>攻撃：${isMagicJob(k)?'魔法':k==='spellblade'?'物理＋魔法':'物理'}${JOB_WT[k]?'・得意な武器 '+JOB_WT[k]:''}${JOB_EL[k]?'・属性 '+elTag(JOB_EL[k]):''}${JOB_SECRETS[k]&&JOB_SECRETS[k].hint?`<br><span class="o">…${JOB_SECRETS[k].hint}</span>`:''}${jobSecretFound(k)?` <span class="mir">【秘密：${JOB_SECRETS[k].n}】</span>`:''}<br>メイン：${j.main==='best'?'一番高い能力':KN[j.main]}／技：${j.skill.n}<br><span class="y">マスター報酬：${j.main==='best'?'全能力×1.1':KN[j.main]+'×1.2'}</span>　<span class="c">修練${fmt(trainN(k))}回${P.kiwami&&P.kiwami[k]?'（極意）':''}</span>${j.rank>0&&j.rank<3?`<br><span class="o">攻撃・防御・HP ×${RMUL[j.rank]}</span>`:''}`;
+    const jobDetail=(k,j)=>`${j.d}${jobModText(k)?`<br><span class="c">補正：${jobModText(k)}</span>`:''}<br>攻撃：${isMagicJob(k)?'魔法':k==='spellblade'?'物理＋魔法':'物理'}${JOB_WT[k]?'・得意な武器 '+JOB_WT[k]:''}${JOB_EL[k]?'・属性 '+elTag(JOB_EL[k]):''}${JOB_SECRETS[k]&&JOB_SECRETS[k].hint?`<br><span class="o">…${JOB_SECRETS[k].hint}</span>`:''}${jobSecretFound(k)?` <span class="mir">【秘密：${JOB_SECRETS[k].n}】</span>`:''}<br>メイン：${j.main==='best'?'一番高い能力':KN[j.main]}／技：${j.skill.n}<br><span class="y">マスター報酬：${j.main==='best'?'全能力×1.1':KN[j.main]+'×1.2'}</span>　<span class="c">${P.kiwami&&P.kiwami[k]?'極意':`極意まで あと${fmt(kiwamiLeft(k))}戦`}</span>${j.rank>0&&j.rank<3?`<br><span class="o">攻撃・防御・HP ×${RMUL[j.rank]}</span>`:''}`;
     const jlvTag=k=>isMaster(k)?'<span class="mir">MASTER</span>':'JLv'+jl(k).lv;
     { const J=JOBS[P.job]; h+=`<div class="win" style="margin:6px 0;padding:6px 8px"><div><span class="y">いまの職業：${J.n}</span> <span class="small">${jlvTag(P.job)}　戦闘${fmt((P.jobB||{})[P.job]||0)}回</span>${P.blessed[P.job]?' <span class="mir">★</span>':''}</div><div class="small">${jobDetail(P.job,J)}</div></div>`; }
     const listOf=r=>Object.entries(JOBS).filter(([k,j])=>j.rank===r&&(!j.hidden||P.unlocked[k]));
@@ -881,7 +891,7 @@ function panel(p,arg){
       if(!ok){ const hint = j.rank===2 && !j.req.some(isMaster);
         h+=`<div class="row"><div><span style="opacity:.6">${hint?'？？？':j.n}</span><div class="small">${hint?'条件：？？？ ＋ ？？？':reqText(j)}</div></div><button disabled>転職</button></div>`; return; }
       h+=`<div class="row"><div style="flex:1;min-width:0"><div>${j.n} <span class="small">${jlvTag(k)}</span>${k===P.job?' <span class="y">(現在)</span>':''}${P.blessed[k]?' <span class="mir">★</span>':''}${jobSecretFound(k)?' <span class="mir">秘</span>':''}</div>
-        <details><summary class="small" style="color:#9ab">くわしく</summary><div class="small">戦闘${fmt((P.jobB||{})[k]||0)}回<br>${jobDetail(k,j)}</div></details></div><button ${k===P.job?'disabled':''} onclick="changeJob('${k}')">転職</button></div>`; });
+        <details><summary class="small" style="color:#9ab">くわしく</summary><div class="small">戦闘${fmt((P.jobB||{})[k]||0)}回${kiwamiLeft(k)?`（極意まで あと${fmt(kiwamiLeft(k))}戦）`:'　<span class="mir">極意</span>'}<br>${jobDetail(k,j)}</div></details></div><button ${k===P.job?'disabled':''} onclick="changeJob('${k}')">転職</button></div>`; });
   } else if(p==='reb'){
     const mul=rebStep();
     h=`<h2>転生の祭壇</h2><div class="small">Lv${rebReq()}以上で転生できます（転生するたびに必要Lvが+10。最大Lv${REB_LV_MAX}）。レベルは1に戻りますが、全ステータスに<b class="y">×${mul.toFixed(2)}</b>の永続倍率がかかります（現在の倍率 ×${fmtMul(P.rebMul)}）。装備・お金・エリアは引き継ぎ。</div>${P.rebMul>=Number.MAX_VALUE*.9999?`<div class="small" style="margin-top:4px"><span class="maxv">転生倍率は上限に届いています。</span>これ以上は増えませんが、転生はでき、転生回数（桁の神の条件など）は進みます。</div>`:''}<div class="small o" style="margin-top:4px">※転生すると「奇跡の加護」は失われ、神々の座の神はさらに強大な姿に変わる。</div>`
@@ -919,7 +929,7 @@ function panel(p,arg){
     h=`<div class="grid2" style="margin-bottom:8px"><button class="${recTab==='rec'?'sel':''}" onclick="panel('rec','rec')">記録</button><button class="${recTab==='help'?'sel':''}" onclick="panel('rec','help')">ヘルプ・TIPS集</button></div>`;
     if(recTab==='help'){ h+=`<h2>ヘルプ</h2>`+helpHTML(); el.innerHTML=h; return; }
     h+=`<h2>記録</h2>`;
-    [['プレイ時間',fmtTime(P.playMs||0)],['最大ダメージ',fmt(P.maxDmg)],['倒した敵',fmt(P.kills)],['戦闘回数',fmt(P.battles)],['撃破した王者',P.champ+'人'],['神々の座 撃破',(P.godWins||0)+'回'],['神々の座 挑戦',(P.godTries||0)+'回'],['修練場 勝利（合計）',fmt(Object.values(P.train||{}).reduce((a,b)=>a+b,0))+'回'],['会得した極意',Object.keys(P.kiwami||{}).length+'個'],['ギャンブル大当たり',(P.jackpots||0)+'回'],[P.unlocked.neet?'ハローワーク':'？？？',P.unlocked.neet?(P.work?(P.work.cleared?`内定（${Object.keys(P.work.endings||{}).filter(k=>ROUTES[k]).length}/${Object.keys(ROUTES).length}ルート）`:(HW_STAGES[P.work.stage||0]+(P.work.stage===4?`（${ROUND_N[P.work.round||0]}）`:''))):'―'):'？？？'],['転生回数',P.reb+'回'],['到達エリア',areaName(P.maxArea)]].forEach(([a,b])=>h+=`<div class="row"><span>${a}</span><span class="y">${b}</span></div>`);
+    [['プレイ時間',fmtTime(P.playMs||0)],['最大ダメージ',fmt(P.maxDmg)],['倒した敵',fmt(P.kills)],['戦闘回数',fmt(P.battles)],['撃破した王者',P.champ+'人'],['神々の座 撃破',(P.godWins||0)+'回'],['神々の座 挑戦',(P.godTries||0)+'回'],['会得した極意',Object.keys(P.kiwami||{}).length+'個'],['ギャンブル大当たり',(P.jackpots||0)+'回'],[P.unlocked.neet?'ハローワーク':'？？？',P.unlocked.neet?(P.work?(P.work.cleared?`内定（${Object.keys(P.work.endings||{}).filter(k=>ROUTES[k]).length}/${Object.keys(ROUTES).length}ルート）`:(HW_STAGES[P.work.stage||0]+(P.work.stage===4?`（${ROUND_N[P.work.round||0]}）`:''))):'―'):'？？？'],['転生回数',P.reb+'回'],['到達エリア',areaName(P.maxArea)]].forEach(([a,b])=>h+=`<div class="row"><span>${a}</span><span class="y">${b}</span></div>`);
     if(P.work&&P.work.cleared) h+=`<button style="width:100%;margin-top:8px" onclick="showEnding()">エンディングをもう一度見る</button>`;
     h+=`<div class="y" style="margin-top:10px">セーブの書き出し・読み込み</div>
       <div class="small">ブラウザのデータが消えたときや、別のスマホに移すときのために、セーブコードを保存しておけます。</div>
@@ -1105,7 +1115,7 @@ function casTraitHTML(){ const T=casT(); if(!T) return P.job==='neet'?`<div clas
   if(isT('apprentice')){ const n=P.casBeg&&P.casBeg.job==='apprentice'?P.casBeg.n:0; st=n<5?`あと${5-n}回`:'終了'; }
   let btn='';
   if(isT('assassin')&&!P.casArm) btn=`<button ${casReady()&&!busy&&!hl.active?'':'disabled'} style="margin-top:4px;width:100%" onclick="casArm()">急所を狙う（次の1回は必ず勝つ）</button>`;
-  return `<div class="win" style="margin:4px 0;padding:6px 8px"><div class="small"><span class="y">${JOBS[P.job].n}の特性【${T.n}】</span>${st?`　${st}`:''}</div><div class="small" style="color:#bcd">${T.d}${T.cd?`（使ったら、冒険・修練場で${T.cd}戦するまで使えない）`:''}</div>${btn}</div>`; }
+  return `<div class="win" style="margin:4px 0;padding:6px 8px"><div class="small"><span class="y">${JOBS[P.job].n}の特性【${T.n}】</span>${st?`　${st}`:''}</div><div class="small" style="color:#bcd">${T.d}${T.cd?`（使ったら、冒険で${T.cd}戦するまで使えない）`:''}</div>${btn}</div>`; }
 
 // --- ハイ&ロー ---
 const SUITS=['♠','♥','♦','♣'], CN=['','A','2','3','4','5','6','7','8','9','10','J','Q','K'];
@@ -1205,7 +1215,7 @@ function slotHTML(){
 }
 function takashiBonus(){ // たかしの777のご褒美
   const lv0=P.lv, L=[]; for(let i=0;i<3;i++) gainExp(Math.max(0,need(P.lv)-P.exp),L);
-  const nb=100; P.battles+=nb; P.jobB=P.jobB||{}; P.jobB[P.job]=(P.jobB[P.job]||0)+nb;
+  const nb=100; P.battles+=nb; jobBattle(nb,L);
   const j=jl(P.job), jl0=j.lv; let jt='';
   if(j.lv<JMAX){ gainJob(jneed(j.lv)-j.exp,L); jt= isMaster(P.job)?`、<span class="mir">${JOBS[P.job].n}マスター！ 転職・冒険が解禁された！</span>`:`、JLv${jl0}→${jl(P.job).lv}`; }
   return `<div class="lv">たかしの魂が震える！ Lv${lv0}→${P.lv}、戦闘数+${nb}${jt}</div>`; }
@@ -1372,7 +1382,7 @@ function hwInterview(k){ const w=workState(); if(w.stage!==3||P.hwCd>0) return; 
 function hwOinori(w,why){ hwLog(w,`<span class="r">📧 お祈りメールが届いた…「${why}」 一から出直しだ。</span>`); P.oinori=(P.oinori||0)+1;
   w.stage=0; w.route=null; w.flags={}; w.tries=0; w.fam=0; w.round=0; w.hp=hwRoundHP(0); w.strikes=0; w.q=null; w.flags.late=false; }
 function hwAnswer(a){ const w=workState(); if(w.stage!==4||!w.q||P.hwCd>0) return; const R=ROUTES[w.route], q=w.q;
-  P.battles++; drinkTick([]);
+  P.battles++; { const JL=[]; jobBattle(1,JL); JL.forEach(x=>hwLog(w,x)); } drinkTick([]);
   let m=1, t; if(a===q.best){ m=2; hwOk(w); t='<span class="g">手応えあり！</span>'; } else if(a===q.bad){ m=.3; w.strikes++; t='<span class="r">しまった、失言だ…</span>'; hwFail(w); } else t='まずまずの受け答えだ。';
   if(w.round===0&&w.flags.healthy) m*=1.2;
   const pts=Math.floor(hwPower()*(w.flags.resume||1)*m*rnd(.8,1.2)); w.hp=Math.max(0,w.hp-pts);
@@ -1508,9 +1518,11 @@ function buildAch(){
   });
   A.push(T('ms_apprentice','マスター','見習い？マスター','見習い？をマスターした',()=>isMaster('apprentice')));
   A.push(T('ms_neet','マスター','無職マスター','無職をマスターした',()=>isMaster('neet')));
-  A.push(T('tr1','修練場','初めての修練','修練場で1回勝った',()=>Object.values(P.train||{}).some(v=>v>=1)));
-  Object.entries(JOBS).forEach(([k,j])=>A.push(T('kw_'+k,'修練場',`${j.n}の極意`,`${j.n}の修練場で1000回勝った`,()=>!!(P.kiwami&&P.kiwami[k]))));
-  A.push(T('kwall','修練場','百芸の達人','すべての職業の極意を会得した',()=>Object.keys(JOBS).every(k=>P.kiwami&&P.kiwami[k])));
+  // 職業ごとの戦闘回数（#38）：1・100・500・1000戦、3000戦で極意
+  Object.entries(JOBS).forEach(([k,j])=>{
+    [[1,'初陣'],[100,'見習い'],[500,'一人前'],[1000,'熟練']].forEach(([v,n])=>A.push(T(`jb${v}_${k}`,'極意',`${j.n}の${n}`,`${j.n}で${v}戦した`,()=>jobBN(k)>=v)));
+    A.push(T('kw_'+k,'極意',`${j.n}の極意`,`${j.n}で${KIWAMI_N}戦して極意を会得した`,()=>!!(P.kiwami&&P.kiwami[k]))); });
+  A.push(T('kwall','極意','百芸の達人','すべての職業の極意を会得した',()=>Object.keys(JOBS).every(k=>P.kiwami&&P.kiwami[k])));
   Object.keys(JOB_SECRETS).forEach(k=>A.push(T('js_'+k,'職業の秘密',`${JOBS[k].n}の秘密`,`${JOBS[k].n}の秘密「${JOB_SECRETS[k].n}」を見つけた`,()=>jobSecretFound(k))));
   A.push(T('jsall','職業の秘密','すべての職の秘密','すべての職業の秘密を見つけた',()=>Object.keys(JOB_SECRETS).every(jobSecretFound)));
   // エンディング（ハロワの5ルート＋桁の神）
@@ -1558,17 +1570,6 @@ function achHTML(){
   return h;
 }
 
-// ============ 修練場（職業ごとの寄り道エリア。自分の強さに合わせた相手） ============
-const TRAIN_FOE=['修練の木人','修練の鉄人','修練の魔導人形','修練の影'];
-const trainN=k=>(P.train&&P.train[k])||0;
-function makeTrain(){
-  const J=JOBS[P.job], hp0=maxhp(), pa=atk()*1.5;
-  const e={name:`${J.n}の${TRAIN_FOE[J.rank]}`,sp:'knight',hue:(J.hue+180)%360,train:true,
-    hp:pa*rnd(5,7), def:0, agi:st('agi')*.8, atk:(hp0*.12/ps('taken',1)+def()*.5)/1.5,
-    exp:need(P.lv)*.02, gold:enemyStats(Math.max(0,P.maxArea-1)).gold*.8};
-  return elemize(e,'無',true);
-}
-function fightTrain(f){ if(takashiLock()) return; last={type:'train'}; runBattle(makeTrain(),-4,f); }
 // ============ 酒場 ============
 // お酒：次のN戦だけ効く。1度に1杯（新しく飲むと上書き）
 // when：品書きに並ぶ条件（なければ最初から）。hint：並ぶ前に出す目安。hang：効き目が切れたあとの二日酔い（戦闘数）
@@ -1581,7 +1582,7 @@ const DRINKS=[
  // お酒でしか得られない効果（#10 案3）
  {id:'shoku',n:'職人の地酒', d:'熟練度（ジョブ経験値）×2', left:40, k:'jexp', v:2, price:60, when:()=>P.maxArea>=4, hint:'4つ目のエリアに着くと'},
  {id:'kaji', n:'果実酒',     d:'能力の実が出やすい（×3）', left:40, k:'drop', v:3, price:60, when:()=>P.maxArea>=6, hint:'6つ目のエリアに着くと'},
- {id:'shuren',n:'修練酒',    d:'修練場の修練回数が2倍で進む', left:50, k:'train', v:2, price:40, when:()=>Object.values(P.train||{}).some(v=>v>=100), hint:'修練場で100回勝つと'},
+ {id:'shuren',n:'鍛錬の酒',  d:'今の職業の戦闘回数が2倍で数えられる（極意が早くなる）', left:50, k:'train', v:2, price:40, when:()=>Object.values(P.jobB||{}).some(v=>v>=100), hint:'どれかの職業で100戦すると'},
  {id:'bakuto',n:'博徒の酒',  d:'ギャンブル特性の再使用までの戦闘数が2倍の速さで減る', left:50, k:'cas', v:2, price:60, when:()=>P.maxArea>=8, hint:'8つ目のエリアに着くと'},
  {id:'seirei',n:'精霊の酒',  d:'次の1回だけ、属性・武器の種類の付け直しが無料', left:0, k:'forge', v:1, price:200, when:()=>P.maxArea>=2, hint:'3つ目のエリアに着くと'},
  {id:'mukae',n:'迎え酒',     d:'二日酔いがすぐ治り、効いているあいだは二日酔いにならない', left:30, k:'nohang', v:1, price:30, when:()=>P.maxArea>=3, hint:'4つ目のエリアに着くと'},
@@ -1681,7 +1682,7 @@ const RUMORS=[
  {id:'takashi',t:'「たかしって名前のやつは、どうも賭け事から逃げられないらしいぜ」',when:()=>true,found:()=>isTakashi()},
  {id:'setting',t:'「スロットの台にはクセがある。🍒の出方をよく見てりゃ、店の考えが読めるって話だ」',when:()=>true,found:()=>(P.setHits||0)>0},
  {id:'hl',t:'「ハイ&ローで10回続けて当てた奴には、カードの神様がご褒美をくれるんだと」',when:()=>true,found:()=>(P.hlBest||0)>=10},
- {id:'kiwami',t:'「修練場で千回勝つと、その道の“極意”ってのが身につくらしい」',when:()=>P.maxArea>=3,found:()=>Object.keys(P.kiwami||{}).length>0},
+ {id:'kiwami',t:'「ひとつの職業で三千回戦い抜くと、その道の“極意”ってのが身につくらしい」',when:()=>P.maxArea>=3,found:()=>Object.keys(P.kiwami||{}).length>0},
  {id:'legend',t:'「武器屋の剣を99まで鍛えると、桁があふれて別物になるって噂だ」',when:()=>P.maxArea>=30,found:()=>legW()||legA()},
  {id:'slime',t:'「はじまりの画面のスライム、つつかれると喜ぶらしいよ。何度もつつくと…いや、なんでもない」',when:()=>upperOpen(),found:()=>!!P.unlocked.apprentice},
  {id:'appr',t:'「すべての職を極めた者の前に、なんとも頼りない見習いが現れるそうだ。“？”付きのな」',when:()=>upperOpen(),found:()=>!!P.unlocked.apprentice},
@@ -1745,7 +1746,7 @@ const SECRETS=[
  {n:'次元の果て',            f:()=>!!P.areaDone, t:`「冒険の果ての果て、第300層『次元の果て』を踏破しなされ。そこに一張羅が眠っとる」`, g:()=>`次元の果て（第300層）を踏破する（いま ${areaName(P.maxArea)}）`},
  {n:'桁の神',               f:()=>!!(P.final&&P.final.cleared), t:()=>`「伝説の品がすべてそろえば、桁の神が現れる。輪廻の結界は、転生を${FINAL_REB}回重ねた者でなければ破れんぞ」（転生 ${P.reb}/${FINAL_REB}回）`, g:()=>`桁の神を倒す（転生 ${P.reb}/${FINAL_REB}回）`},
  {n:'闘技場の頂',            f:()=>P.champ>=CHAMP_MAX, t:()=>`「闘技場の王者は${CHAMP_MAX}人おる。全員倒した者は、まだおらんそうじゃ」（いま ${P.champ}人）`, g:()=>`闘技場の王者を${CHAMP_MAX}人倒す（${P.champ}人）`},
- {n:'百芸の極意',            f:()=>Object.keys(JOBS).every(k=>P.kiwami&&P.kiwami[k]), t:()=>`「修練場で千回勝つと“極意”が身につく。すべての職でな」（${Object.keys(P.kiwami||{}).length}/${Object.keys(JOBS).length}職）`, g:()=>`すべての職の極意を会得する（${Object.keys(P.kiwami||{}).length}/${Object.keys(JOBS).length}）`},
+ {n:'百芸の極意',            f:()=>Object.keys(JOBS).every(k=>P.kiwami&&P.kiwami[k]), t:()=>`「ひとつの職業で三千戦すると“極意”が身につく。すべての職でな」（${Object.keys(P.kiwami||{}).length}/${Object.keys(JOBS).length}職）`, g:()=>`すべての職の極意を会得する（${Object.keys(P.kiwami||{}).length}/${Object.keys(JOBS).length}）`},
  {n:'酒神',                 f:()=>!!(P.contest&&P.contest.bacchus), t:'「この酒場の飲み比べ、最後に控えとるのは酒の神様じゃ。勝てたら大したもんじゃ」', g:'飲み比べで酒神バッカスに勝つ'},
  {n:'台の心',               f:()=>(P.setHits||0)>=1, t:'「ギャンブル場のスロットには“設定”がある。小役の出方をよく見て、台の心を読んでみなされ」', g:'スロットの設定を見抜く'},
  {n:'名前の秘密',            f:()=>{ try{ return !!P.everTakashi||localStorage.getItem('inflation_adventure_takashi')==='1'; }catch(e){ return !!P.everTakashi; } }, t:'「名前ひとつで、運命が変わる者がおる。…『たかし』という名で始めてみるといい。何かが起きるぞ。今の冒険は、記録画面でセーブコードを書き出してからにしなされ。あとで戻ってこられる」', g:'『たかし』という名前で遊んでみる'},
@@ -1973,7 +1974,7 @@ function simulateFinal(e,fast){
     L.push(`<span class="hpl">${nm} HP ${fmt(Math.max(0,c.php))}/${fmt(c.mhp)} ${mpTag(c)}　|　桁の神 残り ${fmt(Math.max(0,c.ehp))} 桁</span>`);
     if(c.php<=0){ c.lost=true; break; }
   }
-  P.battles++; drinkTick(L);
+  P.battles++; jobBattle(1,L,c); drinkTick(L);
   f.hp=Math.max(0,c.ehp); f.dmg=(f.dmg||0)+c.dealt;
   // 負けても与えた桁は残る。神は、その戦闘で削られた桁の1割を取り戻す
   if(c.lost&&f.hp>0){ const h=Math.floor(c.dealt*.1); f.hp=Math.min(finalHP(form),f.hp+h); L.push(`<span class="r">${nm}は力尽きた…</span> 桁の神は ${fmt(h)} 桁を取り戻した。`); }
@@ -2088,7 +2089,7 @@ let last=null;
 function fightArea(t,f){ if(takashiLock()) return;last={type:'area',t}; runBattle(makeEnemy(t),t,f)}
 function fightChamp(f){ if(takashiLock()||P.champ>=CHAMP_MAX) return;last={type:'champ'}; runBattle(makeChamp(P.champ),-1,f)}
 function fightSecret(f){ if(takashiLock()) return;last={type:'secret'}; runBattle(makeSecret(),-2,f)}
-function again(f){ if(!last) return; if(last.type==='area') fightArea(last.t,f); else if(last.type==='guard') fightGuard(last.t,f); else if(last.type==='champ') fightChamp(f); else if(last.type==='final') fightFinal(f); else if(last.type==='train') fightTrain(f); else fightSecret(f); }
+function again(f){ if(!last) return; if(last.type==='area') fightArea(last.t,f); else if(last.type==='guard') fightGuard(last.t,f); else if(last.type==='champ') fightChamp(f); else if(last.type==='final') fightFinal(f); else fightSecret(f); }
 // 長押し連戦
 let holdT=null, holdI=null, holdN=0, holdW=0, holdL=0;
 function holdStart(ev){ ev.preventDefault(); if(holdT||holdI||!$('#modal').classList.contains('hide')) return;
@@ -2190,9 +2191,9 @@ function simulate(e,t,fast){
     }
     L.push(`<span class="hpl">${nm} HP ${fmt(Math.max(0,c.php))}/${fmt(mhp)} ${mpTag(c)}　|　${e.name} HP ${fmt(Math.max(0,c.ehp))}</span>`);
   }
-  P.battles++; drinkTick(L); if(t>=0||e.train){ casCdTick(); if(drinkOn('cas')) casCdTick(); }
+  P.battles++; drinkTick(L); if(t>=0){ casCdTick(); if(drinkOn('cas')) casCdTick(); }
   if(t>=0&&P.hwCd>0) P.hwCd--;
-  P.jobB=P.jobB||{}; P.jobB[P.job]=(P.jobB[P.job]||0)+1;
+  jobBattle(1,L,c);
   if(e.secret) checkMasterUnlock(L);
   let sum='';
   if(res==='win'){
@@ -2204,22 +2205,15 @@ function simulate(e,t,fast){
     P.gold+=gold; P.earned=(P.earned||0)+gold; if(t>=0) casDonateBack(L);
     const lv0=P.lv;
     let drop='';
-    if(c.secDrop||chance((.04+lk/(lk+1000)*.1)*ps('drop',1)*(e.train?2:1)*matMul('drop')*drinkMul('drop'))){const k=KEYS[Math.floor(Math.random()*5)]; const n=Math.max(1,Math.floor(rnd(1,4)*(Math.max(t,P.champ,P.maxArea*(e.train?1:0),0)+1)*(c.secFruitX||1))); P.lastFruit=true;
+    if(c.secDrop||chance((.04+lk/(lk+1000)*.1)*ps('drop',1)*matMul('drop')*drinkMul('drop'))){const k=KEYS[Math.floor(Math.random()*5)]; const n=Math.max(1,Math.floor(rnd(1,4)*(Math.max(t,P.champ,P.maxArea*(e.train?1:0),0)+1)*(c.secFruitX||1))); P.lastFruit=true;
       P.base[k]+=n; drop=`${KN[k]}の実(+${n})`; L.push(`<span class="g">${KN[k]}の実を拾った！ ${KN[k]}が${n}上がった！</span>`);}
     gainExp(exp,L);
-    // 修練場では熟練度（JEXP）は上がらない（#7：熟練度が上がりすぎるため。修練場は極意を覚える場所）
-    const jg=e.train?'':gainJob(Math.max(1,Math.floor((e.secret?10:e.champ?5:1+Math.floor(Math.sqrt(Math.max(t,0))))*matMul('jexp')*drinkMul('jexp'))),L);
+    const jg=gainJob(Math.max(1,Math.floor((e.secret?10:e.champ?5:1+Math.floor(Math.sqrt(Math.max(t,0))))*matMul('jexp')*drinkMul('jexp'))),L);
     if(t>=0||e.guard) bkCount(e,e.guard?e.gt:t);
     if(t>=0&&chance(MAT_RATE)){ const md=matDrop(t,L); if(md) drop=drop?drop+' / '+md:md; }
     if(e.guard) guardWin(e,L,c);
     if(e.champ){P.champ++; L.push(`<span class="mir">★ ${nm}は新チャンピオンになった！ ★</span>`); if(P.champ===CHAMPS.length) L.push(`<span class="mir">★ 闘技場の全王者を制覇した！ ★</span>`); checkMasterUnlock(L);}
     if(e.secret){P.godWins=(P.godWins||0)+1; P.godMaxForm=Math.max(P.godMaxForm||0,P.reb+1); if(c.usedMiracle||P.godWins===1) c.trainMile=true;}
-    if(e.train){ P.train=P.train||{}; const n0=P.train[P.job]||0, n=P.train[P.job]=n0+(drinkOn('train')?2:1), J=JOBS[P.job], hit=m=>n0<m&&n>=m;
-      if(hit(100)){ const g=Math.floor(e.gold*200); P.gold+=g; P.earned=(P.earned||0)+g; L.push(`<span class="y">修練100回達成！ 師範から ${fmt(g)}G を授かった！</span>`); c.trainMile=true; }
-      if(hit(500)){ const ex=Math.floor(need(P.lv)*5); L.push(`<span class="y">修練500回達成！ 秘伝書を読んだ！</span>`); gainExp(ex,L); c.trainMile=true; }
-      if(hit(1000)){ P.kiwami=P.kiwami||{}; P.kiwami[P.job]=true; c.trainMile=true;
-        L.push(`<span class="mir">★ 修練1000回！「${J.n}の極意」を会得した！ ★</span>`);
-        L.push(`<span class="mir">${(J.main==='best'||J.hidden)?'全能力×1.5':KN[J.main]+'×2'}（永続・全職業に有効）</span>`); } }
     if(e.secret && !P.blessed[P.job]){P.blessed[P.job]=true; L.push(`<span class="mir">★ ${nm}は「奇跡の加護」を授かった！ ★</span>`); L.push(`<span class="mir">${JOBS[P.job].n}でいるかぎり、奇跡が頻繁に起きるようになった！</span>`);}
     if(t>=0&&t===P.maxArea&&!P.areaDone){P.areaWins++;
       if(P.areaWins>=AREA_WINS&&guardBlock()){ const first=P.areaWins===AREA_WINS; P.areaWins=AREA_WINS;
@@ -2237,7 +2231,7 @@ function simulate(e,t,fast){
     L.push(`決着がつかない！ ${nm}は逃げ出した。`);
     sum=`<span class="o">引き分け（逃走）</span>`;
   }
-  const head=`${e.secret?'神々の座':e.champ?'闘技場':e.train?'修練場':e.guard?areaName(e.gt):e.final?'桁の神':t<0?'':areaName(t)}：${e.name}（${JOBS[P.job].n} Lv${P.lv}）`;
+  const head=`${e.secret?'神々の座':e.champ?'闘技場':e.guard?areaName(e.gt):e.final?'桁の神':t<0?'':areaName(t)}：${e.name}（${JOBS[P.job].n} Lv${P.lv}）`;
   LOGS.unshift({head,sum,lines:L}); if(LOGS.length>20) LOGS.length=20;
   save(); if(!fast) saveLogs();
   return {L,sum,newArea:c.newArea,trainMile:c.trainMile,c};
@@ -2253,7 +2247,7 @@ function gainExp(e,L){
 function againLabel(){return last&&last.type==='champ'?'もう一戦':'もう一戦（長押しで連戦）'}
 // 場所ごとの戦闘数（今回入ってから／累計）
 let locKey=null, locRun=0;
-function locOf(e,t){ return e.guard?'a'+e.gt:e.final?'final':e.work?'work':e.secret?'god':e.champ?'champ':e.train?'train_'+P.job:'a'+t; }
+function locOf(e,t){ return e.guard?'a'+e.gt:e.final?'final':e.work?'work':e.secret?'god':e.champ?'champ':'a'+t; }
 function locName(k){ return k==='final'?'桁の神':k==='work'?'ハローワーク':k==='god'?'神々の座':k==='champ'?'闘技場':k.startsWith('train_')?`${JOBS[k.slice(6)].n}の修練場`:areaName(+k.slice(1)); }
 const locTotal=k=>(P.locB&&P.locB[k])||0;
 function runBattle(e,t,fast){

@@ -651,12 +651,19 @@ function panel(p,arg){
     });
   } else if(p==='reb'){
     const mul=1+P.lv/20;
-    h=`<h2>転生の祭壇</h2><div class="small">Lv${rebReq()}以上で転生できます（転生するたびに必要Lvが+10）。レベルは1に戻りますが、全ステータスに<b class="y">×${mul.toFixed(2)}</b>の永続倍率がかかります（現在の倍率 ×${fmtMul(P.rebMul)}）。装備・お金・エリアは引き継ぎ。</div><div class="small o" style="margin-top:4px">※転生すると「奇跡の加護」は失われ、神々の座の神はさらに強大な姿に変わる。</div>`;
+    h=`<h2>転生の祭壇</h2><div class="small">Lv${rebReq()}以上で転生できます（転生するたびに必要Lvが+10）。レベルは1に戻りますが、全ステータスに<b class="y">×${mul.toFixed(2)}</b>の永続倍率がかかります（現在の倍率 ×${fmtMul(P.rebMul)}）。装備・お金・エリアは引き継ぎ。</div><div class="small o" style="margin-top:4px">※転生すると「奇跡の加護」は失われ、神々の座の神はさらに強大な姿に変わる。</div>`
+      +`<details style="margin-top:6px"><summary class="small y">倍率のしくみ</summary><div class="small" style="line-height:1.7">
+      ・1回の転生で掛かる倍率は <b>×(1＋転生したときのLv÷20)</b>。Lv100なら×6、Lv1000なら×51、Lv2000なら×101。高いLvまで上げてから転生するほど伸びる。<br>
+      ・この倍率は、転生のたびに<b>掛け算で重なる</b>（×6で3回転生すると6×6×6＝×216）。今は ×${fmtMul(P.rebMul)}、次の転生で ×${fmtMul(P.rebMul*mul)} になる。<br>
+      ・「1.10e157」のような表記は「1.10×10の157乗」（1.10のあとにゼロが157個）。無量大数より大きい数はこの書き方になる。<br>
+      ・能力振りの画面に出る数字は、倍率を掛ける前の<b>基礎値</b>なので、転生しても変わらない。実際の能力は「基礎値×転生倍率×…」で、ステータス欄に出ている（今の${KN[mainKey()]}：基礎 ${fmt(P.base[mainKey()])} → 実際 ${fmt(st(mainKey()))}）。<br>
+      ・攻撃力は「能力＋武器」で決まる。武器には転生倍率が掛からないので、武器が能力よりずっと強いあいだは、転生しても攻撃力はあまり変わらない（今：能力 ${fmt(st(mainKey()))}／武器 ${fmt(wpnPow(P.wpn))}）。
+      </div></details>`;
     h+=`<button style="width:100%;margin-top:8px" ${P.lv<rebReq()?'disabled':''} onclick="rebirth()">転生する</button>`;
   } else if(p==='stat'){
     h=`<h2>能力振り（残り ${P.pts}pt）</h2>`;
     KEYS.forEach(k=>{h+=`<div class="row"><div>${KN[k]} <span class="small">基礎 ${fmt(P.base[k])}</span></div><div><button ${P.pts<1?'disabled':''} onclick="addPt('${k}',1)">+1</button> <button ${P.pts<1?'disabled':''} onclick="addPt('${k}',${P.pts})">+全部</button></div></div>`});
-    h+=`<div class="small" style="margin-top:6px">レベルが上がるたびに3pt。メイン能力：<span class="y">${KN[mainKey()]}</span>（攻撃力に直結）</div>`;
+    h+=`<div class="small" style="margin-top:6px">レベルが上がるたびに3pt。メイン能力：<span class="y">${KN[mainKey()]}</span>（攻撃力に直結）</div><div class="small" style="color:#9ab">ここの数字は、転生倍率などを掛ける前の基礎値。転生しても変わらない（実際の能力はステータス欄）。</div>`;
   } else if(p==='log'){
     if(arg!==undefined && LOGS[arg]){
       const l=LOGS[arg];

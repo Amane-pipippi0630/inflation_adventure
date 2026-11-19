@@ -1354,10 +1354,12 @@ function simulateFinal(e,fast){
 let curRun=0; // この場所で今回何戦目か（runBattle がセット）
 const isNight=()=>{ const h=new Date().getHours(); return h>=22||h<4; };
 const hpR=c=>c.php/c.mhp;
+// 相手の危険度（戦う前の見積もり）：無謀=2、強敵=1、それ以外=0
+const riskOf=e=>{ const d=danger(e); return /無謀/.test(d)?2:/強敵/.test(d)?1:0; };
 const drunkNow=()=>!!((P.drink&&P.drink.left>0)||persona());
 const digits777=()=>Math.floor(P.gold)%1000===777;
 const JOB_SECRETS={
- warrior:  {n:'背水の陣',      hint:'追い詰められるほど強くなるらしい',           type:'dyn',   c:c=>hpR(c)<.1,                   fx:{atk:100},             msg:'HPがわずか…！ 背水の陣！ 攻撃力×100'},
+ warrior:  {n:'背水の陣',      hint:'無謀な相手に挑むほど、追い詰められるほど強くなるらしい', type:'both', c:(c,e)=>riskOf(e)>=2, d:c=>hpR(c)<.1, fx:{atk:100}, msg:'背水の陣！ 攻撃力×100'},
  mage:     {n:'純粋魔力',      hint:'知力だけを極めると何かが起きるらしい',       type:'start', c:()=>st('int')>=st('str')*100,  fx:{skill:1},             msg:'力を捨てた魔力が満ちる…！ 大魔法が止まらない'},
  thief:    {n:'王冠泥棒',      hint:'王者の前では手癖が悪くなるらしい',           type:'start', c:(c,e)=>!!e.champ,               fx:{gold:10},             msg:'王者の王冠に手が伸びる…！ 賞金×10'},
  priest:   {n:'神の慈悲',      hint:'神の前では祈りが届くらしい',                 type:'start', c:(c,e)=>!!e.secret,              fx:{taken:.5},            msg:'祈りが神に届いた… 神竜の攻撃が半分に'},
@@ -1370,7 +1372,7 @@ const JOB_SECRETS={
  merchant: {n:'札束の壁',      hint:'金持ちになるほど…',                         type:'start', c:()=>P.gold>=1e16,               fx:{taken:.1},            msg:'札束を積み上げて壁にした！ 受けるダメージ1/10'},
  alchemist:{n:'賢者の閃き',    hint:'実を拾った直後は冴えているらしい',           type:'start', c:(c)=>!!c.fruitFresh,            fx:{drop:1},              msg:'さっきの実の味がひらめきを呼ぶ… 実を必ず拾う'},
  apprentice:{n:'奇跡の加護',   hint:'',                                          type:'none'},
- berserker:{n:'狂乱の血',      hint:'血を流すほど狂っていくらしい',               type:'dyn',   c:c=>hpR(c)<.3,                   fx:{atk:1000},            msg:'血が騒ぐ…！ 狂乱の血！ 攻撃力×1000'},
+ berserker:{n:'狂乱の血',      hint:'格上の相手や、血を流すほど狂っていくらしい', type:'both', c:(c,e)=>riskOf(e)>=1, d:c=>hpR(c)<.3, fx:{atk:1000}, msg:'血が騒ぐ…！ 狂乱の血！ 攻撃力×1000'},
  archmage: {n:'魔の深淵',      hint:'知力だけを極めると何かが起きるらしい',       type:'start', c:()=>st('int')>=st('str')*100,  fx:{skill:1,atk:3},       msg:'魔の深淵をのぞいた… 大魔法が止まらず、威力×3'},
  ninja:    {n:'夜影分身',      hint:'夜になると影が増えるらしい',                 type:'start', c:()=>isNight(),                  fx:{multi:2},             msg:'夜の闇に影が溶ける… 毎ターン3回攻撃'},
  bishop:   {n:'神域の加護',    hint:'神の前では祈りが届くらしい',                 type:'start', c:(c,e)=>!!e.secret,              fx:{taken:.25},           msg:'神域の加護… 神竜の攻撃が1/4に'},
@@ -1382,11 +1384,11 @@ const JOB_SECRETS={
  maestro:  {n:'酩酊の交響曲',  hint:'酒が入ると歌声が変わるらしい',               type:'start', c:()=>drunkNow(),                 fx:{atk:20},              msg:'酔いが旋律を狂わせる…！ 攻撃力×20'},
  tycoon:   {n:'金城鉄壁',      hint:'金持ちになるほど…',                         type:'start', c:()=>P.gold>=1e20,               fx:{taken:.01,gold:3},    msg:'財力で城を築いた！ 受けるダメージ1/100・お金×3'},
  grandalch:{n:'錬成の連鎖',    hint:'実を拾った直後は冴えているらしい',           type:'start', c:(c)=>!!c.fruitFresh,            fx:{drop:1,fruitX:10},    msg:'錬成が連鎖する… 実を必ず拾い、効果×10'},
- hero:     {n:'勇者の覚醒',    hint:'王者の前で倒れかけると…',                   type:'dyn',   c:(c)=>hpR(c)<.1&&!!c.e.champ,     fx:{atk:10000},           msg:'まだ倒れられない…！ 勇者が覚醒する！ 攻撃力×1万'},
+ hero:     {n:'勇者の覚醒',    hint:'格上の王者に挑むと…',                       type:'both', c:(c,e)=>!!e.champ&&riskOf(e)>=1, d:c=>!!c.e.champ&&hpR(c)<.1, fx:{atk:10000}, msg:'ここで退くわけにはいかない…！ 勇者が覚醒する！ 攻撃力×1万'},
  sage:     {n:'森羅の悟り',    hint:'神の前で知恵を極めると…',                   type:'start', c:(c,e)=>!!e.secret&&st('int')>=st('str')*100, fx:{skill:1,taken:.25}, msg:'森羅万象を悟った… 技が止まらず、被ダメ1/4'},
- spellblade:{n:'魔剣解放',     hint:'追い詰められると剣が魔を帯びるらしい',       type:'dyn',   c:c=>hpR(c)<.3,                   fx:{skill:1,atk:100},     msg:'魔剣が解き放たれた…！ 魔法剣が止まらない・攻撃力×100'},
+ spellblade:{n:'魔剣解放',     hint:'格上の相手に挑むと剣が魔を帯びるらしい',     type:'both', c:(c,e)=>riskOf(e)>=1, d:c=>hpR(c)<.3, fx:{skill:1,atk:100}, msg:'魔剣が解き放たれた…！ 魔法剣が止まらない・攻撃力×100'},
  assassin: {n:'闇夜の狩人',    hint:'夜、同じ狩場に通い続けると…',               type:'start', c:()=>isNight()&&curRun>=100,     fx:{crit:1,atk:100},      msg:'闇夜はすべて我が狩場… 会心100%・攻撃力×100'},
- swordsaint:{n:'無我の境地',   hint:'財布も体も限界のとき…',                     type:'dyn',   c:c=>P.gold===1&&hpR(c)<.3,        fx:{atk:1e6},             msg:'すべてを失い、無我の境地へ…！ 攻撃力×100万'},
+ swordsaint:{n:'無我の境地',   hint:'一文無し寸前で格上に挑むと…',               type:'both', c:(c,e)=>P.gold===1&&riskOf(e)>=1, d:c=>P.gold===1&&hpR(c)<.3, fx:{atk:1e6}, msg:'すべてを失い、無我の境地へ…！ 攻撃力×100万'},
  dragoon:  {n:'竜の目覚め',    hint:'同じ狩場に通い続け、万全で挑むと…',         type:'start', c:()=>curRun>=100,                fx:{zero:1,atk:100},      msg:'竜が目を覚ました…！ 最初の一撃を防ぎ、攻撃力×100'},
  phantom:  {n:'月夜の大怪盗',  hint:'夜、王者の前では…',                         type:'start', c:(c,e)=>isNight()&&!!e.champ,     fx:{gold:100},            msg:'月夜に大怪盗参上！ 王者の財宝をいただく… 賞金×100'},
  luckking: {n:'天運の極み',    hint:'大金持ちが縁起を担ぐと…',                   type:'start', c:()=>digits777()&&P.gold>=1e10,   fx:{atk:77777,gold:7},    msg:'天運が極まった！ 攻撃力×77777・お金×7'},
@@ -1404,8 +1406,8 @@ function applySecret(c,S){ const fx=S.fx||{}; c.secOn=true;
   if(!S.silentUntil) markSecret(c); }
 function markSecret(c){ const S=JOB_SECRETS[P.job]; if(!S||!S.msg) return; c.L.push(`<span class="mir">【${JOBS[P.job].n}の秘密】${S.msg}</span>`);
   P.jsec=P.jsec||{}; if(!P.jsec[P.job]){ P.jsec[P.job]=true; c.L.push(`<span class="y">★ 職業の秘密「${S.n}」を発見した！</span>`); } }
-function secretStart(c,e,t){ const S=JOB_SECRETS[P.job]; if(!S||S.type!=='start') return; let ok=false; try{ ok=S.c(c,e,t); }catch(x){} if(ok) applySecret(c,S); }
-function secretDyn(c){ const S=JOB_SECRETS[P.job]; if(!S||S.type!=='dyn'||c.secOn) return; let ok=false; try{ ok=S.c(c); }catch(x){} if(ok) applySecret(c,S); }
+function secretStart(c,e,t){ const S=JOB_SECRETS[P.job]; if(!S||(S.type!=='start'&&S.type!=='both')) return; let ok=false; try{ ok=S.c(c,e,t); }catch(x){} if(ok) applySecret(c,S); }
+function secretDyn(c){ const S=JOB_SECRETS[P.job]; if(!S||c.secOn||(S.type!=='dyn'&&S.type!=='both')) return; let ok=false; try{ ok=(S.type==='both'?S.d:S.c)(c); }catch(x){} if(ok) applySecret(c,S); }
 const jobSecretFound=k=>k==='fighter'?(P.kajiN||0)>0:k==='apprentice'?!!(P.blessed&&P.blessed.apprentice):!!(P.jsec&&P.jsec[k]);
 // ============ 戦闘 ============
 let last=null;

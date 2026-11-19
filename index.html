@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>インフレアドベンチャー</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;background:#05061a;color:#fff;font-family:'DotGothic16',monospace;font-size:15px;line-height:1.5}
+#app{max-width:480px;margin:0 auto;padding:10px 10px 40px}
+h1{font-size:22px;text-align:center;margin:8px 0 2px;letter-spacing:2px;color:#ffe066;text-shadow:2px 2px 0 #a33}
+.sub{text-align:center;font-size:12px;color:#9ab;margin-bottom:10px}
+.win{background:linear-gradient(#2b44b8,#0c1766);border:3px solid #fff;border-radius:7px;padding:10px 12px;margin:10px 0;box-shadow:0 0 0 2px #000,4px 4px 0 2px #000a}
+.win h2{font-size:15px;margin:0 0 6px;color:#ffe066}
+button{font-family:inherit;font-size:14px;color:#fff;background:#0a0f3d;border:2px solid #fff;border-radius:5px;padding:7px 8px;cursor:pointer}
+button:active{background:#33f}
+button:disabled{opacity:.35}
+button.sel{background:#c33;border-color:#ffe066}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:3px 0;border-bottom:1px dashed #fff3}
+.row:last-child{border-bottom:0}
+.small{font-size:12px;color:#bcd}
+.y{color:#ffe066}.r{color:#ff6b6b}.g{color:#7dff9a}.c{color:#7de0ff}
+input{font-family:inherit;font-size:16px;padding:6px;width:100%;background:#000;color:#fff;border:2px solid #fff;border-radius:5px}
+.bar{height:8px;background:#000;border:1px solid #fff;border-radius:3px;overflow:hidden;margin:3px 0}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,#7dff9a,#ffe066)}
+canvas{image-rendering:pixelated;width:84px;height:84px}
+#stage{display:flex;justify-content:space-around;align-items:flex-end;background:linear-gradient(#123 60%,#243 60%);border:3px solid #fff;border-radius:7px;padding:10px;margin-top:8px}
+#stage div{text-align:center;font-size:12px;max-width:45%}
+#log{height:46vh;overflow-y:auto;font-size:13px}
+#log p{margin:0 0 3px}
+.dmg{color:#ffe066;font-size:15px}
+.dmg.big{font-size:18px;color:#ff9f43}
+.edmg{color:#ff6b6b}
+.crit{color:#ff5e5e;font-weight:bold}
+.mir{font-size:17px;background:linear-gradient(90deg,#f55,#fd5,#5f8,#5df,#a5f);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sk{color:#7de0ff}
+.heal{color:#7dff9a}
+.hpl{color:#9ab;font-size:11px}
+.lv{color:#ffe066;font-size:15px}
+.rw{color:#7dff9a}
+.hide{display:none!important}
+.o{color:#ffa94d}
+#bBar{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:480px;background:#05061aee;padding:8px 10px 14px;display:grid;grid-template-columns:2fr 1fr;gap:8px;z-index:10;border-top:2px solid #fff3}
+#bBar button{padding:18px 6px;font-size:16px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+#btnAgain.holding{background:#c33;border-color:#ffe066}
+#sBattle{padding-bottom:100px}
+.card{display:inline-block;background:#fff;color:#000;border-radius:6px;padding:14px 8px;font-size:28px;min-width:66px;text-align:center;border:3px solid #ffe066}
+.card.red{color:#d00}
+.card.back{background:repeating-linear-gradient(45deg,#33a,#33a 6px,#227 6px,#227 12px);color:transparent}
+#reels{display:flex;justify-content:center;gap:6px;margin:8px 0}
+.reel{width:76px;height:64px;background:#000;border:3px solid #ffe066;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:28px}
+.numgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:6px}
+.numgrid button{padding:5px 0;font-size:12px}
+.numgrid button.redn{background:#811}
+.big{font-size:30px;text-align:center;margin:6px 0}
+#modal{position:fixed;inset:0;background:#000a;z-index:20;display:none;}
+#modal:not(.hide){display:flex;}
+#modal{align-items:center;justify-content:center;padding:20px}
+#modal .win{max-width:420px;width:100%;text-align:center}
+#toast{position:fixed;top:10px;pointer-events:none;left:50%;transform:translateX(-50%);z-index:30;background:linear-gradient(#5a3a00,#2a1a00);border:2px solid #ffe066;border-radius:7px;padding:8px 14px;font-size:14px;max-width:90vw;transition:opacity .3s;pointer-events:none}
+#casMsg{min-height:1.6em;margin-top:6px;text-align:center}
+#result{font-size:14px}
+.logbox{max-height:50vh;overflow-y:auto;font-size:13px}
+.logbox p{margin:0 0 3px}
+.tag{font-size:11px;border:1px solid #fff6;border-radius:3px;padding:0 4px;margin-left:4px}
+.title-spr{display:flex;justify-content:center;gap:10px;margin:8px 0}
+.title-spr canvas{width:48px;height:48px;cursor:pointer;touch-action:manipulation}
+@keyframes a-jump{0%,100%{transform:translateY(0)}40%{transform:translateY(-12px)}}
+@keyframes a-flap{0%,100%{transform:translateY(0)}25%{transform:translateY(-8px) scaleX(.8)}50%{transform:translateY(0)}75%{transform:translateY(-8px) scaleX(.8)}}
+@keyframes a-spin{0%{transform:rotateY(0)}100%{transform:rotateY(360deg)}}
+@keyframes a-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px) rotate(-8deg)}40%{transform:translateX(4px) rotate(8deg)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+@keyframes a-roar{0%,100%{transform:scale(1)}30%{transform:scale(1.25) translateY(-4px)}60%{transform:scale(.95)}}
+.a-jump{animation:a-jump .25s ease-out}.a-flap{animation:a-flap .35s ease-in-out}.a-spin{animation:a-spin .4s ease-in-out}.a-shake{animation:a-shake .35s}.a-roar{animation:a-roar .4s ease-out}
+</style>
+</head>
+<body>
+<div id="toast" class="hide"></div>
+<div id="app">
+  <h1>インフレアドベンチャー</h1>
+  <div class="sub">― 桁がおかしくなるまで戦え ―</div>
+
+  <!-- タイトル -->
+  <div id="sTitle" class="hide">
+    <div class="title-spr" id="titleSpr"></div>
+    <div class="win">
+      <button id="btnCont" style="width:100%;padding:14px;font-size:17px" onclick="goMain()">つづきから</button>
+      <div class="small" id="contInfo" style="text-align:center;margin-top:4px"></div>
+      <button id="btnNew" style="width:100%;margin-top:10px" onclick="openNew()">はじめから</button>
+      <button style="width:100%;margin-top:6px;font-size:12px" onclick="$('#impBoxT').classList.toggle('hide')">セーブコードから復元する</button>
+      <div id="impBoxT" class="hide" style="margin-top:8px">
+        <div class="small">書き出しておいたセーブコードを貼り付けてください。</div>
+        <textarea id="impTextT" rows="4" style="width:100%;font-size:11px;background:#000;color:#fff;border:2px solid #fff;border-radius:5px"></textarea>
+        <button id="impBtnT" style="width:100%;margin-top:4px" onclick="importSave('T')">読み込む</button>
+        <div id="impMsgT" class="small" style="text-align:center;margin-top:4px"></div>
+      </div>
+    </div>
+    <div class="win hide" id="newBox">
+      <h2>キャラクター作成</h2>
+      <div class="small">名前</div>
+      <input id="inName" maxlength="10" value="" placeholder="主人公の名前（10文字まで）" autocomplete="off">
+      <div id="nameMsg" class="small r hide" style="margin-top:2px">名前を入力してください</div>
+      <div class="small" style="margin-top:8px">職業</div>
+      <div class="grid2" id="jobPick"></div>
+      <div class="small" id="jobDesc" style="margin:8px 0;min-height:2.5em"></div>
+      <div class="small r hide" id="newWarn" style="margin-bottom:6px">※いまのセーブデータは消えます</div>
+      <button id="btnStart" style="width:100%" onclick="startNew()">冒険をはじめる</button>
+    </div>
+    <div id="credit" class="small" style="text-align:center;color:#789;margin-top:14px;line-height:1.7">
+      © 2026 Amane-pipippi0630 ／ MIT License<br>
+      フォント：DotGothic16（Fontworks・SIL Open Font License 1.1）<br>
+      ※スクウェア・エニックスおよび関連作品とは関係のない非公式ファンメイド作品です
+    </div>
+  </div>
+
+  <!-- メイン -->
+  <div id="sMain" class="hide">
+    <div class="win" id="status"></div>
+    <div class="win">
+      <div class="grid">
+        <button onclick="panel('area')">冒険</button>
+        <button onclick="panel('champ')">闘技場</button>
+        <button onclick="panel('job')">転職所</button>
+        <button onclick="panel('wpn')">武器屋</button>
+        <button onclick="panel('arm')">防具屋</button>
+        <button onclick="panel('acc')">装飾品屋</button>
+        <button onclick="panel('reb')">転生の祭壇</button>
+        <button onclick="panel('stat')">能力振り</button>
+        <button onclick="panel('casino')" class="y">ギャンブル場</button>
+      </div>
+      <div class="grid" style="margin-top:6px">
+        <button onclick="panel('ach')" class="y">実績</button>
+        <button onclick="panel('log')">戦闘ログ</button>
+        <button onclick="panel('rec')">記録</button>
+      </div>
+    </div>
+    <div class="win" id="panel"></div>
+  </div>
+
+  <!-- 戦闘 -->
+  <div id="sBattle" class="hide">
+    <div id="stage">
+      <div><canvas id="cvP"></canvas><div id="nmP"></div></div>
+      <div class="y" style="align-self:center">VS</div>
+      <div><canvas id="cvE"></canvas><div id="nmE"></div></div>
+    </div>
+    <div class="win" id="result"></div>
+    <div class="win"><div id="log" class="logbox"></div></div>
+    <div id="modal" class="hide" onclick="if(event.target===this)closeModal()"><div class="win">
+      <h2 id="mTitle"></h2><div id="mBody" class="small" style="margin-bottom:10px"></div>
+      <div class="grid2"><button id="mGo" class="y">次のエリアへ進む</button><button id="mStay">このまま続ける</button></div>
+    </div></div>
+    <div id="bBar">
+      <button id="btnAgain">もう一戦（長押しで連戦）</button>
+      <button onclick="goMain()">戻る</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ データ ============
+const KEYS=['str','int','agi','vit','luk'];
+const KN={str:'力',int:'知力',agi:'素早さ',vit:'体力',luk:'運'};
+const RANKS=['下位職','中位職','上位職','？？？'];
+// pass: crit(会心率+), eva(回避率+), taken(被ダメ倍率), gold, exp, drop(倍率)
+const JOBS={
+  apprentice:{rank:0,hidden:true,n:'見習い？',hue:30,main:'str',g:{str:1,int:1,agi:1,vit:1,luk:1},skill:{n:'がむしゃら',p:.15,m:2},pass:{exp:1.5},d:'何もかも普通…に見える。経験値が1.5倍。'},
+  warrior:{rank:0,n:'戦士',hue:210,main:'str',g:{str:1.5,int:.5,agi:.9,vit:1.4,luk:.8},skill:{n:'渾身斬り',p:.18,m:3},d:'力と体力がよく伸びる。攻撃は力依存。'},
+  mage:{rank:0,n:'魔導士',hue:280,main:'int',g:{str:.4,int:1.7,agi:.9,vit:.8,luk:1},skill:{n:'メテオストライク',p:.15,m:5},d:'知力で攻撃。たまに出る大魔法が強烈。'},
+  thief:{rank:0,n:'盗賊',hue:120,main:'agi',g:{str:.9,int:.7,agi:1.7,vit:.8,luk:1.3},skill:{n:'盗む',p:.22,steal:true},d:'素早さで攻撃。連続攻撃しやすく、お金を盗む。'},
+  priest:{rank:0,n:'僧侶',hue:50,main:'int',g:{str:.8,int:1.2,agi:.8,vit:1.6,luk:1.1},skill:{n:'ヒール',p:.2,heal:true},d:'体力が高く、戦闘中にHPを回復する。'},
+  gambler:{rank:0,n:'ギャンブラー',hue:330,main:'luk',g:{str:.8,int:.8,agi:1,vit:.9,luk:2.2},skill:{n:'イチかバチか',p:.25,gamble:true},pass:{casino:1.5},d:'運で攻撃。ルーレットで×0〜×777。ギャンブル場の儲け1.5倍。'},
+  fighter:{rank:0,n:'格闘家',hue:15,main:'str',g:{str:1.3,int:.4,agi:1.3,vit:1.1,luk:.8},skill:{n:'百裂拳',p:.18,multi:true},d:'力と素早さが伸びる。2〜5回の連打を叩き込む。…追い詰められると何かが目覚めるらしい。'},
+  hunter:{rank:0,n:'狩人',hue:90,main:'agi',g:{str:1,int:.7,agi:1.3,vit:.8,luk:1.3},skill:{n:'急所撃ち',p:.15,sure:true},pass:{crit:.08},d:'会心が出やすい。急所撃ちは必ず会心。'},
+  knight:{rank:0,n:'騎士',hue:190,main:'vit',g:{str:1.2,int:.6,agi:.6,vit:1.7,luk:.8},skill:{n:'シールドバッシュ',p:.15,m:2.5},pass:{taken:.7},d:'体力で攻撃。受けるダメージが3割減る。'},
+  dancer:{rank:0,n:'踊り子',hue:310,main:'agi',g:{str:.7,int:1,agi:1.5,vit:.8,luk:1.2},skill:{n:'魅惑の舞',p:.2,stun:true},pass:{eva:.1},d:'よく避ける。舞で敵の動きを1回止める。'},
+  bard:{rank:0,n:'吟遊詩人',hue:160,main:'int',g:{str:.6,int:1.3,agi:1,vit:.9,luk:1.3},skill:{n:'勇気の歌',p:.2,buff:true},d:'歌うたびに攻撃力×1.5（戦闘中ずっと重なる）。'},
+  merchant:{rank:0,n:'商人',hue:45,main:'luk',g:{str:.8,int:1.1,agi:.8,vit:1,luk:1.6},skill:{n:'銭投げ',p:.18,coin:true},pass:{gold:2},d:'お金が2倍手に入る。銭投げは所持金が多いほど痛い。'},
+
+  // ---- 中位職（対応する下位職をマスターで解放）----
+  berserker:{rank:1,base:'warrior',n:'狂戦士',hue:0,main:'str',g:{str:2.1,int:.4,agi:1,vit:1.5,luk:.8},skill:{n:'狂乱斬り',p:.22,m:5},pass:{taken:1.2},d:'すべてを力に。被ダメージ1.2倍だが技が強烈。'},
+  archmage:{rank:1,base:'mage',n:'大魔導士',hue:270,main:'int',g:{str:.4,int:2.3,agi:1,vit:.9,luk:1.1},skill:{n:'星砕き',p:.18,m:8},d:'知力が爆発的に伸びる。星を砕く大魔法。'},
+  ninja:{rank:1,base:'thief',n:'忍者',hue:240,main:'agi',g:{str:1,int:.8,agi:2.3,vit:.9,luk:1.4},skill:{n:'影分身',p:.22,multi:1},pass:{eva:.12},d:'分身で連打。よく避ける。'},
+  bishop:{rank:1,base:'priest',n:'神官',hue:55,main:'int',g:{str:.8,int:1.6,agi:.9,vit:2.1,luk:1.2},skill:{n:'ハイヒール',p:.25,heal:true},pass:{taken:.8},d:'高い回復力と守り。'},
+  shark:{rank:1,base:'gambler',n:'勝負師',hue:340,main:'luk',g:{str:.9,int:.9,agi:1.1,vit:1,luk:2.9},skill:{n:'大勝負',p:.3,gamble:true},pass:{crit:.05,casino:2},d:'ルーレットの発動率アップ。会心も出やすい。ギャンブル場の儲け2倍。'},
+  kenou:{rank:1,base:'fighter',n:'拳王',hue:20,main:'str',g:{str:1.9,int:.4,agi:1.8,vit:1.3,luk:.9},skill:{n:'百裂拳・極',p:.25,multi:2},d:'3〜8発の連打を叩き込む。'},
+  sniper:{rank:1,base:'hunter',n:'狙撃手',hue:100,main:'agi',g:{str:1.1,int:.8,agi:1.9,vit:.9,luk:1.6},skill:{n:'一撃必殺',p:.2,sure:true,m:1.5},pass:{crit:.15},d:'会心率がさらに上がる。必中の狙撃。'},
+  paladin:{rank:1,base:'knight',n:'聖騎士',hue:200,main:'vit',g:{str:1.4,int:.9,agi:.7,vit:2.3,luk:.9},skill:{n:'聖盾撃',p:.2,m:3,drain:true},pass:{taken:.55},d:'鉄壁。技で与えたダメージの一部を回復。'},
+  maiden:{rank:1,base:'dancer',n:'舞姫',hue:320,main:'agi',g:{str:.8,int:1.2,agi:2,vit:.9,luk:1.4},skill:{n:'幻惑の舞',p:.28,stun:true},pass:{eva:.18},d:'敵を止めて、ひらりとかわす。'},
+  maestro:{rank:1,base:'bard',n:'楽聖',hue:170,main:'int',g:{str:.7,int:1.8,agi:1.1,vit:1,luk:1.5},skill:{n:'英雄の歌',p:.22,buff:true,bm:2},d:'歌うたびに攻撃力×2（戦闘中ずっと重なる）。'},
+  tycoon:{rank:1,base:'merchant',n:'大富豪',hue:48,main:'luk',g:{str:.9,int:1.3,agi:.9,vit:1.1,luk:2.1},skill:{n:'札束ビンタ',p:.22,coin:true,cm:3},pass:{gold:4},d:'お金が4倍。札束で殴る。'},
+  grandalch:{rank:1,base:'alchemist',n:'大錬金術師',hue:280,main:'int',g:{str:.5,int:2,agi:.9,vit:1,luk:1.5},skill:{n:'賢者の石',p:.16,m:6},pass:{drop:6},d:'能力の実を6倍拾いやすい。'},
+  // ---- 上位職（中位＋下位、または中位＋中位をマスターで解放）----
+  hero:{rank:2,req:['paladin','archmage'],n:'勇者',hue:210,main:'str',g:{str:2.4,int:2,agi:1.8,vit:2.2,luk:1.6},skill:{n:'天翔剣',p:.2,m:12,pierce:true},pass:{taken:.7},d:'剣も魔法も。防御無視の天翔剣。'},
+  sage:{rank:2,req:['archmage','bishop'],n:'賢者',hue:60,main:'int',g:{str:.8,int:2.8,agi:1.2,vit:1.8,luk:1.6},skill:{n:'森羅万象',p:.2,m:15,drain:true},pass:{taken:.8},d:'攻めと癒しを極めた者。'},
+  spellblade:{rank:2,req:['berserker','mage'],n:'魔法剣士',hue:250,main:'str',g:{str:2.5,int:1.6,agi:1.3,vit:1.6,luk:1},skill:{n:'魔法剣',p:.24,m:8,pierce:true},d:'防御を貫く魔法剣。'},
+  assassin:{rank:2,req:['ninja','hunter'],n:'暗殺者',hue:280,main:'agi',g:{str:1.4,int:1,agi:2.8,vit:1,luk:1.8},skill:{n:'暗殺',p:.22,sure:true,m:3},pass:{crit:.2,eva:.1},d:'急所しか狙わない。'},
+  swordsaint:{rank:2,req:['berserker','kenou'],n:'剣聖',hue:10,main:'str',g:{str:2.8,int:.6,agi:2.2,vit:1.6,luk:1},skill:{n:'無双乱舞',p:.25,multi:2,m:2},d:'無数の斬撃。'},
+  dragoon:{rank:2,req:['paladin','hunter'],n:'竜騎士',hue:150,main:'str',g:{str:2.3,int:.8,agi:1.9,vit:2.2,luk:1.1},skill:{n:'ドラゴンダイブ',p:.2,m:10,pierce:true},pass:{taken:.75},d:'天から降り、防御ごと貫く。'},
+  phantom:{rank:2,req:['ninja','tycoon'],n:'大怪盗',hue:300,main:'agi',g:{str:1.2,int:1.4,agi:2.6,vit:1.1,luk:2.2},skill:{n:'怪盗の一閃',p:.3,steal:true,sm:5},pass:{gold:5,eva:.15},d:'お金が5倍。盗みも5倍。'},
+  luckking:{rank:2,req:['shark','merchant'],n:'豪運王',hue:50,main:'luk',g:{str:1,int:1.1,agi:1.3,vit:1.2,luk:3.6},skill:{n:'天運',p:.35,gamble:true},pass:{crit:.1,gold:3,casino:3},d:'運だけで世界を獲る。ギャンブル場の儲け3倍。'},
+  tennyo:{rank:2,req:['maiden','maestro'],n:'天女',hue:190,main:'int',g:{str:.8,int:2.4,agi:2.2,vit:1.1,luk:1.8},skill:{n:'天の調べ',p:.25,buff:true,bm:2.5},pass:{eva:.2},d:'舞と歌で攻撃力×2.5ずつ高まっていく。'},
+  chrono:{rank:2,req:['grandalch','bard'],n:'時空術師',hue:230,main:'int',g:{str:.6,int:2.7,agi:1.6,vit:1.2,luk:1.7},skill:{n:'時間停止',p:.3,stun:true},pass:{exp:2,drop:3},d:'時を止める。経験値2倍。'},
+  saint:{rank:2,req:['bishop','dancer'],n:'聖女',hue:330,main:'int',g:{str:.7,int:2.2,agi:1.4,vit:2.4,luk:1.6},skill:{n:'女神の祝福',p:.3,heal:true},pass:{taken:.45},d:'ほぼ倒れない。'},
+  overlord:{rank:2,req:['kenou','knight'],n:'覇王',hue:0,main:'str',g:{str:2.7,int:.8,agi:1.8,vit:2.3,luk:1.2},skill:{n:'覇王拳',p:.2,m:10},pass:{taken:.6},d:'力でねじ伏せる。'},
+  neet:{rank:3,hidden:true,byMaster:true,n:'無職',hue:0,main:'best',g:{str:1.3,int:1.3,agi:1.3,vit:1.3,luk:1.3},skill:{n:'本気を出す',p:.1,m:10},d:'働かずして、すべてを極めた者。一番高い能力で攻撃し、マスターした全職業の特性と技を使いこなす。'},
+  alchemist:{rank:0,n:'錬金術師',hue:260,main:'int',g:{str:.5,int:1.5,agi:.8,vit:.9,luk:1.2},skill:{n:'爆薬調合',p:.13,m:4},pass:{drop:3},d:'能力の実を3倍拾いやすい。'},
+};
+// アクセサリー（1つだけ装備。買うたびに+1強化）
+const ACC=[
+ ['ring','力の指輪','str'],['brace','知恵の腕輪','int'],['boots','疾風のブーツ','agi'],['charm','守りのお守り','vit'],['coin','幸運のコイン','luk'],
+ ['cat','招き猫','gold'],['book','経験の書','exp'],['earring','会心のピアス','crit'],['rosary','奇跡のロザリオ','mir'],['neck','実りの首飾り','drop']];
+// +1〜+10：+1は300G、以降1段ごとに110倍（全種+10で合計約7垓…見習い？の神々→転生5周ほど）
+// +11〜+20：無職だけの限界突破。バカ高い。
+const ACC_MAX=10, ACC_LIMIT=20;
+const accPrice=lv=>lv<ACC_MAX?300*Math.pow(110,lv):1e36*Math.pow(1000,lv-ACC_MAX);
+const accCap=()=>P.job==='neet'?ACC_LIMIT:ACC_MAX;
+const accSlots=()=>(P.job==='neet'||P.job==='apprentice')?ACC.length:[1,2,3][JOBS[P.job].rank];
+const accEqList=()=>{ if(!Array.isArray(P.accEq)) P.accEq=P.accEq?[P.accEq]:[]; return P.accEq; };
+function trimAcc(){ const l=accEqList(); if(l.length>accSlots()) l.length=accSlots(); }
+const accLv=k=>(P.acc&&P.acc[k])||0;
+const accEqs=()=>accEqList().map(k=>ACC.find(x=>x[0]===k)).filter(Boolean).map(a=>({key:a[0],n:a[1],t:a[2],lv:accLv(a[0])}));
+function accVal(t,lv){ if(KEYS.includes(t)) return Math.pow(1.5,lv); if(t==='crit') return Math.min(.6,.02*lv); if(t==='mir') return Math.min(.3,.004*lv); return 1+.5*lv; }
+function accDesc(t,lv){ if(KEYS.includes(t)) return `${KN[t]}×${fmtMul(accVal(t,lv))}`; if(t==='crit') return `会心率+${Math.round(accVal(t,lv)*100)}%`; if(t==='mir') return `奇跡率+${(accVal(t,lv)*100).toFixed(1)}%`;
+  return `${({gold:'お金',exp:'経験値',drop:'実の入手率'})[t]}×${accVal(t,lv).toFixed(1)}`; }
+const accStat=k=>accEqs().reduce((m,a)=>a.t===k?m*accVal(k,a.lv):m,1);
+const accMir=()=>accEqs().reduce((m,a)=>a.t==='mir'?m+accVal('mir',a.lv):m,0);
+const ps=(k,def)=>{ let v=psJob(k,def); accEqs().forEach(a=>{ if(a.t===k) v = k==='crit' ? v+accVal(k,a.lv) : v*accVal(k,a.lv); }); return v; };
+const psJob=(k,def)=>{
+  if(P.job==='neet'){ let v=def; Object.entries(JOBS).forEach(([jk,j])=>{ if(jk!=='neet'&&j.pass&&j.pass[k]!==undefined&&isMaster(jk)) v = (k==='crit'||k==='eva') ? v+j.pass[k] : v*j.pass[k]; }); return v; }
+  const p=JOBS[P.job].pass; return p&&p[k]!==undefined?p[k]:def};
+const mainKey=()=>{const m=JOBS[P.job].main; return m==='best'?KEYS.reduce((a,b)=>st(b)>st(a)?b:a):m};
+function canJob(k){const j=JOBS[k]; if(j.hidden) return !!P.unlocked[k]; if(j.rank===0) return true; if(j.rank===1) return isMaster(j.base); if(j.rank===2) return j.req.every(isMaster); return false;}
+function reqText(j){ if(j.rank===1) return `条件：${isMaster(j.base)?'✓':''}${JOBS[j.base].n}マスター`; if(j.rank===2) return '条件：'+j.req.map(k=>(isMaster(k)?'✓':'')+JOBS[k].n).join(' ＋ ')+' マスター'; return ''; }
+const isSecretJob=j=>j===SECRET_JOB||j==='neet';
+function pickSkill(){ const J=JOBS[P.job]; if(P.job!=='neet') return J.skill;
+  const pool=[J.skill].concat(Object.entries(JOBS).filter(([k,j])=>k!=='neet'&&isMaster(k)).map(([k,j])=>j.skill));
+  return pool[Math.floor(Math.random()*pool.length)]; }
+// ジョブレベル
+const JMAX=10, jneed=l=>10*l*l;
+const jl=k=>{P.jlv=P.jlv||{}; return P.jlv[k]||(P.jlv[k]={lv:1,exp:0})};
+const isMaster=k=>jl(k).lv>=JMAX;
+const masterCount=()=>Object.keys(JOBS).filter(isMaster).length;
+const masterMul=()=>Math.pow(1.05,masterCount());
+function gainJob(n,L){
+  const j=jl(P.job), J=JOBS[P.job]; if(j.lv>=JMAX) return '';
+  j.exp+=n; let up=false;
+  while(j.lv<JMAX&&j.exp>=jneed(j.lv)){j.exp-=jneed(j.lv); j.lv++; up=true;}
+  if(!up) return '';
+  if(j.lv>=JMAX){ j.exp=0; L.push(`<span class="mir">★ ${J.n}をマスターした！ 全ステータス×1.05（永続） ★</span>`);
+    { const g=Math.floor(enemyStats(P.maxArea).gold*50); P.gold+=g; P.earned=(P.earned||0)+g;
+      L.push(`<span class="y">マスター報酬：${J.main==='best'?'全能力×1.1':KN[J.main]+'×1.2'}（永続・全職業に有効）＋ ${fmt(g)}G</span>`); } checkMasterUnlock(L); return `${J.n}マスター`; }
+  L.push(`<span class="c">ジョブレベルアップ！ ${J.n} JLv${j.lv}</span>`); return `JLv${j.lv}`;
+}
+// 下位・中位・上位をすべてマスターすると隠し職業が現れる
+function checkMasterUnlock(L){
+  const open=Object.entries(JOBS).filter(([k,j])=>!j.hidden);
+  const ranksExist=[0,1,2].every(r=>open.some(([k,j])=>j.rank===r));
+  // 下位・中位・上位をすべてマスター → 見習い？
+  if(!P.unlocked.apprentice && ranksExist && open.every(([k])=>isMaster(k))){
+    P.unlocked.apprentice=true; L.push(`<span class="mir">すべての職業を極めた${esc(P.name)}の前に、どこからか 見習い？ が現れた…！（転職所へ）</span>`);
+  }
+  // 見習い？マスター＋闘技場制覇＋神々の座 → 無職
+  if(!P.unlocked.neet && P.unlocked.apprentice && isMaster('apprentice') && P.champ>=CHAMPS.length && ((P.godWins||0)>=1||(P.godTries||0)>=100)){
+    P.unlocked.neet=true; L.push(`<span class="mir">すべてを極めた先で、無職への道が開かれた…！（転職所へ）</span>`);
+  }
+}
+// 隠し要素
+const SECRET_JOB='apprentice', SECRET_TRIES=100;
+const AREAS=[
+ ['はじまりの草原',[['スライム','slime'],['おおコウモリ','bat'],['ぎょろ目','eye']]],
+ ['ささやきの森',[['森スライム','slime'],['吸血コウモリ','bat'],['さまよう骸骨','skull']]],
+ ['古びた坑道',[['鉱石スライム','slime'],['坑道の亡霊','skull'],['監視の眼','eye']]],
+ ['砂塵の砂漠',[['砂スライム','slime'],['砂漠の竜','dragon'],['乾いた頭蓋','skull']]],
+ ['氷結の洞窟',[['氷スライム','slime'],['氷コウモリ','bat'],['フロストドラゴン','dragon']]],
+ ['灼熱の火山',[['マグマスライム','slime'],['炎の眼','eye'],['火竜','dragon']]],
+ ['幽霊船',[['船幽霊','skull'],['深海の眼','eye'],['海竜','dragon']]],
+ ['天空の塔',[['天使スライム','slime'],['天空コウモリ','bat'],['聖竜','dragon']]],
+ ['魔界の門',[['魔界スライム','slime'],['冥府の骸骨','skull'],['魔眼','eye']]],
+ ['混沌の深淵',[['混沌の眼','eye'],['深淵竜','dragon'],['虚ろな骸','skull']]],
+ ['虚無の果て',[['虚無スライム','slime'],['終焉コウモリ','bat'],['終焉竜','dragon']]],
+ ['時空の狭間',[['時の眼','eye'],['時空竜','dragon'],['永劫の骸','skull']]],
+];
+const CHAMPS=['草原の王 ガルド','剣聖 ミラ','魔導王 ゼノス','獣王 バルガ','暗黒騎士 ヴァイス','竜騎士 シエラ','大賢者 オルド','覇王 レグナ','神殺し カイン','創世の王 アルファ'];
+const WPN=['こんぼう','銅の剣','鉄の剣','鋼の剣','銀の剣','ミスリルソード','炎の剣','氷の剣','雷鳴の剣','ドラゴンソード','聖剣','魔剣','神剣','星の剣','銀河の剣','宇宙剣','次元剣','虚無の剣','創世の剣','インフレソード'];
+const ARM=['布の服','皮の鎧','鎖かたびら','鉄の鎧','鋼の鎧','銀の鎧','ミスリルメイル','炎の鎧','氷の鎧','竜の鎧','聖なる鎧','魔の鎧','神の鎧','星の鎧','銀河の鎧','宇宙の鎧','次元の鎧','虚無の鎧','創世の鎧','インフレアーマー'];
+const SPR={
+ slime:["............","............",".....aa.....","....aaaa....","...aacaaa...","..aacaaaaa..","..adaaadaa..",".aadaaadaaa.",".aaaaaaaaaa.",".abaaaaaaba.","..bbbbbbbb..","............"],
+ bat:["............","............","a....aa....a","aa..aaaa..aa","aaa.dada.aaa","aaaaaaaaaaaa","ab.aaaaaa.ba","b..acaaca..b","....a..a....","............","............","............"],
+ skull:["....aaaa....","..aaaaaaaa..",".aaaaaaaaaa.",".aaddaaddaa.",".aaddaaddaa.",".aaaaaaaaaa.","..aaaabaaa..","...aaaaaa...","...acacaca..","...aaaaaa...","....b..b....","............"],
+ eye:["............","....bbbb....","..bbaaaabb..",".baaccccaab.",".baccccccab.","bacccddcccab","bacccddcccab",".baccccccab.","..bbaaaabb..","...b.bb.b...","..b..bb..b..","............"],
+ dragon:["........bb..",".......baab.","......baadab","..b..baaaaa.",".bab.baaa...","baaabaaa....","baaaaaaab...",".baaccaaab..","..baccaaaab.","...baaaabaab","...bb..bb.bb","............"],
+ knight:["....bbbb....","...baaaab...","...badadb...","...baaaab...","....bccb....",".bbbccccbbb.","..bacccab.c.","..bacccab.c.","..bbaaabb.c.","...ba.ab..b.","...ba.ab....","..bbb.bbb..."],
+};
+const U=['','万','億','兆','京','垓','秭','穣','溝','澗','正','載','極','恒河沙','阿僧祇','那由他','不可思議','無量大数'];
+
+// ============ ユーティリティ ============
+const $=s=>document.querySelector(s);
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const chance=p=>Math.random()<p;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function fmt(n){
+  n=Math.floor(n); if(!isFinite(n)) return '∞'; if(n<0) return '-'+fmt(-n);
+  if(n<10000) return String(n);
+  const e=Math.floor(Math.log10(n)/4);
+  if(e>=U.length) return n.toExponential(2).replace('e+','e');
+  const unit=Math.pow(10,4*e);
+  let hi=Math.floor(n/unit); let lo=Math.floor((n-hi*unit)/Math.pow(10,4*(e-1)));
+  if(hi>=10000) hi=9999; if(lo<0) lo=0;
+  return hi+U[e]+(lo>0?lo+U[e-1]:'');
+}
+const fmtMul=m=>m<1e4?m.toFixed(2):fmt(m);
+function drawSprite(cv,key,hue,flip){
+  const m=SPR[key]; cv.width=12; cv.height=12; const x=cv.getContext('2d'); x.clearRect(0,0,12,12);
+  const col={a:`hsl(${hue},70%,58%)`,b:`hsl(${hue},70%,28%)`,c:'#fff',d:'#111'};
+  for(let y=0;y<12;y++) for(let i=0;i<12;i++){const ch=m[y][i]; if(ch==='.')continue; x.fillStyle=col[ch]; x.fillRect(flip?11-i:i,y,1,1);}
+}
+
+// ============ セーブ ============
+const SAVE='inflation_adventure_v1', LOGSAVE='inflation_adventure_logs';
+let P=null, LOGS=[];
+function save(){try{checkAch()}catch(e){} try{localStorage.setItem(SAVE,JSON.stringify(P))}catch(e){}}
+function saveLogs(){try{localStorage.setItem(LOGSAVE,JSON.stringify(LOGS))}catch(e){}}
+// 読み込んだセーブを、決まった形（数値・真偽・既知のID）だけに整える。改ざんされたセーブコードで画面に変な表示や
+// スクリプトが入り込まないようにするため。
+function sanitizeSave(o){
+  const num=(v,d=0)=>{ v=Number(v); return Number.isFinite(v)?v:d; };
+  const int=(v,d=0)=>Math.floor(Math.max(0,num(v,d)));
+  const bool=v=>v===true||v===1;
+  const isKey=k=>typeof k==='string'&&/^[A-Za-z0-9_]{1,40}$/.test(k);
+  const numMap=(m,keyOk)=>{ const r={}; if(m&&typeof m==='object') for(const k of Object.keys(m)) if(isKey(k)&&(!keyOk||keyOk(k))) r[k]=num(m[k]); return r; };
+  const boolMap=(m,keyOk)=>{ const r={}; if(m&&typeof m==='object') for(const k of Object.keys(m)) if(isKey(k)&&(!keyOk||keyOk(k))&&m[k]) r[k]=true; return r; };
+  const isJob=k=>Object.prototype.hasOwnProperty.call(JOBS,k);
+  const r={};
+  r.name=String(o.name==null?'ななし':o.name).replace(/[\u0000-\u001f<>&"'`]/g,'').slice(0,10)||'ななし';
+  r.job=isJob(o.job)?o.job:'warrior';
+  ['lv','exp','gold','pts','wpn','arm','reb','maxArea','areaWins','champ','kills','maxDmg','battles','earned','maxLv','godTries','godWins','godMaxForm',
+   'jackpots','j777','jpin','jrou','hlBest','allInWins','kajiN','miracles'].forEach(k=>r[k]=num(o[k],0));
+  r.lv=Math.max(1,int(o.lv,1)); r.wpn=Math.min(GEAR_MAX,int(o.wpn)); r.arm=Math.min(GEAR_MAX,int(o.arm)); r.reb=int(o.reb); r.pts=int(o.pts);
+  r.maxArea=Math.min(AREA_MAX,int(o.maxArea)); r.areaWins=int(o.areaWins); r.champ=int(o.champ);
+  r.rebMul=Math.max(1,num(o.rebMul,1)); r.oneG=bool(o.oneG); r.areaDone=bool(o.areaDone);
+  r.base={}; KEYS.forEach(k=>r.base[k]=Math.max(0,num(o.base&&o.base[k],1)));
+  r.jlv={}; if(o.jlv&&typeof o.jlv==='object') for(const k of Object.keys(o.jlv)) if(isJob(k)&&o.jlv[k]) r.jlv[k]={lv:Math.min(JMAX,Math.max(1,int(o.jlv[k].lv,1))),exp:int(o.jlv[k].exp)};
+  r.acc=numMap(o.acc,k=>ACC.some(a=>a[0]===k)); Object.keys(r.acc).forEach(k=>r.acc[k]=Math.min(ACC_LIMIT,int(r.acc[k])));
+  const eq=Array.isArray(o.accEq)?o.accEq:(o.accEq?[o.accEq]:[]); r.accEq=eq.filter(k=>ACC.some(a=>a[0]===k)).slice(0,ACC.length);
+  r.lacc=boolMap(o.lacc,k=>LACC.some(a=>a[0]===k));
+  r.secret=numMap(o.secret,isJob); r.jobB=numMap(o.jobB,isJob); r.train=numMap(o.train,isJob);
+  r.blessed=boolMap(o.blessed,isJob); r.unlocked=boolMap(o.unlocked,isJob); r.kiwami=boolMap(o.kiwami,isJob); r.been=boolMap(o.been,isJob);
+  r.locB=numMap(o.locB,k=>/^(a\d+|god|champ|work|train_\w+)$/.test(k));
+  r.ach=boolMap(o.ach);
+  if(o.work&&typeof o.work==='object'){ const f=Math.min(WORK.length-1,int(o.work.floor)); r.work={floor:f,hp:Math.min(WORK[f].hp,Math.max(0,num(o.work.hp,WORK[f].hp))),cleared:bool(o.work.cleared),dmg:num(o.work.dmg)}; }
+  return r;
+}
+function load(){
+  try{const s=localStorage.getItem(SAVE); if(s) P=sanitizeSave(JSON.parse(s));}catch(e){P=null}
+  try{const l=localStorage.getItem(LOGSAVE); if(l) LOGS=JSON.parse(l)||[];}catch(e){LOGS=[]}
+  if(P){ if(!JOBS[P.job]) P.job='warrior'; P.secret=P.secret||{}; P.blessed=P.blessed||{}; P.unlocked=P.unlocked||{}; P.jlv=P.jlv||{}; P.acc=P.acc||{}; accEqList(); if(P.job==='apprentice'||P.blessed.apprentice||P.secret.apprentice) P.unlocked.apprentice=true; }
+}
+
+// ============ セーブコード（書き出し・読み込み） ============
+// IA2: 実績を名前の一覧にまとめ、小数を丸め、deflateで圧縮してURL安全なbase64に（IA1は旧形式・読み込みのみ）
+const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=8192)s+=String.fromCharCode.apply(null,u8.subarray(i,i+8192));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
+const ub64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
+async function pipe(u8,stream){ const w=stream.writable.getWriter(); w.write(u8); w.close(); return new Uint8Array(await new Response(stream.readable).arrayBuffer()); }
+async function makeCode(){
+  const o=JSON.parse(JSON.stringify(P)); o.ach=Object.keys(P.ach||{}).join(',');
+  const json=JSON.stringify(o,(k,v)=>typeof v==='number'&&!Number.isInteger(v)?+v.toPrecision(10):v);
+  if(typeof CompressionStream==='undefined') return 'IA1:'+btoa(unescape(encodeURIComponent(JSON.stringify(P))));
+  return 'IA2:'+b64u(await pipe(new TextEncoder().encode(json),new CompressionStream('deflate-raw')));
+}
+async function parseCode(t){ t=(t||'').replace(/\s+/g,''); let o;
+  if(t.length>200000) throw new Error('セーブコードが長すぎます');
+  if(t.startsWith('IA2:')){ if(typeof DecompressionStream==='undefined') throw new Error('このブラウザでは読み込めません（ブラウザを最新にしてください）');
+    o=JSON.parse(new TextDecoder().decode(await pipe(ub64u(t.slice(4)),new DecompressionStream('deflate-raw')))); }
+  else if(t.startsWith('IA1:')) o=JSON.parse(decodeURIComponent(escape(atob(t.slice(4)))));
+  else throw new Error('セーブコードの形式が違います');
+  if(!o||typeof o!=='object'||!o.name||!o.job||!o.base) throw new Error('セーブデータが壊れています');
+  if(typeof o.ach==='string'){ const a={}; o.ach.split(',').filter(Boolean).forEach(id=>a[id]=1); o.ach=a; }
+  return sanitizeSave(o); }
+let impArm={};
+async function importSave(w){
+  const msg=$('#impMsg'+w), btn=$('#impBtn'+w);
+  let o; try{ o=await parseCode($('#impText'+w).value); }catch(e){ msg.innerHTML=`<span class="r">${esc(e.message||'読み込めませんでした')}</span>`; return; }
+  if(P&&!impArm[w]){ impArm[w]=true; btn.textContent='本当に上書きする？（もう一度押す）'; btn.classList.add('sel');
+    msg.innerHTML=`<span class="o">いまのデータ（${esc(P.name)} Lv${P.lv}）は、${esc(o.name)} Lv${o.lv} で上書きされます</span>`; return; }
+  impArm[w]=false;
+  try{ localStorage.setItem(SAVE,JSON.stringify(o)); }catch(e){}
+  P=o; LOGS=[]; saveLogs(); const tmp=P; load(); if(!P) P=tmp; ACHS=null; save();
+  msg.innerHTML='<span class="g">読み込みました！</span>'; setTimeout(goMain,400);
+}
+async function copyCode(){
+  const code=await makeCode(), ta=$('#expText'), m=$('#expMsg'); ta.value=code; ta.classList.remove('hide');
+  try{ await navigator.clipboard.writeText(code); m.innerHTML=`<span class="g">コピーしました（${code.length}文字）。メモアプリなどに貼って保存してください。</span>`; }
+  catch(e){ ta.focus(); ta.select(); m.innerHTML='<span class="o">自動でコピーできませんでした。下の文字を長押しして全部コピーしてください。</span>'; }
+}
+
+// ============ 能力計算 ============
+// マスター報酬：その職業のメイン能力×1.2（無職は全能力×1.1）／修練場1000回：メイン能力×2（無職・見習い？は全能力×1.5）
+function jobBonus(k){ let m=1; for(const [jk,j] of Object.entries(JOBS)){
+    const all=j.main==='best';
+    if(isMaster(jk)) m*= all?1.1:(j.main===k?1.2:1);
+    if(P.kiwami&&P.kiwami[jk]) m*= (all||j.hidden)?1.5:(j.main===k?2:1);
+  } return m; }
+let _jbCache=null, _jbKey='';
+const jobBonusC=k=>{ const key=JSON.stringify([P.jlv,P.kiwami]); if(key!==_jbKey){_jbKey=key;_jbCache={};} return _jbCache[k]??(_jbCache[k]=jobBonus(k)); };
+// 伝説の装飾品（無職専用・装備枠とは別に、持っていれば無職のとき自動で効く）
+const LACC=[
+ // 価格nullは店では買えず、ハローワークの関門突破で手に入る（floor=その関門を越えたら）
+ ['tie','勝負ネクタイ',null,'ハローワークの社会的信用×2',3,'ハローワークで、ある関門を越えた者に贈られるらしい…'],
+ ['glasses','知的なメガネ',null,'言葉に詰まらなくなる・圧縮ダメージ×1.5',6,'ハローワークで、さらに先の関門を越えた者に贈られるらしい…'],
+ ['watch','高級腕時計',1e80,'ハローワークの1戦が15ターンに'],
+ ['shoes','磨かれた革靴',1e120,'全能力×10'],
+];
+const hasL=k=>P.job==='neet'&&!!(P.lacc&&P.lacc[k]);
+function grantLacc(L){ const w=P.work; if(!w) return; const fl=w.cleared?99:w.floor; LACC.forEach(a=>{ if(a[4]&&fl>=a[4]&&!(P.lacc&&P.lacc[a[0]])){ P.lacc=P.lacc||{}; P.lacc[a[0]]=true; if(L) L.push(`<span class="mir">★ 伝説の装飾品「${a[1]}」を贈られた！（${a[3]}） ★</span>`); } }); }
+function buyLacc(k){ const a=LACC.find(x=>x[0]===k); if(!a||a[2]===null||P.job!=='neet'||(P.lacc&&P.lacc[k])||P.gold<a[2]) return; P.gold-=a[2]; P.lacc=P.lacc||{}; P.lacc[k]=true; save(); renderStatus(); panel('acc'); }
+const st=k=>P.base[k]*P.rebMul*masterMul()*accStat(k)*jobBonusC(k)*(hasL('shoes')?10:1);
+const RMUL=[1,3,10,10]; const rmul=()=>RMUL[JOBS[P.job].rank];
+// +99（20種＋99段＝119段目）に到達すると伝説の装備に置き換わる
+const GEAR_MAX=119;
+const LEG_W='桁あふれの剣 オーバーフロー', LEG_A='桁あふれの鎧 アンダーフロー';
+const legW=()=>P.wpn>=GEAR_MAX, legA=()=>P.arm>=GEAR_MAX;
+const wpnPow=w=>w>=GEAR_MAX?12*Math.pow(5,GEAR_MAX)*1e4:w?12*Math.pow(5,w):0;
+const armPow=a=>a>=GEAR_MAX?6*Math.pow(5,GEAR_MAX)*1e4:a?6*Math.pow(5,a):0;
+const wpnPrice=w=>100*Math.pow(7,w);
+const armPrice=a=>80*Math.pow(7,a);
+const itemName=(list,i)=>i<=0?'なし':i>=GEAR_MAX?(list===WPN?LEG_W:LEG_A):(i<=list.length?list[i-1]:list[list.length-1]+'+'+(i-list.length));
+function atk(){return (st(mainKey())+wpnPow(P.wpn))*(1+P.lv*0.08)*(1+0.05*(jl(P.job).lv-1))*rmul()}
+function def(){return (st('vit')*0.5+armPow(P.arm))*rmul()}
+function maxhp(){return Math.floor((st('vit')*12+P.lv*10*P.rebMul+armPow(P.arm)*3)*rmul())}
+const need=lv=>Math.floor(15*Math.pow(1.3,lv-1));
+const rebReq=()=>30+20*P.reb;
+function enemyStats(t){return {hp:30*Math.pow(5.5,t),atk:10*Math.pow(5.2,t),def:4*Math.pow(5,t),agi:6+t*9,exp:12*Math.pow(4.3,t),gold:25*Math.pow(6,t)}}
+const AREA_MAX=12+299; // 次元の彼方 第300層が最終
+const areaName=t=>t<AREAS.length?AREAS[t][0]:t>=AREA_MAX?'次元の果て（第300層）':`次元の彼方 第${t-AREAS.length+1}層`;
+const AREA_WINS=10;
+const areaLv=t=>Math.max(1,Math.round(1+t*5.6));
+function makeEnemy(t){
+  const a=AREAS[t%AREAS.length]; const i=Math.floor(Math.random()*3); const [nm,sp]=a[1][i];
+  const name=t<AREAS.length?nm:t>=AREA_MAX?`次元の果ての${nm}`:`第${t-AREAS.length+1}次元の${nm}`;
+  return Object.assign(enemyStats(t+i*0.15),{name,sp,hue:(t*47+i*30)%360});
+}
+const champName=k=>k<CHAMPS.length?CHAMPS[k]:`${k-CHAMPS.length+2}代目 無限王`;
+function makeChamp(k){
+  const s=enemyStats(0.8+k*1.25); s.hp*=4; s.atk*=1.3; s.def*=1.3; s.gold*=10;
+  const rl=areaLv(0.8+k*1.25); s.exp=need(rl)*(Math.pow(1.3,5)-1)/0.3; // 推奨Lvの人が+5Lv上がる量
+  return Object.assign(s,{name:champName(k),sp:'knight',hue:(k*67+20)%360,champ:true,lv:areaLv(0.8+k*1.25)});
+}
+function makeSecret(){
+  const s=enemyStats(14+(P?P.reb:0)*3); s.hp*=5; s.atk*=2; s.def*=2; s.exp*=3; s.gold*=3;
+  const r=P?P.reb:0; return Object.assign(s,{name:r?`創世神竜 アルケイオン・第${r+1}形態`:'創世神竜 アルケイオン',sp:'dragon',hue:(45+r*60)%360,secret:true});
+}
+// 危険度：自分が倒すまでのターン数と、倒されるまでのターン数の比
+function danger(e){
+  const pa=atk()*1.5, ea=e.atk*1.5*ps('taken',1);
+  const pd=Math.max(pa-e.def*.5,pa*.08,1), ed=Math.max(ea-def()*.5,ea*.08,1);
+  const r=(maxhp()/ed)/(e.hp/pd);
+  if(r>=5) return '<span class="g">楽勝</span>';
+  if(r>=1.5) return '<span class="c">適正</span>';
+  if(r>=.6) return '<span class="o">強敵</span>';
+  return '<span class="r">無謀</span>';
+}
+
+// ============ 画面 ============
+function show(id){['sTitle','sMain','sBattle'].forEach(s=>$('#'+s).classList.toggle('hide',s!==id)); window.scrollTo(0,0)}
+let pickedJob='warrior', slimeTaps=[];
+const UNLOCK_KEY='inflation_adventure_unlock';
+function titleUnlocked(){try{return localStorage.getItem(UNLOCK_KEY)==='1'}catch(e){return false}}
+function tapSlime(cv){
+  const now=Date.now(); slimeTaps=slimeTaps.filter(t=>now-t<2500); slimeTaps.push(now);
+  if(slimeTaps.length>=5 && !titleUnlocked()){
+    try{localStorage.setItem(UNLOCK_KEY,'1')}catch(e){} window.__unlock=true; pickedJob='apprentice'; renderTitle();
+    $('#jobDesc').innerHTML='<span class="mir">どこからか 見習い？ が現れた…！</span><br>'+JOBS.apprentice.d;
+  }
+}
+function renderTitle(){
+  const jp=$('#jobPick'); jp.innerHTML='';
+  Object.entries(JOBS).forEach(([k,j])=>{ if(j.rank>0) return; if(j.hidden&&!(titleUnlocked()||window.__unlock)) return;
+    const b=document.createElement('button'); b.textContent=j.n; if(k===pickedJob) b.classList.add('sel');
+    b.onclick=()=>{pickedJob=k; renderTitle()}; jp.appendChild(b);});
+  $('#jobDesc').textContent=JOBS[pickedJob].d;
+  const ts=$('#titleSpr'); ts.innerHTML='';
+  const ANIM={slime:'a-jump',bat:'a-flap',knight:'a-spin',skull:'a-shake',dragon:'a-roar'};
+  [['slime',100],['bat',280],['knight',210],['skull',40],['dragon',0]].forEach(([s,h],i)=>{const c=document.createElement('canvas'); drawSprite(c,s,h,i<2);
+    c.addEventListener('pointerdown',()=>{ c.classList.remove(ANIM[s]); void c.offsetWidth; c.classList.add(ANIM[s]); if(i===0) tapSlime(c); });
+    c.addEventListener('animationend',()=>c.classList.remove(ANIM[s])); ts.appendChild(c)});
+  const bc=$('#btnCont'); bc.disabled=!P;
+  $('#contInfo').innerHTML=P?`${esc(P.name)}　${JOBS[P.job].n} Lv${P.lv}${P.reb?`　転生${P.reb}`:''}`:'セーブデータがありません';
+  $('#newWarn').classList.toggle('hide',!P);
+  if(!P) $('#newBox').classList.remove('hide');
+}
+let newArm=false;
+function openNew(){ $('#newBox').classList.remove('hide'); $('#newBox').scrollIntoView({behavior:'smooth'}); setTimeout(()=>$('#inName').focus(),300); }
+function startNew(){
+  const nm0=$('#inName').value.trim();
+  if(!nm0){ $('#nameMsg').classList.remove('hide'); $('#inName').focus(); return; }
+  $('#nameMsg').classList.add('hide');
+  if(P&&!newArm){ newArm=true; $('#btnStart').textContent='本当に消してはじめる？（もう一度押す）'; $('#btnStart').classList.add('sel'); return; }
+  newArm=false; $('#btnStart').textContent='冒険をはじめる'; $('#btnStart').classList.remove('sel');
+  const name=nm0.slice(0,10);
+  const g=JOBS[pickedJob].g; const base={}; KEYS.forEach(k=>base[k]=Math.round(5+g[k]*4));
+  P={name,job:pickedJob,lv:1,exp:0,gold:100,pts:0,base,wpn:0,arm:0,reb:0,rebMul:1,maxArea:0,areaWins:0,champ:0,kills:0,maxDmg:0,battles:0,secret:{},blessed:{},unlocked:JOBS[pickedJob].hidden?{[pickedJob]:true}:{},jlv:{}};
+  LOGS=[]; saveLogs(); save(); goMain();
+}
+function goMain(){ closeModal(); holdEnd(); if(!P) return; show('sMain'); renderStatus(); panel(curPanel||'area'); }
+function renderStatus(){
+  const J=JOBS[P.job];
+  let h=`<div class="row"><b class="y">${esc(P.name)}</b><span>${J.n}<span class="tag">${RANKS[J.rank]}</span> Lv${P.lv}${P.reb?` <span class="c">転生${P.reb}</span>`:''}</span></div>`;
+  h+=`<div class="small">EXP ${fmt(P.exp)} / ${fmt(need(P.lv))}</div><div class="bar"><i style="width:${Math.min(100,P.exp/need(P.lv)*100)}%"></i></div>`;
+  { const j=jl(P.job); h+= j.lv>=JMAX ? `<div class="small"><span class="mir">★${J.n} MASTER</span>　マスター数 ${masterCount()}（全能力×${masterMul().toFixed(2)}）</div>`
+     : `<div class="small">${J.n} JLv${j.lv}/${JMAX}　JEXP ${j.exp}/${jneed(j.lv)}</div><div class="bar"><i style="width:${j.exp/jneed(j.lv)*100}%;background:linear-gradient(90deg,#7de0ff,#a5f)"></i></div>`; }
+  h+=`<div class="grid2 small"><div>HP <span class="g">${fmt(maxhp())}</span></div><div>所持金 <span class="y">${fmt(P.gold)}G</span></div>`;
+  h+=`<div>攻撃 <span class="r">${fmt(atk())}</span></div><div>防御 <span class="c">${fmt(def())}</span></div></div>`;
+  h+=`<div class="grid small" style="margin-top:4px">`+KEYS.map(k=>`<div>${KN[k]} ${fmt(st(k))}</div>`).join('')+`</div>`;
+  h+=`<div class="small">武器：${itemName(WPN,P.wpn)}　防具：${itemName(ARM,P.arm)}</div>`;
+  { const l=accEqs(); h+=`<div class="small">装飾品（${l.length}/${accSlots()}枠）：${l.length?l.map(a=>`${a.n}+${a.lv}`).join('、'):'なし'}</div>`;
+    const lg=LACC.filter(a=>hasL(a[0])); if(lg.length) h+=`<div class="small mir">伝説：${lg.map(a=>a[1]).join('、')}</div>`; }
+  if(P.blessed[P.job]) h+=`<div class="small mir">★ 奇跡の加護を受けている ★</div>`;
+  if(P.pts>0) h+=`<div class="small y">ステータスポイントが ${P.pts} 残っています</div>`;
+  $('#status').innerHTML=h;
+}
+
+let curPanel='area', resetArm=false, areaTab='adv', areaPage=0;
+const AREA_PER_PAGE=6;
+function panel(p,arg){
+  curPanel=p; const el=$('#panel'); let h='';
+  if(p==='area'){
+    if(arg) areaTab=arg;
+    const tabs=[['adv','冒険'],['train','修練場'],['god','神々の座']].concat(P.unlocked.neet?[['work','ハローワーク']]:[]);
+    if(!tabs.some(x=>x[0]===areaTab)) areaTab='adv';
+    h=`<div class="grid" style="grid-template-columns:repeat(${tabs.length},1fr);margin-bottom:8px">`+tabs.map(([k,n])=>`<button class="${areaTab===k?'sel':''}" style="font-size:13px;padding:7px 2px" onclick="panel('area','${k}')">${n}</button>`).join('')+`</div>`;
+    if(areaTab==='work'){
+    { const w=workState(), F=WORK[w.floor];
+      h+=`<div class="row"><div><span class="mir">ハローワーク</span> <span class="small">無職専用</span>`+
+        (w.cleared?`<div class="small mir">★ 内定済み（完走）</div>`:
+        `<div class="small">第${w.floor+1}/${WORK.length}関門「${F.n}」 残り ${fmt(w.hp)} / ${fmt(F.hp)}</div><div class="bar"><i style="width:${(1-w.hp/F.hp)*100}%;background:linear-gradient(90deg,#f55,#fd5)"></i></div>`+
+        `<div class="small c">ダメージ圧縮：log₁₀(ダメージ)² × 社会的信用 ×${trust().toFixed(2)}</div>`+
+        `<div class="small">`+trustParts().map(([n,v,c])=>`${n} ${c}→×${v.toFixed(2)}`).join('<br>')+`</div>`)+
+        `</div><button ${P.job!=='neet'||w.cleared?'disabled':''} onclick="fightWork()">${P.job==='neet'?'挑む':'無職のみ'}</button></div>`;
+    }
+      h+=`<div class="small" style="margin-top:6px">ここではダメージが圧縮される。社会的信用を上げると削りやすくなる。</div>`;
+    } else if(areaTab==='train'){
+    { const J=JOBS[P.job], n=trainN(P.job), mk=P.kiwami&&P.kiwami[P.job];
+      h+=`<div class="row"><div><span class="c">${J.n}の修練場</span> <span class="small">ジョブ専用</span><div class="small">今の強さに合わせた相手。ジョブ経験値3倍・実2倍</div><div class="small">修練 ${fmt(n)}${mk?'回 <span class="mir">極意会得済</span>':'/1000'}　${n<100?'(100回で師範の褒美)':n<500?'(500回で秘伝書)':n<1000?'(1000回で極意)':''}</div></div><button onclick="fightTrain()">修練</button></div>`; }
+      h+=`<div class="small" style="margin-top:6px">修練場は今の職業ごとに別。行き詰まったらここでジョブレベルとお金を稼ごう。</div>`;
+    } else if(areaTab==='god'){
+    const sec=makeSecret();
+    h+=`<div class="row"><div><span class="r">神々の座</span> <span class="small">目安Lv ？？？ / 危険度 <span class="r">無謀</span></span><div class="small">${P.reb?`転生のたびに神は姿を変え、より強大になる…（第${P.reb+1}形態）`:'人の身では到底たどり着けぬ領域…'}</div></div><button onclick="fightSecret()">挑む</button></div>`;
+    } else {
+      const total=P.maxArea+1, pages=Math.max(1,Math.ceil(total/AREA_PER_PAGE));
+      if(areaPage>=pages) areaPage=pages-1; if(areaPage<0) areaPage=0;
+      h+= P.areaDone ? `<div class="small mir" style="margin-bottom:4px">★ 次元の果てを踏破済み ★</div>` : `<div class="small" style="margin-bottom:4px">${P.maxArea>=AREA_MAX?'最終エリア！ ':''}最深エリアで${AREA_WINS}勝すると${P.maxArea>=AREA_MAX?'踏破':'次のエリアが解放'}（<span class="y">${P.areaWins}/${AREA_WINS}</span>）</div>`;
+      const top=P.maxArea-areaPage*AREA_PER_PAGE, bottom=Math.max(0,top-AREA_PER_PAGE+1);
+      for(let t=top;t>=bottom;t--){const e=enemyStats(t);
+        h+=`<div class="row"><div>${t===P.maxArea&&!P.areaDone?'<span class="o">【未攻略】</span>':''}${t===AREA_MAX?'<span class="mir">【最終】</span>':''}${areaName(t)}<div class="small">目安Lv${areaLv(t)} / 危険度 ${danger(e)}　累計${fmt(locTotal('a'+t))}戦</div></div><button onclick="fightArea(${t})">戦う</button></div>`;}
+      if(pages>1) h+=`<div class="grid" style="margin-top:8px;align-items:center"><button ${areaPage<=0?'disabled':''} onclick="areaPage--;panel('area')">◀ 前</button><div style="text-align:center" class="small">${areaPage+1} / ${pages}</div><button ${areaPage>=pages-1?'disabled':''} onclick="areaPage++;panel('area')">次 ▶</button></div>`;
+    }
+  } else if(p==='champ'){
+    const c=makeChamp(P.champ);
+    h=`<h2>闘技場</h2><div class="small">現チャンピオン</div><div class="row"><b class="y">${c.name}</b><button onclick="fightChamp()">挑戦</button></div>`;
+    h+=`<div class="small">目安Lv${c.lv} / 危険度 ${danger(c)}</div><div class="small">HP ${fmt(c.hp)}　攻撃 ${fmt(c.atk)}　防御 ${fmt(c.def)}</div><div class="small">撃破した王者：${P.champ}人</div>`;
+  } else if(p==='wpn'||p==='arm'){
+    const isW=p==='wpn', cur=isW?P.wpn:P.arm;
+    h=`<h2>${isW?'武器屋':'防具屋'}</h2><div class="small">装備中：${itemName(isW?WPN:ARM,cur)}（${isW?'攻撃':'防御'}+${fmt(isW?wpnPow(cur):armPow(cur))}）</div>`;
+    if(cur>=GEAR_MAX){ h+=`<div class="mir" style="margin:8px 0">★ 伝説の${isW?'剣':'鎧'}を装備中 ★</div><div class="small">${isW?'攻撃力×1万、会心の一撃のダメージがさらに×10。':'防御力×1万、受けるダメージ1/10。'}この先に、もう装備は存在しない。</div>`; el.innerHTML=h; return; }
+    { const mx=maxTier(isW); if(mx>cur) h+=`<button class="y" style="width:100%;margin:6px 0" onclick="buy('${p}',${mx})">買えるだけ買う → ${mx>=GEAR_MAX?(isW?'インフレソード':'インフレアーマー')+'+99 → ？？？':itemName(isW?WPN:ARM,mx)}（${fmt(isW?wpnPrice(mx):armPrice(mx))}G）</button>`; }
+    for(let i=cur+1;i<=Math.min(cur+3,GEAR_MAX);i++){const pr=isW?wpnPrice(i):armPrice(i);
+      h+=`<div class="row"><div>${i>=GEAR_MAX?`${isW?'インフレソード':'インフレアーマー'}+99 <span class="mir">→ ？？？</span>`:itemName(isW?WPN:ARM,i)}<div class="small">${isW?'攻撃':'防御'}+${fmt(isW?wpnPow(i):armPow(i))}　${fmt(pr)}G</div></div><button ${P.gold<pr?'disabled':''} onclick="buy('${p}',${i})">買う</button></div>`;}
+  } else if(p==='acc'){
+    const eq=accEqList(), slots=accSlots(), cap=accCap();
+    h=`<h2>装飾品屋</h2><div class="small">装備枠：<span class="y">${eq.length}/${slots}</span>（下位職1・中位職2・上位職3・見習い？と無職は全部）。買うたびに+1強化、最大+${ACC_MAX}。${P.job==='neet'?'<span class="mir">無職は限界突破で+'+ACC_LIMIT+'まで</span>':''}</div>`;
+    ACC.forEach(([k,n,t])=>{ const lv=accLv(k), pr=accPrice(lv), on=eq.includes(k), max=lv>=cap;
+      h+=`<div class="row"><div>${n}${lv?` +${lv}`:''}${on?' <span class="y">(装備中)</span>':''}<div class="small">${lv?accDesc(t,lv):''}${max?'　<span class="y">MAX</span>':`${lv?' → ':''}${accDesc(t,lv+1)}　${lv>=ACC_MAX?'<span class="mir">限界突破</span> ':''}${fmt(pr)}G`}</div></div>
+      <div style="white-space:nowrap"><button ${max||P.gold<pr?'disabled':''} onclick="buyAcc('${k}')">${max?'MAX':lv?'強化':'買う'}</button> <button ${!lv||(!on&&eq.length>=slots)?'disabled':''} onclick="eqAcc('${k}')">${on?'外す':'装備'}</button></div></div>`; });
+    if(P.unlocked.neet){
+      h+=`<div class="mir" style="margin-top:10px">伝説の装飾品（無職専用）</div><div class="small">装備枠とは別。持っていれば、無職のときだけ効果が出る。${P.job!=='neet'?'<span class="o">今は無職ではないので買えない</span>':''}</div>`;
+      LACC.forEach(([k,n,pr,d,fl,hint])=>{ const own=P.lacc&&P.lacc[k];
+        if(pr===null){ h+=`<div class="row"><div>${own?n+' <span class="y">(所持)</span>':'<span style="opacity:.7">？？？</span>'}<div class="small">${own?d:hint}</div></div><button disabled>${own?'所持':'非売品'}</button></div>`; return; }
+        h+=`<div class="row"><div>${n}${own?' <span class="y">(所持)</span>':''}<div class="small">${d}${own?'':'　'+fmt(pr)+'G'}</div></div><button ${own||P.job!=='neet'||P.gold<pr?'disabled':''} onclick="buyLacc('${k}')">${own?'所持':'買う'}</button></div>`; });
+    }
+  } else if(p==='job'){
+    h=`<h2>転職所</h2><div class="small">ステータスはそのままで、条件を満たした職業ならいつでも転職できます（無料）。中位職は対応する下位職のマスター、上位職は2つの職業のマスターが条件。ジョブレベルは勝つたびに上がり、JLv${JMAX}でマスター。マスターするたびに全能力×1.05（永続）。</div><div class="small">マスター数：${masterCount()}</div>`;
+    RANKS.forEach((rn,r)=>{
+      h+=`<div class="y" style="margin-top:8px">${rn}</div>`;
+      const list=Object.entries(JOBS).filter(([k,j])=>j.rank===r&&(!j.hidden||P.unlocked[k]));
+      if(!list.length){ h+= r===3 ? `<div class="small">？？？</div>` : `<div class="small">準備中…（一定の強さに達した者だけが就ける）</div>`; return; }
+      list.forEach(([k,j])=>{
+        const ok=canJob(k);
+        if(!ok){ const hint = j.rank===2 && !j.req.some(isMaster);
+          h+=`<div class="row"><div><span style="opacity:.6">${hint?'？？？':j.n}</span><div class="small">${hint?'条件：？？？ ＋ ？？？':reqText(j)}</div></div><button disabled>転職</button></div>`; return; }
+        h+=`<div class="row"><div>${j.n} <span class="small">${isMaster(k)?'<span class="mir">MASTER</span>':'JLv'+jl(k).lv}　戦闘${fmt((P.jobB||{})[k]||0)}回</span>${k===P.job?' <span class="y">(現在)</span>':''}${P.blessed[k]?' <span class="mir">★</span>':''}<div class="small">${j.d}<br>メイン：${j.main==='best'?'一番高い能力':KN[j.main]}／技：${j.skill.n}<br><span class="y">マスター報酬：${j.main==='best'?'全能力×1.1':KN[j.main]+'×1.2'}</span>　<span class="c">修練${fmt(trainN(k))}回${P.kiwami&&P.kiwami[k]?'（極意）':''}</span>${j.rank>0&&j.rank<3?`<br><span class="o">攻撃・防御・HP ×${RMUL[j.rank]}</span>`:''}</div></div><button ${k===P.job?'disabled':''} onclick="changeJob('${k}')">転職</button></div>`;});
+    });
+  } else if(p==='reb'){
+    const mul=1+P.lv/20;
+    h=`<h2>転生の祭壇</h2><div class="small">Lv${rebReq()}以上で転生できます（転生するたびに必要Lvが+20）。レベルは1に戻りますが、全ステータスに<b class="y">×${mul.toFixed(2)}</b>の永続倍率がかかります（現在の倍率 ×${fmtMul(P.rebMul)}）。装備・お金・エリアは引き継ぎ。</div><div class="small o" style="margin-top:4px">※転生すると「奇跡の加護」は失われ、神々の座の神はさらに強大な姿に変わる。</div>`;
+    h+=`<button style="width:100%;margin-top:8px" ${P.lv<rebReq()?'disabled':''} onclick="rebirth()">転生する</button>`;
+  } else if(p==='stat'){
+    h=`<h2>能力振り（残り ${P.pts}pt）</h2>`;
+    KEYS.forEach(k=>{h+=`<div class="row"><div>${KN[k]} <span class="small">基礎 ${fmt(P.base[k])}</span></div><div><button ${P.pts<1?'disabled':''} onclick="addPt('${k}',1)">+1</button> <button ${P.pts<1?'disabled':''} onclick="addPt('${k}',${P.pts})">+全部</button></div></div>`});
+    h+=`<div class="small" style="margin-top:6px">レベルが上がるたびに3pt。メイン能力：<span class="y">${KN[mainKey()]}</span>（攻撃力に直結）</div>`;
+  } else if(p==='log'){
+    if(arg!==undefined && LOGS[arg]){
+      const l=LOGS[arg];
+      h=`<h2>${l.head}</h2><div style="margin-bottom:6px">${l.sum}</div><div class="logbox">${l.lines.map(x=>`<p>${x}</p>`).join('')}</div><button style="width:100%;margin-top:8px" onclick="panel('log')">一覧に戻る</button>`;
+    } else {
+      h=`<h2>戦闘ログ（直近${LOGS.length}件）</h2>`;
+      if(!LOGS.length) h+=`<div class="small">まだ戦闘していません。</div>`;
+      LOGS.forEach((l,i)=>h+=`<div class="row"><div class="small">${l.head}<br>${l.sum}</div><button onclick="panel('log',${i})">見る</button></div>`);
+    }
+  } else if(p==='casino'){
+    if(arg) casinoGame=arg; h=casinoHTML();
+  } else if(p==='ach'){
+    h=achHTML();
+  } else if(p==='rec'){
+    h=`<h2>記録</h2>`;
+    [['最大ダメージ',fmt(P.maxDmg)],['倒した敵',fmt(P.kills)],['戦闘回数',fmt(P.battles)],['撃破した王者',P.champ+'人'],['神々の座 撃破',(P.godWins||0)+'回'],['神々の座 挑戦',(P.godTries||0)+'回'],['修練場 勝利（合計）',fmt(Object.values(P.train||{}).reduce((a,b)=>a+b,0))+'回'],['会得した極意',Object.keys(P.kiwami||{}).length+'個'],['ギャンブル大当たり',(P.jackpots||0)+'回'],[P.unlocked.neet?'ハローワーク':'？？？',P.unlocked.neet?(P.work?(P.work.cleared?'内定（完走）':`第${P.work.floor+1}関門`):'―'):'？？？'],['転生回数',P.reb+'回'],['到達エリア',areaName(P.maxArea)]].forEach(([a,b])=>h+=`<div class="row"><span>${a}</span><span class="y">${b}</span></div>`);
+    h+=`<div class="y" style="margin-top:10px">セーブの書き出し・読み込み</div>
+      <div class="small">ブラウザのデータが消えたときや、別のスマホに移すときのために、セーブコードを保存しておけます。</div>
+      <button style="width:100%;margin-top:6px" onclick="copyCode()">セーブコードをコピー</button>
+      <div id="expMsg" class="small" style="text-align:center;margin-top:4px"></div>
+      <textarea id="expText" class="hide" rows="4" readonly style="width:100%;font-size:11px;background:#000;color:#fff;border:2px solid #fff;border-radius:5px;margin-top:4px"></textarea>
+      <button style="width:100%;margin-top:6px" onclick="$('#impBoxR').classList.toggle('hide')">セーブコードから読み込む</button>
+      <div id="impBoxR" class="hide" style="margin-top:6px">
+        <textarea id="impTextR" rows="4" style="width:100%;font-size:11px;background:#000;color:#fff;border:2px solid #fff;border-radius:5px"></textarea>
+        <button id="impBtnR" style="width:100%;margin-top:4px" onclick="importSave('R')">読み込む</button>
+        <div id="impMsgR" class="small" style="text-align:center;margin-top:4px"></div>
+      </div>`;
+    h+=`<button style="width:100%;margin-top:10px" onclick="resetSave()">${resetArm?'本当に消す？もう一度押すと消去':'データを消して最初から'}</button>`;
+  }
+  el.innerHTML=h;
+}
+// 今の所持金で買える一番上の段階（1回分の値段だけ払って直接その段階へ）
+function maxTier(isW){ const base=isW?100:80; if(P.gold<base*7) return isW?P.wpn:P.arm; return Math.min(GEAR_MAX, Math.max(isW?P.wpn:P.arm, Math.floor(Math.log(P.gold/base)/Math.log(7)+1e-9))); }
+function buy(p,i){ if(i>GEAR_MAX) return; const wasW=legW(), wasA=legA();const pr=p==='wpn'?wpnPrice(i):armPrice(i); if(P.gold<pr)return; P.gold-=pr; if(p==='wpn')P.wpn=i; else P.arm=i; save(); renderStatus(); panel(p);}
+function buyAcc(k){const lv=accLv(k), pr=accPrice(lv); if(lv>=accCap()||P.gold<pr) return; P.gold-=pr; P.acc=P.acc||{}; accEqList(); P.acc[k]=lv+1; const l=accEqList(); if(!l.includes(k)&&l.length<accSlots()) l.push(k); save(); renderStatus(); panel('acc');}
+function eqAcc(k){ if(!accLv(k)) return; const l=accEqList(), i=l.indexOf(k); if(i>=0) l.splice(i,1); else if(l.length<accSlots()) l.push(k); save(); renderStatus(); panel('acc');}
+function changeJob(k){if(!canJob(k))return; P.job=k; trimAcc(); save(); renderStatus(); panel('job');}
+function addPt(k,n){n=Math.min(n,P.pts); P.base[k]+=n; P.pts-=n; save(); renderStatus(); panel('stat');}
+function rebirth(){if(P.lv<rebReq())return; P.rebMul*=1+P.lv/20; P.reb++; P.lv=1; P.exp=0; P.secret={}; P.blessed={}; save(); renderStatus(); panel('reb');}
+function resetSave(){ if(!resetArm){resetArm=true; panel('rec'); return;} resetArm=false; try{localStorage.removeItem(SAVE);localStorage.removeItem(LOGSAVE)}catch(e){} P=null; LOGS=[]; curPanel='area'; renderTitle(); show('sTitle'); }
+
+// ============ ギャンブル場 ============
+let casinoGame='hl', casMsg='', betPct=.1, betLeave1=false, busy=false;
+const casMul=()=>ps('casino',1);
+const gamb=()=>casMul()>1;
+function betAmt(){ if(P.gold<1) return 0; if(betLeave1) return Math.max(0,P.gold-1); return Math.max(1,Math.min(P.gold,Math.floor(P.gold*betPct))); }
+function setBet(v){ if(busy) return; if(v<0) betLeave1=true; else {betLeave1=false; betPct=v;} panel('casino'); }
+// 戻ってくる総額（ギャンブラーは儲け分が1.5倍）
+function payout(bet,mult){ const prof=bet*mult-bet; return Math.floor(bet+(prof>0?prof*casMul():prof)); }
+let lastAllIn=false;
+function takeBet(){ const b=betAmt(); lastAllIn=b>0&&b===P.gold; if(b<1){casMsg='<span class="r">賭けるお金がない！</span>'; return 0;} P.gold-=b; return b; }
+function settle(bet,mult,txt){ const ret=payout(bet,mult); P.gold+=ret; if(ret>bet){P.earned=(P.earned||0)+ret-bet; if(lastAllIn) P.allInWins=(P.allInWins||0)+1;} if(P.gold===1) P.oneG=true;
+  casMsg = mult>0 ? `${txt} <span class="g">+${fmt(ret-bet)}G</span>` : `${txt} <span class="r">-${fmt(bet)}G</span>`;
+  if(P.gold===1) casMsg+=`<div class="small o">所持金がちょうど1Gになった…</div>`;
+  save(); renderStatus(); }
+function betUI(lock){
+  const o=[[.01,'1%'],[.1,'10%'],[.5,'半分'],[1,'全額']];
+  return `<div class="small">賭け金：<span class="y">${fmt(betAmt())}G</span>${gamb()?` <span class="c">（${JOBS[P.job].n}特典：儲け${+casMul().toFixed(2)}倍）</span>`:''}</div>
+  <div class="grid" style="grid-template-columns:repeat(5,1fr)">`+o.map(([v,l])=>`<button ${lock?'disabled':''} class="${!betLeave1&&betPct===v?'sel':''}" onclick="setBet(${v})">${l}</button>`).join('')+
+  `<button ${lock?'disabled':''} class="${betLeave1?'sel':''}" style="font-size:11px" onclick="setBet(-1)">1G残す</button></div>`;
+}
+function casinoHTML(){
+  let h=`<h2>ギャンブル場</h2><div class="small">所持金 <span class="y">${fmt(P.gold)}G</span></div>`;
+  h+=`<div class="grid" style="grid-template-columns:repeat(4,1fr);margin:6px 0">`+[['hl','ハイ&ロー'],['slot','スロット'],['rou','ルーレット'],['dice','丁半']].map(([k,n])=>`<button ${busy?'disabled':''} class="${casinoGame===k?'sel':''}" style="font-size:12px;padding:7px 2px" onclick="casMsg='';panel('casino','${k}')">${n}</button>`).join('')+`</div>`;
+  if(casinoGame==='hl') h+=hlHTML();
+  if(casinoGame==='slot') h+=slotHTML();
+  if(casinoGame==='rou') h+=rouHTML();
+  if(casinoGame==='dice') h+=diceHTML();
+  h+=`<div id="casMsg">${casMsg}</div>`;
+  return h;
+}
+// --- ハイ&ロー ---
+const SUITS=['♠','♥','♦','♣'], CN=['','A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+let hl={active:false,card:0,suit:0,bet:0,pot:0,streak:0,prev:null};
+const drawCard=()=>[1+Math.floor(Math.random()*13),Math.floor(Math.random()*4)];
+const cardHTML=(n,s)=>`<span class="card ${s===1||s===2?'red':''}">${SUITS[s]}${CN[n]}</span>`;
+function hlHTML(){
+  let h=`<div class="small">次のカードが今より上か下かを当てる。当たるたびに賞金2倍。同じ数字は引き分け。</div>`+betUI(hl.active);
+  h+=`<div class="big">${hl.prev?cardHTML(...hl.prev)+' → ':''}${hl.active?cardHTML(hl.card,hl.suit):'<span class="card back">?</span>'}</div>`;
+  if(hl.active){
+    h+=`<div class="small" style="text-align:center">賞金 <span class="y">${fmt(hl.pot)}G</span>（${hl.streak}連勝中）</div>`;
+    h+=`<div class="grid" style="margin-top:6px"><button onclick="hlGuess(1)">ハイ ▲</button><button onclick="hlGuess(0)">ロー ▼</button><button ${hl.streak?'':'disabled'} onclick="hlCollect()">降りる</button></div>`;
+  } else h+=`<button style="width:100%;margin-top:6px" onclick="hlStart()">カードを引く</button>`;
+  return h;
+}
+function hlStart(){ const b=takeBet(); if(!b){panel('casino');return;} const [n,s]=drawCard(); hl={active:true,card:n,suit:s,bet:b,pot:b,streak:0,prev:null}; casMsg=''; save(); renderStatus(); panel('casino'); }
+function hlGuess(hi){
+  const [n,s]=drawCard(); hl.prev=[hl.card,hl.suit];
+  if(n===hl.card){ casMsg='同じ数字！ 引き分け、続行。'; }
+  else if(hi?n>hl.card:n<hl.card){ hl.pot*=2; hl.streak++; P.hlBest=Math.max(P.hlBest||0,hl.streak); casMsg=`<span class="g">当たり！ 賞金 ${fmt(hl.pot)}G</span>`; }
+  else { hl.card=n; hl.suit=s; hl.active=false; settle(hl.bet,0,`ハズレ…（${hl.streak}連勝で終了）`); panel('casino'); return; }
+  hl.card=n; hl.suit=s; panel('casino');
+}
+function hlCollect(){ hl.active=false; settle(hl.bet,hl.pot/hl.bet,`${hl.streak}連勝で降りた！`); hl.prev=null; panel('casino'); }
+// --- スロット ---
+const SYM=[['7',1,100],['BAR',2,40],['★',3,20],['🔔',4,10],['🍉',5,8],['🍒',6,5]];
+let reels=['7','7','7'];
+function pickSym(){let r=Math.random()*21; for(const x of SYM){r-=x[1]; if(r<0) return x[0]} return '🍒'}
+function slotHTML(){
+  return `<div class="small">3つ揃えば配当。777で×100！ 🍒が2つでも×2。</div>`+betUI(busy)+
+   `<div id="reels">${reels.map(r=>`<div class="reel">${r}</div>`).join('')}</div>`+
+   `<button style="width:100%" ${busy?'disabled':''} onclick="slotSpin()">スピン</button>`+
+   `<div class="small" style="margin-top:6px">配当：7=×100　BAR=×40　★=×20　🔔=×10　🍉=×8　🍒=×5</div>`;
+}
+function slotSpin(){
+  if(busy) return; const b=takeBet(); if(!b){panel('casino');return;}
+  busy=true; casMsg=''; renderStatus(); panel('casino');
+  const fin=[pickSym(),pickSym(),pickSym()], stop=[8,13,18]; let tick=0;
+  const iv=setInterval(()=>{ tick++;
+    for(let i=0;i<3;i++) reels[i]=tick<stop[i]?pickSym():fin[i];
+    const el=document.getElementById('reels'); if(el) el.innerHTML=reels.map(r=>`<div class="reel">${r}</div>`).join('');
+    if(tick>=18){ clearInterval(iv); busy=false;
+      let m=0, t='ハズレ…';
+      if(fin[0]===fin[1]&&fin[1]===fin[2]){ m=SYM.find(x=>x[0]===fin[0])[2]; t=fin[0]==='7'?'<span class="mir">★★ 777 大当たり！！ ★★</span>':`${fin[0]}が揃った！ ×${m}`; if(fin[0]==='7'){ P.jackpots=(P.jackpots||0)+1; P.j777=(P.j777||0)+1; } }
+      else if(fin.filter(x=>x==='🍒').length===2){ m=2; t='🍒が2つ！ ×2'; }
+      settle(b,m,t); if(curPanel==='casino') panel('casino'); }
+  },50);
+}
+// --- ルーレット ---
+const REDN=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+let rouBet='red', rouRes=null;
+const ROU_T={red:['赤',2],black:['黒',2],odd:['奇数',2],even:['偶数',2],d1:['1-12',3],d2:['13-24',3],d3:['25-36',3]};
+function rouLabel(b){return b.startsWith('n')?`${b.slice(1)}番（×36）`:`${ROU_T[b][0]}（×${ROU_T[b][1]}）`}
+function rouHTML(){
+  let h=`<div class="small">0〜36のどこに止まるか。赤黒・奇偶は×2、12個ごとは×3、一点賭けは×36。</div>`+betUI(busy);
+  h+=`<div class="big" id="rouNum">${rouRes===null?'―':`<span class="${REDN.includes(rouRes)?'r':rouRes===0?'g':''}">${rouRes}</span>`}</div>`;
+  h+=`<div class="grid" style="grid-template-columns:repeat(4,1fr)">`+Object.entries(ROU_T).map(([k,[n]])=>`<button ${busy?'disabled':''} class="${rouBet===k?'sel':''}" onclick="rouBet='${k}';panel('casino')">${n}</button>`).join('')+`</div>`;
+  h+=`<div class="numgrid">`+Array.from({length:37},(_,i)=>`<button ${busy?'disabled':''} class="${rouBet==='n'+i?'sel':REDN.includes(i)?'redn':''}" onclick="rouBet='n${i}';panel('casino')">${i}</button>`).join('')+`</div>`;
+  h+=`<button style="width:100%;margin-top:6px" ${busy?'disabled':''} onclick="rouSpin()">${rouLabel(rouBet)}に賭けて回す</button>`;
+  return h;
+}
+function rouSpin(){
+  if(busy) return; const b=takeBet(); if(!b){panel('casino');return;}
+  busy=true; casMsg=''; renderStatus(); panel('casino');
+  const fin=Math.floor(Math.random()*37); let tick=0;
+  const iv=setInterval(()=>{ tick++; const n=tick<20?Math.floor(Math.random()*37):fin;
+    const el=document.getElementById('rouNum'); if(el) el.innerHTML=`<span class="${REDN.includes(n)?'r':n===0?'g':''}">${n}</span>`;
+    if(tick>=20){ clearInterval(iv); busy=false; rouRes=fin;
+      let win=false, m=0;
+      if(rouBet.startsWith('n')){ win=+rouBet.slice(1)===fin; m=36; if(win){ P.jackpots=(P.jackpots||0)+1; P.jrou=(P.jrou||0)+1; } }
+      else { m=ROU_T[rouBet][1];
+        win= fin!==0 && ({red:REDN.includes(fin),black:!REDN.includes(fin),odd:fin%2===1,even:fin%2===0,d1:fin<=12,d2:fin>12&&fin<=24,d3:fin>24})[rouBet]; }
+      settle(b,win?m:0,win?`${fin}！ 当たり ×${m}`:`${fin}… ハズレ`); if(curPanel==='casino') panel('casino'); }
+  },60);
+}
+// --- 丁半 ---
+const DICE=['','⚀','⚁','⚂','⚃','⚄','⚅'];
+let dice=[1,1];
+function diceHTML(){
+  return `<div class="small">サイコロ2つの合計が偶数なら丁、奇数なら半。当たれば×2。丁でピンゾロ(1・1)なら×10！</div>`+betUI(busy)+
+   `<div class="big" id="diceBox" style="font-size:56px">${DICE[dice[0]]}${DICE[dice[1]]}</div>`+
+   `<div class="grid2"><button ${busy?'disabled':''} onclick="diceRoll(0)">丁（偶数）</button><button ${busy?'disabled':''} onclick="diceRoll(1)">半（奇数）</button></div>`;
+}
+function diceRoll(odd){
+  if(busy) return; const b=takeBet(); if(!b){panel('casino');return;}
+  busy=true; casMsg=''; renderStatus(); panel('casino');
+  const d=()=>1+Math.floor(Math.random()*6); const fin=[d(),d()]; let tick=0;
+  const iv=setInterval(()=>{ tick++; dice=tick<12?[d(),d()]:fin;
+    const el=document.getElementById('diceBox'); if(el) el.textContent=DICE[dice[0]]+DICE[dice[1]];
+    if(tick>=12){ clearInterval(iv); busy=false;
+      const sum=fin[0]+fin[1], isOdd=sum%2===1; let m=0, t;
+      if(!odd&&fin[0]===1&&fin[1]===1){ m=10; t='<span class="mir">ピンゾロの丁！ ×10！</span>'; P.jackpots=(P.jackpots||0)+1; P.jpin=(P.jpin||0)+1; }
+      else if(isOdd===!!odd){ m=2; t=`${sum}の${isOdd?'半':'丁'}！ 当たり`; }
+      else t=`${sum}の${isOdd?'半':'丁'}… ハズレ`;
+      settle(b,m,t); if(curPanel==='casino') panel('casino'); }
+  },60);
+}
+
+
+// ============ ハローワーク（無職専用エンドコンテンツ） ============
+// ダメージは log10(生ダメージ)^2 × 社会的信用 に圧縮される。HPは戦闘をまたいで持ち越し。
+const WORK=[
+ {n:'書類選考の壁',sp:'eye',hue:200,hp:1.2e+06,q:['「お祈り申し上げます」','「空白期間について教えてください」','履歴書が突き返された！']},
+ {n:'一次面接官',sp:'skull',hue:30,hp:2.4e+06,q:['「自己PRを1分でお願いします」','「弊社を志望した理由は？」','「趣味は何ですか？」']},
+ {n:'グループディスカッション',sp:'bat',hue:120,hp:4.8e+06,q:['意識の高い学生が議論を仕切りはじめた！','「それってあなたの感想ですよね」','タイムキーパーを押し付けられた！']},
+ {n:'圧迫面接官',sp:'eye',hue:0,hp:9.6e+06,q:['「で？」','「それ、他の会社でもいいよね？」','ため息をつかれた！']},
+ {n:'最終面接の役員',sp:'knight',hue:280,hp:1.92e+07,q:['「10年後どうなっていたいですか？」','「最後に何か質問は？」','役員がスマホを見ている…']},
+ {n:'内定者懇親会',sp:'slime',hue:60,hp:3.84e+07,q:['乾杯の挨拶を振られた！','「出身どこ？」','二次会への圧力をかけられた！']},
+ {n:'新人研修',sp:'skull',hue:180,hp:7.68e+07,q:['大声で社訓を叫ばされた！','名刺交換の練習が終わらない！','「報連相は？」']},
+ {n:'配属ガチャ',sp:'eye',hue:300,hp:1.536e+08,q:['希望と真逆の部署が光り輝いている…','「とりあえず3年は頑張ろう」','転勤の二文字がよぎる！']},
+ {n:'繁忙期',sp:'dragon',hue:15,hp:3.072e+08,q:['終電を逃した！','「ちょっといい？」と声をかけられた！','メールが100通届いた！']},
+ {n:'社会',sp:'dragon',hue:0,hp:1.2e+09,q:['社会の荒波が押し寄せる！','「普通はさぁ…」','税金と年金の請求書が舞い込んだ！','満員電車に押しつぶされる！']},
+];
+function workState(){ if(!P.work) P.work={floor:0,hp:WORK[0].hp,cleared:false,dmg:0}; return P.work; }
+function trustParts(){
+  return [
+    ['転生回数',1+P.reb*0.1,`${P.reb}回`],
+    ['闘技場（11人目以降）',1+Math.max(0,P.champ-CHAMPS.length)*0.05,`${Math.max(0,P.champ-CHAMPS.length)}人`],
+    ['神々の座 撃破',1+(P.godWins||0)*0.2,`${P.godWins||0}回`],
+    ['ギャンブル大当たり',1+(P.jackpots||0)*0.3,`${P.jackpots||0}回`],
+  ].concat(hasL('tie')?[['勝負ネクタイ',2,'着用']]:[]);
+}
+const trust=()=>trustParts().reduce((a,x)=>a*x[1],1);
+const compress=(d,M)=>Math.floor(Math.pow(Math.log10(d+1),2)*M);
+function makeWork(){ const w=workState(), f=WORK[Math.min(w.floor,WORK.length-1)];
+  return {name:f.n,sp:f.sp,hue:f.hue,hp:w.hp,atk:0,def:0,agi:40,gold:0,exp:0,work:true,floor:w.floor}; }
+function fightWork(f){ if(P.job!=='neet'||workState().cleared) return; last={type:'work'}; runBattle(makeWork(),-3,f); }
+function simulateWork(e,fast){
+  const w=workState(), F=WORK[w.floor], M=trust()*(hasL('glasses')?1.5:1), nm=esc(P.name), TURNS=hasL('watch')?15:10;
+  const c={e,L:[],php:maxhp(),mhp:maxhp(),ehp:w.hp,gold:0,buff:1,stun:false,forceMiracle:false,kaji:false,work:true,M,dealt:0};
+  const L=c.L;
+  L.push(`<b class="y">第${w.floor+1}関門：${F.n}</b>（残りHP ${fmt(w.hp)} / ${fmt(F.hp)}）`);
+  L.push(`<span class="small c">ここではダメージが圧縮される…　社会的信用 ×${M.toFixed(2)}</span>`);
+  for(let turn=1;turn<=TURNS&&c.ehp>0;turn++){
+    L.push(`<span class="hpl">― ターン${turn} ―</span>`);
+    if(c.stun){c.stun=false;}
+    if(!hasL('glasses')&&chance(.15)){ L.push(`${nm}は言葉に詰まった！`); }
+    else { playerHit(c); if(c.ehp>0&&st('agi')>e.agi*2&&chance(.25)){L.push(`<span class="sk">連続攻撃！</span>`); playerHit(c);} }
+    if(c.ehp>0) L.push(`${F.n}：${F.q[Math.floor(Math.random()*F.q.length)]}`);
+  }
+  P.battles++;
+  w.hp=Math.max(0,c.ehp); w.dmg=(w.dmg||0)+c.dealt;
+  let sum=`<span class="c">与えた圧縮ダメージ ${fmt(c.dealt)}</span> / 残り ${fmt(w.hp)}`;
+  if(w.hp<=0){
+    const gold=Math.floor(enemyStats(20+w.floor*3).gold), exp=Math.floor(enemyStats(20+w.floor*3).exp);
+    P.gold+=gold; P.earned=(P.earned||0)+gold; gainExp(exp,L);
+    L.push(`<span class="mir">★ ${F.n}を突破した！ ★</span>`);
+    w.floor++; grantLacc(L); w.floor--;
+    L.push(`<span class="rw">${fmt(exp)}の経験値と ${fmt(gold)}G を手に入れた！</span>`);
+    w.floor++;
+    if(w.floor>=WORK.length){
+      w.cleared=true; w.floor=WORK.length-1;
+      ['<span class="mir">★★★★★ 内 定 ★★★★★</span>',
+       `<span class="mir">${nm}は、ついに社会に勝った。</span>`,
+       '<span class="y">数えきれない転生、すべての職業、神々との戦い、ギャンブル…</span>',
+       '<span class="y">そのすべてが、たった一枚の内定通知書のためにあった。</span>',
+       `<span class="mir">${nm}は「社会人」の称号を手に入れた！</span>`,
+       '<span class="small">― 完 ―　…しかし冒険（と残業）はこれからだ。</span>'].forEach(x=>L.push(x));
+      sum='<span class="mir">★ 内定！ ハローワーク完走 ★</span>';
+    } else { w.hp=WORK[w.floor].hp; sum=`<span class="mir">${F.n}を突破！</span> 次は「${WORK[w.floor].n}」`; }
+  }
+  const head=`ハローワーク：${F.n}（無職 Lv${P.lv}）`;
+  LOGS.unshift({head,sum,lines:L}); if(LOGS.length>20) LOGS.length=20;
+  save(); if(!fast) saveLogs();
+  return {L,sum};
+}
+
+// ============ 実績 ============
+const T=(id,cat,n,d,f,vis)=>({id,cat,n,d,f,vis});
+const MONEY=[[1e4,'小金持ち'],[1e8,'億り人'],[1e12,'兆の壁'],[1e16,'京を稼ぐ者'],[1e20,'垓の富'],[1e32,'溝に沈む金'],[1e44,'載せきれない'],[1e68,'無量大数長者']];
+const DMG=[[1e4,'万の一撃'],[1e8,'億の一撃'],[1e12,'兆の一撃'],[1e16,'京の一撃'],[1e20,'垓の一撃'],[1e68,'無量大数の一撃'],[1e100,'グーゴル']];
+function buildAch(){
+  const A=[];
+  // 職業（下位職は最初から見える道しるべ）
+  Object.entries(JOBS).filter(([k,j])=>j.rank===0&&!j.hidden).forEach(([k,j])=>A.push(T('be_'+k,'職業',`${j.n}になった`,`${j.n}に就いた`,()=>!!(P.been&&P.been[k]),true)));
+  // 闘技場
+  A.push(T('ch1','闘技場','初めての勝利','闘技場で王者を1人倒した',()=>P.champ>=1));
+  A.push(T('ch5','闘技場','名のある闘士','闘技場で王者を5人倒した',()=>P.champ>=5));
+  A.push(T('ch10','闘技場','闘技場制覇','闘技場の全王者10人を倒した',()=>P.champ>=10));
+  A.push(T('ch20','闘技場','無限王殺し','闘技場で王者を20人倒した',()=>P.champ>=20));
+  [[30,'闘技場の主'],[50,'五十代目の玉座'],[75,'王者狩り'],[100,'百代の覇者']].forEach(([v,n])=>A.push(T('ch'+v,'闘技場',n,`闘技場で王者を${v}人倒した`,()=>P.champ>=v)));
+  // 神々の座
+  A.push(T('g1','神々の座','無謀な挑戦','神々の座に挑んだ',()=>(P.godTries||0)>=1));
+  A.push(T('g100','神々の座','百度参り','神々の座に累計100回挑んだ',()=>(P.godTries||0)>=100));
+  A.push(T('gw1','神々の座','神々の座制覇','創世神竜を倒した',()=>(P.godWins||0)>=1));
+  A.push(T('gw5','神々の座','神殺し','創世神竜を5回倒した',()=>(P.godWins||0)>=5));
+  A.push(T('gw10','神々の座','神々の天敵','創世神竜を10回倒した',()=>(P.godWins||0)>=10));
+  A.push(T('gw20','神々の座','神話の終わり','創世神竜を20回倒した',()=>(P.godWins||0)>=20));
+  A.push(T('g500','神々の座','五百度参り','神々の座に累計500回挑んだ',()=>(P.godTries||0)>=500));
+  A.push(T('g1000','神々の座','千度参り','神々の座に累計1000回挑んだ',()=>(P.godTries||0)>=1000));
+  [[5,'第5形態撃破'],[10,'第10形態撃破'],[20,'第20形態撃破']].forEach(([v,n])=>A.push(T('gf'+v,'神々の座',n,`第${v}形態以上の創世神竜を倒した`,()=>(P.godMaxForm||0)>=v)));
+  A.push(T('bless','神々の座','奇跡の加護','奇跡の加護を授かった',()=>Object.keys(P.blessed||{}).length>0||(P.ach&&P.ach.bless)));
+  // 隠し職業・ハローワーク
+  A.push(T('appr','隠し職業','見習い？','見習い？を見つけた',()=>!!P.unlocked.apprentice));
+  A.push(T('neetU','隠し職業','無職の存在','無職への道が開かれた',()=>!!P.unlocked.neet));
+  A.push(T('neetJ','隠し職業','職業：無職','無職になった',()=>P.job==='neet'));
+  A.push(T('work1','隠し職業','書類選考通過','ハローワークの関門を1つ突破した',()=>P.work&&(P.work.floor>=1||P.work.cleared)));
+  A.push(T('work','隠し職業','内定','社会に勝った',()=>P.work&&P.work.cleared));
+  // ギャンブル
+  A.push(T('j777','ギャンブル','777','スロットで777を揃えた',()=>(P.j777||0)>=1));
+  A.push(T('jpin','ギャンブル','ピンゾロの丁','丁半でピンゾロを出した',()=>(P.jpin||0)>=1));
+  A.push(T('jrou','ギャンブル','一点的中','ルーレットの一点賭けを当てた',()=>(P.jrou||0)>=1));
+  A.push(T('hl10','ギャンブル','読み切り','ハイ&ローで10連勝した',()=>(P.hlBest||0)>=10));
+  A.push(T('allin','ギャンブル','全額勝負','全額を賭けて勝った',()=>(P.allInWins||0)>=1));
+  A.push(T('jp30','ギャンブル','ギャンブル狂','大当たりを30回出した',()=>(P.jackpots||0)>=30));
+  A.push(T('one','ギャンブル','残り1G','所持金がちょうど1Gになった',()=>!!P.oneG));
+  A.push(T('kaji','ギャンブル','火事場のクソ力','火事場のクソ力を発動させた',()=>(P.kajiN||0)>=1));
+  // 奇跡
+  A.push(T('mir1','奇跡','奇跡','奇跡を起こした',()=>(P.miracles||0)>=1));
+  A.push(T('mir100','奇跡','奇跡の安売り','奇跡を100回起こした',()=>(P.miracles||0)>=100));
+  // お金
+  MONEY.forEach(([v,n],i)=>A.push(T('m'+i,'お金',n,`累計${fmt(v)}G稼いだ`,()=>(P.earned||0)>=v)));
+  // ダメージ
+  DMG.forEach(([v,n],i)=>A.push(T('d'+i,'ダメージ',n,`${fmt(v)}以上のダメージを与えた`,()=>P.maxDmg>=v)));
+  // レベル・転生・戦闘
+  [[50,'一人前'],[100,'百戦錬磨'],[200,'レベルの向こう側'],[300,'レベルカンスト？']].forEach(([v,n])=>A.push(T('lv'+v,'レベル',n,`Lv${v}に到達した`,()=>(P.maxLv||P.lv)>=v)));
+  [[1,'生まれ変わり'],[5,'輪廻'],[10,'輪廻転生'],[30,'転生しすぎ']].forEach(([v,n])=>A.push(T('rb'+v,'転生',n,`転生を${v}回した`,()=>P.reb>=v)));
+  [[1000,'千戦'],[10000,'万戦'],[100000,'十万戦']].forEach(([v,n])=>A.push(T('bt'+v,'戦闘',n,`${fmt(v)}回戦った`,()=>P.battles>=v)));
+  [[12,'時空の狭間へ'],[21,'次元の彼方 第10層'],[61,'次元の彼方 第50層'],[111,'次元の彼方 第100層'],[211,'次元の彼方 第200層'],[AREA_MAX,'次元の果てへ']].forEach(([v,n])=>A.push(T('ar'+v,'冒険',n,`${areaName(v)}に到達した`,()=>P.maxArea>=v)));
+  // 装飾品
+  A.push(T('w99','装備','インフレソード+99','武器を極限まで鍛え上げ、伝説の剣「オーバーフロー」を手にした',()=>legW()));
+  A.push(T('a99','装備','インフレアーマー+99','防具を極限まで鍛え上げ、伝説の鎧「アンダーフロー」を身にまとった',()=>legA()));
+  A.push(T('leg','装備','桁あふれの勇者','伝説の剣と鎧をそろえた',()=>legW()&&legA()));
+  A.push(T('areaDone','冒険','完全踏破','次元の果て（第300層）を踏破した',()=>!!P.areaDone));
+  LACC.forEach(([k,n])=>A.push(T('la_'+k,'装飾品',n,`伝説の装飾品「${n}」を手に入れた`,()=>!!(P.lacc&&P.lacc[k]))));
+  A.push(T('laall','装飾品','社会人の身だしなみ','伝説の装飾品をすべてそろえた',()=>LACC.every(a=>P.lacc&&P.lacc[a[0]])));
+  A.push(T('acc10','装飾品','フル装備','全装飾品を+10にした',()=>ACC.every(a=>accLv(a[0])>=10)));
+  A.push(T('acc20','装飾品','限界の先','全装飾品を+20にした',()=>ACC.every(a=>accLv(a[0])>=20)));
+  // 職業マスター
+  [['下位職',0],['中位職',1],['上位職',2]].forEach(([rn,r])=>{
+    Object.entries(JOBS).filter(([k,j])=>j.rank===r&&!j.hidden).forEach(([k,j])=>A.push(T('ms_'+k,'マスター',`${j.n}マスター`,`${j.n}をマスターした`,()=>isMaster(k))));
+    A.push(T('msall'+r,'マスター',`${rn}を極めし者`,`${rn}をすべてマスターした`,()=>Object.entries(JOBS).filter(([k,j])=>j.rank===r&&!j.hidden).every(([k])=>isMaster(k))));
+  });
+  A.push(T('ms_apprentice','マスター','見習い？マスター','見習い？をマスターした',()=>isMaster('apprentice')));
+  A.push(T('ms_neet','マスター','無職マスター','無職をマスターした',()=>isMaster('neet')));
+  A.push(T('tr1','修練場','初めての修練','修練場で1回勝った',()=>Object.values(P.train||{}).some(v=>v>=1)));
+  Object.entries(JOBS).forEach(([k,j])=>A.push(T('kw_'+k,'修練場',`${j.n}の極意`,`${j.n}の修練場で1000回勝った`,()=>!!(P.kiwami&&P.kiwami[k]))));
+  A.push(T('kwall','修練場','百芸の達人','すべての職業の極意を会得した',()=>Object.keys(JOBS).every(k=>P.kiwami&&P.kiwami[k])));
+  A.push(T('all','マスター','インフレの果て','すべての実績を解除した',()=>ACHS.filter(a=>a.id!=='all').every(a=>P.ach[a.id])));
+  return A;
+}
+let ACHS=null, toastT=null, toastQ=[];
+function checkAch(){
+  if(!P) return; try{grantLacc(null)}catch(e){} P.been=P.been||{}; P.been[P.job]=true; if(!ACHS) ACHS=buildAch(); P.ach=P.ach||{};
+  for(const a of ACHS){ if(!P.ach[a.id] && a.f()){ P.ach[a.id]=Date.now(); toastQ.push(a.n); } }
+  if(toastQ.length&&!toastT) nextToast();
+}
+function nextToast(){ const el=$('#toast'); if(!toastQ.length){ el.classList.add('hide'); toastT=null; return; }
+  const n=toastQ.shift(), more=toastQ.length; el.innerHTML=`🏆 実績解除：<b class="y">${n}</b>${more>3?`<span class="small">（ほか${more}件）</span>`:''}`; if(more>3) toastQ=[];
+  el.classList.remove('hide'); toastT=setTimeout(nextToast,1800); }
+function achHTML(){
+  if(!ACHS) ACHS=buildAch(); P.ach=P.ach||{};
+  const got=ACHS.filter(a=>P.ach[a.id]).length;
+  let h=`<h2>実績 ${got} / ${ACHS.length}</h2><div class="bar"><i style="width:${got/ACHS.length*100}%"></i></div>`;
+  const cats=[...new Set(ACHS.map(a=>a.cat))];
+  cats.forEach(c=>{ const list=ACHS.filter(a=>a.cat===c), g=list.filter(a=>P.ach[a.id]).length;
+    h+=`<div class="y" style="margin-top:8px">${c} <span class="small">${g}/${list.length}</span></div>`;
+    list.forEach(a=>{ const ok=P.ach[a.id];
+      h+= ok ? `<div class="row"><div>🏆 ${a.n}<div class="small">${a.d}</div></div></div>`
+             : a.vis ? `<div class="row"><div style="opacity:.6">□ ${a.n}<div class="small">${a.d}（未達成）</div></div></div>`
+             : `<div class="row"><div style="opacity:.5">？？？<div class="small">？？？</div></div></div>`; });
+  });
+  return h;
+}
+
+// ============ 修練場（職業ごとの寄り道エリア。自分の強さに合わせた相手） ============
+const TRAIN_FOE=['修練の木人','修練の鉄人','修練の魔導人形','修練の影'];
+const trainN=k=>(P.train&&P.train[k])||0;
+function makeTrain(){
+  const J=JOBS[P.job], hp0=maxhp(), pa=atk()*1.5;
+  const e={name:`${J.n}の${TRAIN_FOE[J.rank]}`,sp:'knight',hue:(J.hue+180)%360,train:true,
+    hp:pa*rnd(5,7), def:0, agi:st('agi')*.8, atk:(hp0*.12/ps('taken',1)+def()*.5)/1.5,
+    exp:need(P.lv)*.02, gold:enemyStats(Math.max(0,P.maxArea-1)).gold*.8};
+  return e;
+}
+function fightTrain(f){ last={type:'train'}; runBattle(makeTrain(),-4,f); }
+// ============ 戦闘 ============
+let last=null;
+function fightArea(t,f){last={type:'area',t}; runBattle(makeEnemy(t),t,f)}
+function fightChamp(f){last={type:'champ'}; runBattle(makeChamp(P.champ),-1,f)}
+function fightSecret(f){last={type:'secret'}; runBattle(makeSecret(),-2,f)}
+function again(f){ if(!last) return; if(last.type==='area') fightArea(last.t,f); else if(last.type==='champ') fightChamp(f); else if(last.type==='work') fightWork(f); else if(last.type==='train') fightTrain(f); else fightSecret(f); }
+// 長押し連戦
+let holdT=null, holdI=null, holdN=0, holdW=0;
+function holdStart(ev){ ev.preventDefault(); if(holdT||holdI||!$('#modal').classList.contains('hide')) return;
+  holdN=0; holdW=0; again();
+  if(last&&last.type==='champ') return;
+  holdT=setTimeout(()=>{ holdT=null; $('#btnAgain').classList.add('holding');
+    holdI=setInterval(()=>{ again(true); if(!holdI) return; holdN++; if($('#result').dataset.win==='1') holdW++;
+      $('#btnAgain').textContent=`連戦中… ${holdN}回（${holdW}勝）`; },60); },350);
+}
+function holdEnd(){ const was=!!holdI; clearTimeout(holdT); clearInterval(holdI); holdT=holdI=null;
+  const b=$('#btnAgain'); b.classList.remove('holding'); b.textContent=againLabel();
+  if(was){ saveLogs(); $('#result').insertAdjacentHTML('beforeend',`<div class="y small">連戦 ${holdN}回終了（${holdW}勝 ${holdN-holdW}敗）</div>`); } }
+(()=>{const b=$('#btnAgain'); b.addEventListener('pointerdown',holdStart);
+  ['pointerup','pointerleave','pointercancel'].forEach(t=>b.addEventListener(t,holdEnd));
+  b.addEventListener('contextmenu',e=>e.preventDefault());
+  b.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); again();}});})();
+function pickGamble(){const v=[0,.1,1,2,3,7,77,777],w=[10,10,25,25,15,10,4,1]; let r=Math.random()*100; for(let i=0;i<v.length;i++){r-=w[i]; if(r<0) return v[i]} return 1;}
+
+function playerHit(c){
+  const J=JOBS[P.job], luk=st('luk'), L=c.L, e=c.e, nm=esc(P.name);
+  if(c.forceMiracle){
+    c.forceMiracle=false; c.usedMiracle=true;
+    P.miracles=(P.miracles||0)+1; L.push(`<span class="mir">★★★ 天と地がひっくり返った ★★★</span>`);
+    L.push(`<span class="mir">${nm}の体に、ありえない力が流れ込む…！</span>`);
+    const d=Math.floor(c.ehp*rnd(3,30)); c.ehp-=d; if(d>P.maxDmg) P.maxDmg=d;
+    L.push(`<span class="mir">奇跡の一撃！ ${e.name}に${fmt(d)}のダメージ！！</span>`); return;
+  }
+  if(chance(Math.min(.25,e.agi/(e.agi+st('agi'))*.12))){L.push(`${e.name}は攻撃をかわした！`);return;}
+  let mult=1, sure=false, flat=0, pierce=false, drain=false;
+  if(chance(J.skill.p+luk/(luk+2000)*.1+(jl(P.job).lv-1)*.01)){const s=pickSkill(); pierce=!!s.pierce; drain=!!s.drain;
+    if(s.heal){const h=Math.floor(c.mhp*.5); c.php=Math.min(c.mhp,c.php+h); L.push(`<span class="sk">${nm}は${s.n}を唱えた！</span> HPが<span class="heal">${fmt(h)}</span>回復！`);}
+    else if(s.gamble){mult=pickGamble(); L.push(`<span class="sk">${nm}の${s.n}！ ルーレットは… <b>×${mult}</b>！</span>`); if(mult===0){L.push('…しかし何も起きなかった。');return;}}
+    else if(s.steal){const g=Math.floor(e.gold*rnd(.3,1)*(s.sm||1)); c.gold+=g; L.push(`<span class="sk">${nm}は${fmt(g)}G盗んだ！</span>`);}
+    else if(s.multi){mult=(s.multi===2?3+Math.floor(Math.random()*6):2+Math.floor(Math.random()*4))*(s.m||1); L.push(`<span class="sk">${nm}の${s.n}！ ${mult}発叩き込んだ！</span>`);}
+    else if(s.sure){mult=4.5*(s.m||1); sure=true; L.push(`<span class="sk">${nm}の${s.n}！</span> <span class="crit">急所を撃ち抜いた！</span>`);}
+    else if(s.stun){c.stun=true; L.push(`<span class="sk">${nm}は${s.n}を踊った！ ${e.name}は見とれている！</span>`);}
+    else if(s.buff){c.buff*=(s.bm||1.5); L.push(`<span class="sk">${nm}は${s.n}を歌った！ 攻撃力が×${fmtMul(c.buff)}になった！</span>`);}
+    else if(s.coin){flat=P.gold*rnd(.005,.02)*(s.cm||1); L.push(`<span class="sk">${nm}の${s.n}！ 小銭が宙を舞う！</span>`);}
+    else {mult=s.m; L.push(`<span class="sk">${nm}の${s.n}！</span>`);}
+  }
+  const mirP=.004+luk/(luk+5000)*.02+(P.blessed[P.job]?.12:0)+accMir();
+  if(chance(mirP)){mult*=100; P.miracles=(P.miracles||0)+1; L.push(`<span class="mir">★☆ 奇跡が起きた！ ☆★</span>`);}
+  else if(!sure&&chance(.04+luk/(luk+300)*.25+ps('crit',0))){mult*=legW()?30:3; L.push(legW()?`<span class="crit">会心の一撃！ オーバーフローが桁をあふれさせる！</span>`:`<span class="crit">会心の一撃！</span>`);}
+  const a=atk()*c.buff*rnd(1.3,1.7)*mult+flat;
+  const d=Math.floor(pierce?Math.max(a,1):Math.max(a-e.def*.5,a*.08,1));
+  if(c.work){ const cd=compress(d,c.M); c.ehp-=cd; c.dealt+=cd; if(d>P.maxDmg) P.maxDmg=d;
+    L.push(`${nm}の攻撃！ <span class="small">${fmt(d)}</span> → 圧縮されて <span class="dmg">${fmt(cd)}</span> のダメージ！`);
+    if(drain){const h=Math.min(c.mhp-c.php,Math.floor(c.mhp*.05)); if(h>0) c.php+=h;} return; }
+  c.ehp-=d; if(d>P.maxDmg) P.maxDmg=d;
+  L.push(`${nm}の攻撃！ ${pierce?'<span class="c">防御を貫いた！</span> ':''}${e.name}に<span class="dmg${d>=1e8?' big':''}">${fmt(d)}</span>のダメージ！`);
+  if(drain){const h=Math.min(c.mhp-c.php,Math.floor(d*.3)); if(h>0){c.php+=h; L.push(`HPが<span class="heal">${fmt(h)}</span>回復した！`);}}
+}
+function enemyHit(c){
+  const e=c.e,L=c.L,ag=st('agi'),lk=st('luk'),nm=esc(P.name);
+  if(c.stun){c.stun=false; L.push(`${e.name}は見とれて動けない！`); return;}
+  if(chance(Math.min(.4,ag/(ag+e.agi)*.15+lk/(lk+3000)*.05+ps('eva',0)))){L.push(`${nm}は身をかわした！`);return;}
+  let m=1; if(chance(.04)){m=2.5; L.push(`<span class="crit">${e.name}の痛恨の一撃！</span>`);}
+  const a=e.atk*rnd(1.3,1.7)*m*ps('taken',1)*(c.kaji?.1:1)*(legA()?.1:1); const d=Math.floor(Math.max(a-def()*.5,a*.08,1));
+  c.php-=d; L.push(`${e.name}の攻撃！ ${nm}は<span class="edmg">${fmt(d)}</span>のダメージ！`);
+}
+function simulate(e,t,fast){
+  const mhp=maxhp(); const c={e,L:[],php:mhp,mhp,ehp:e.hp,gold:0,buff:1,stun:false,forceMiracle:false,kaji:false};
+  const L=c.L, nm=esc(P.name);
+  if(P.job==='fighter'&&P.gold===1){c.kaji=true; c.buff=10000; P.kajiN=(P.kajiN||0)+1;}
+  if(e.secret){
+    P.secret[P.job]=(P.secret[P.job]||0)+1; P.godTries=(P.godTries||0)+1;
+    if(isSecretJob(P.job) && P.secret[P.job]===SECRET_TRIES && !P.blessed[P.job]) c.forceMiracle=true;
+  }
+  L.push(`<b class="y">${e.champ?'チャンピオン ':''}${e.name}</b>が現れた！（HP ${fmt(e.hp)}）`);
+  if(c.kaji){L.push(`<span class="mir">所持金わずか1G…！ 追い詰められた${nm}の中で何かが弾けた！</span>`); L.push(`<span class="mir">🔥 火事場のクソ力 発動！ 攻撃力×1万・被ダメージ1/10 🔥</span>`);}
+  let res=null;
+  for(let turn=1;turn<=40&&res===null;turn++){
+    L.push(`<span class="hpl">― ターン${turn} ―</span>`);
+    const pFirst=c.forceMiracle||st('agi')*rnd(.8,1.2)>=e.agi*rnd(.8,1.2);
+    for(const a of (pFirst?['p','e']:['e','p'])){
+      if(a==='p'){
+        const dbl=(P.job==='thief'&&chance(.35))||(st('agi')>e.agi*2&&chance(.25));
+        playerHit(c);
+        if(dbl&&c.ehp>0){L.push(`<span class="sk">連続攻撃！</span>`); playerHit(c);}
+        if(c.ehp<=0){res='win';break;}
+      } else { enemyHit(c); if(c.php<=0){res='lose';break;} }
+    }
+    L.push(`<span class="hpl">${nm} HP ${fmt(Math.max(0,c.php))}/${fmt(mhp)}　|　${e.name} HP ${fmt(Math.max(0,c.ehp))}</span>`);
+  }
+  P.battles++;
+  P.jobB=P.jobB||{}; P.jobB[P.job]=(P.jobB[P.job]||0)+1;
+  if(e.secret) checkMasterUnlock(L);
+  let sum='';
+  if(res==='win'){
+    P.kills++;
+    const lk=st('luk');
+    const exp=Math.floor(e.exp*rnd(.9,1.1)*ps('exp',1)); const gold=Math.floor(e.gold*rnd(.8,1.2)*(1+lk/(lk+200))*ps('gold',1))+c.gold;
+    L.push(`<span class="y">${e.name}を倒した！</span>`);
+    L.push(`<span class="rw">${fmt(exp)}の経験値と ${fmt(gold)}G を手に入れた！</span>`);
+    P.gold+=gold; P.earned=(P.earned||0)+gold;
+    const lv0=P.lv;
+    let drop='';
+    if(chance((.04+lk/(lk+1000)*.1)*ps('drop',1)*(e.train?2:1))){const k=KEYS[Math.floor(Math.random()*5)]; const n=Math.max(1,Math.floor(rnd(1,4)*(Math.max(t,P.champ,P.maxArea*(e.train?1:0),0)+1)));
+      P.base[k]+=n; drop=`${KN[k]}の実(+${n})`; L.push(`<span class="g">${KN[k]}の実を拾った！ ${KN[k]}が${n}上がった！</span>`);}
+    gainExp(exp,L);
+    const jg=gainJob(e.secret?10:e.champ?5:e.train?3*(1+Math.floor(P.maxArea/3)):1+Math.floor(Math.max(t,0)/3),L);
+    if(e.champ){P.champ++; L.push(`<span class="mir">★ ${nm}は新チャンピオンになった！ ★</span>`); if(P.champ===CHAMPS.length) L.push(`<span class="mir">★ 闘技場の全王者を制覇した！ ★</span>`); checkMasterUnlock(L);}
+    if(e.secret){P.godWins=(P.godWins||0)+1; P.godMaxForm=Math.max(P.godMaxForm||0,P.reb+1); if(c.usedMiracle||P.godWins===1) c.trainMile=true;}
+    if(e.train){ P.train=P.train||{}; const n=P.train[P.job]=(P.train[P.job]||0)+1, J=JOBS[P.job];
+      if(n===100){ const g=Math.floor(e.gold*200); P.gold+=g; P.earned=(P.earned||0)+g; L.push(`<span class="y">修練100回達成！ 師範から ${fmt(g)}G を授かった！</span>`); c.trainMile=true; }
+      if(n===500){ const ex=Math.floor(need(P.lv)*5); L.push(`<span class="y">修練500回達成！ 秘伝書を読んだ！</span>`); gainExp(ex,L); c.trainMile=true; }
+      if(n===1000){ P.kiwami=P.kiwami||{}; P.kiwami[P.job]=true; c.trainMile=true;
+        L.push(`<span class="mir">★ 修練1000回！「${J.n}の極意」を会得した！ ★</span>`);
+        L.push(`<span class="mir">${(J.main==='best'||J.hidden)?'全能力×1.5':KN[J.main]+'×2'}（永続・全職業に有効）</span>`); } }
+    if(e.secret && !P.blessed[P.job]){P.blessed[P.job]=true; L.push(`<span class="mir">★ ${nm}は「奇跡の加護」を授かった！ ★</span>`); L.push(`<span class="mir">${JOBS[P.job].n}でいるかぎり、奇跡が頻繁に起きるようになった！</span>`);}
+    if(t>=0&&t===P.maxArea&&!P.areaDone){P.areaWins++;
+      if(P.areaWins>=AREA_WINS&&P.maxArea>=AREA_MAX){ P.areaDone=true; c.trainMile=true;
+        L.push(`<span class="mir">★★★ 次元の果てを踏破した！ ★★★</span>`); L.push(`<span class="mir">これより先に、世界は存在しない。</span>`); }
+      else if(P.areaWins>=AREA_WINS){P.maxArea++; P.areaWins=0; c.newArea=P.maxArea; L.push(`<span class="y">新エリア「${areaName(P.maxArea)}」が解放された！</span>`);}}
+    sum=`<span class="g">勝利！</span> EXP+${fmt(exp)} / ${fmt(gold)}G${P.lv>lv0?` / <span class="lv">Lv${lv0}→${P.lv}</span>`:''}${drop?` / <span class="g">${drop}</span>`:''}${e.secret?' / <span class="mir">奇跡の加護</span>':''}${c.kaji?' / <span class="mir">火事場のクソ力</span>':''}${jg?` / <span class="c">${jg}</span>`:''}`;
+  } else if(res==='lose'){
+    const lost=Math.floor(P.gold/2); P.gold-=lost;
+    L.push(`<span class="r">${nm}は力尽きた…</span>`);
+    if(lost>0) L.push(`<span class="r">所持金が半分になった…（-${fmt(lost)}G）</span>`);
+    sum=`<span class="r">敗北…</span>${lost>0?` 所持金 -${fmt(lost)}G`:''}`;
+  } else {
+    L.push(`決着がつかない！ ${nm}は逃げ出した。`);
+    sum=`<span class="o">引き分け（逃走）</span>`;
+  }
+  const head=`${e.secret?'神々の座':e.champ?'闘技場':e.train?'修練場':areaName(t)}：${e.name}（${JOBS[P.job].n} Lv${P.lv}）`;
+  LOGS.unshift({head,sum,lines:L}); if(LOGS.length>20) LOGS.length=20;
+  save(); if(!fast) saveLogs();
+  return {L,sum,newArea:c.newArea,trainMile:c.trainMile};
+}
+function gainExp(e,L){
+  P.exp+=e; let ups=0;
+  while(P.exp>=need(P.lv)){P.exp-=need(P.lv); P.lv++; P.pts+=3; ups++;
+    const g=JOBS[P.job].g; KEYS.forEach(k=>P.base[k]+=Math.max(0,Math.round(g[k]*rnd(.5,2.5))));
+    if(ups>300) break;}
+  P.maxLv=Math.max(P.maxLv||0,P.lv);
+  if(ups) L.push(`<span class="lv">レベルアップ！ Lv${P.lv} になった！${ups>1?`（+${ups}）`:''}</span>`);
+}
+function againLabel(){return last&&last.type==='champ'?'もう一戦':'もう一戦（長押しで連戦）'}
+// 場所ごとの戦闘数（今回入ってから／累計）
+let locKey=null, locRun=0;
+function locOf(e,t){ return e.work?'work':e.secret?'god':e.champ?'champ':e.train?'train_'+P.job:'a'+t; }
+function locName(k){ return k==='work'?'ハローワーク':k==='god'?'神々の座':k==='champ'?'闘技場':k.startsWith('train_')?`${JOBS[k.slice(6)].n}の修練場`:areaName(+k.slice(1)); }
+const locTotal=k=>(P.locB&&P.locB[k])||0;
+function runBattle(e,t,fast){
+  if(!fast) closeModal();
+  show('sBattle'); if(!holdI) $('#btnAgain').textContent=againLabel();
+  drawSprite($('#cvP'),'knight',JOBS[P.job].hue,false); $('#nmP').textContent=`${P.name} Lv${P.lv}`;
+  drawSprite($('#cvE'),e.sp,e.hue,true); $('#nmE').textContent=e.name;
+  const lk=locOf(e,t); if(lk!==locKey){locKey=lk; locRun=0;}
+  let R;
+  try{ R=e.work?simulateWork(e,fast):simulate(e,t,fast); }
+  catch(err){ holdEnd(); $('#result').innerHTML=`<span class="r">エラーが起きました：${esc(err&&err.message||err)}</span><div class="small">「戻る」で戻れます。この文面を教えてもらえれば直します。</div>`; $('#log').innerHTML=''; return; }
+  const {L,sum,newArea,trainMile}=R;
+  locRun++; P.locB=P.locB||{}; P.locB[lk]=(P.locB[lk]||0)+1;
+  $('#result').dataset.win=(sum.includes('勝利')||sum.includes('突破'))?'1':'0';
+  if(e.work){ const w=workState(); $('#nmE').textContent=w.cleared?'内定':WORK[w.floor].n; drawSprite($('#cvE'),WORK[w.floor].sp,WORK[w.floor].hue,true); }
+  $('#nmP').textContent=`${P.name} Lv${P.lv}`;
+  $('#result').innerHTML=sum+`<div class="small">所持金 ${fmt(P.gold)}G　<span class="c">${locName(lk)}：今回${fmt(locRun)}戦目（累計${fmt(P.locB[lk])}戦）</span></div><div class="small">${JOBS[P.job].n}での戦闘 ${fmt((P.jobB||{})[P.job]||0)}回　総戦闘${fmt(P.battles)}回</div>`;
+  const box=$('#log'); box.innerHTML=L.map(x=>`<p>${x}</p>`).join(''); box.scrollTop=box.scrollHeight;
+  if(newArea!==undefined && t>=0){ holdEnd(); showAreaModal(newArea); }
+  if(trainMile){ holdEnd(); }
+}
+function showAreaModal(na){
+  $('#mTitle').innerHTML=`<span class="mir">新エリア解放！</span>`;
+  const e=enemyStats(na);
+  $('#mBody').innerHTML=`「<span class="y">${areaName(na)}</span>」へ行けるようになった。<br>目安Lv${areaLv(na)} / 危険度 ${danger(e)}<br><br>次のエリアに進む？ それともここで鍛える？`;
+  $('#mGo').onclick=()=>{ $('#modal').classList.add('hide'); last={type:'area',t:na}; fightArea(na); };
+  $('#mStay').onclick=()=>{ $('#modal').classList.add('hide'); };
+  $('#modal').classList.remove('hide');
+}
+function closeModal(){ $('#modal').classList.add('hide'); }
+
+// ============ 起動 ============
+load(); renderTitle(); show('sTitle');
+</script>
+</body>
+</html>

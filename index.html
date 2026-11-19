@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- 自動生成ファイル：src/ を編集して `npm run build` で作り直す -->
 <html lang="ja">
 <head>
 <meta charset="utf-8">
@@ -75,6 +76,8 @@ rt{font-size:9px;color:#bcd}
 @keyframes a-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px) rotate(-8deg)}40%{transform:translateX(4px) rotate(8deg)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
 @keyframes a-roar{0%,100%{transform:scale(1)}30%{transform:scale(1.25) translateY(-4px)}60%{transform:scale(.95)}}
 .a-jump{animation:a-jump .25s ease-out}.a-flap{animation:a-flap .35s ease-in-out}.a-spin{animation:a-spin .4s ease-in-out}.a-shake{animation:a-shake .35s}.a-roar{animation:a-roar .4s ease-out}
+.row>button,.row>div>button{flex-shrink:0;white-space:nowrap}.row>div:first-child{min-width:0;overflow-wrap:anywhere}
+.maxv{color:#ffd34d;font-weight:bold;text-shadow:0 0 4px #f90}
 </style>
 </head>
 <body>
@@ -308,7 +311,7 @@ const rnd=(a,b)=>a+Math.random()*(b-a);
 const chance=p=>Math.random()<p;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function fmt(n){
-  n=Math.floor(n); if(!isFinite(n)) return '∞'; if(n<0) return '-'+fmt(-n);
+  n=Math.floor(n); if(n!==n) return '0'; if(n>=Number.MAX_VALUE*.9999) return `<span class="maxv">${Number.MAX_VALUE.toExponential(2).replace('e+','e')} MAX</span>`; if(n<0) return '-'+fmt(-n);
   if(n<10000) return String(n);
   const e=Math.floor(Math.log10(n)/4);
   if(e>=U.length) return n.toExponential(2).replace('e+','e');
@@ -363,6 +366,16 @@ function sanitizeSave(o){
   r.blessed=boolMap(o.blessed,isJob); r.unlocked=boolMap(o.unlocked,isJob); r.kiwami=boolMap(o.kiwami,isJob); r.been=boolMap(o.been,isJob);
   r.locB=numMap(o.locB,k=>/^(a\d+|god|champ|work|train_\w+)$/.test(k));
   r.ach=boolMap(o.ach);
+  // 図鑑・番人・固有品（#8）
+  r.bk=numMap(o.bk,k=>/^\d{1,2}_[0-2]$/.test(k)); Object.keys(r.bk).forEach(k=>r.bk[k]=int(r.bk[k]));
+  r.bkT=numMap(o.bkT,k=>/^\d{1,2}_[0-2]$/.test(k)); Object.keys(r.bkT).forEach(k=>r.bkT[k]=Math.min(AREA_MAX,int(r.bkT[k])));
+  r.guard=boolMap(o.guard,k=>/^\d{2,3}$/.test(k)&&+k%10===0&&+k<=300);
+  r.mats=numMap(o.mats,k=>/^\d{1,2}$/.test(k)&&+k<12); Object.keys(r.mats).forEach(k=>r.mats[k]=Math.min(999,int(r.mats[k])));
+  // ギャンブル特性（#2）
+  r.casCd=numMap(o.casCd,isJob); Object.keys(r.casCd).forEach(k=>r.casCd[k]=Math.min(100,int(r.casCd[k])));
+  if(o.casCharge&&typeof o.casCharge==='object'&&o.casCharge.maiden!==undefined) r.casCharge={maiden:Math.min(2,int(o.casCharge.maiden))};
+  r.casStreak=int(o.casStreak); r.casDonate=num(o.casDonate,0); r.casArm=bool(o.casArm);
+  if(o.casBeg&&isJob(o.casBeg.job)) r.casBeg={job:o.casBeg.job,n:Math.min(99,int(o.casBeg.n))};
   ['drinks','personaN','yakeN','shukuhaiN','memLoss','contestTries','contestWins','loseStreak','hangover'].forEach(k=>r[k]=int(o[k]));
   if(o.drink&&DRINKS.some(D=>D.id===o.drink.type)) r.drink={type:o.drink.type,left:int(o.drink.left)};
   if(o.persona&&PERSONA[o.persona.mode]) r.persona={mode:o.persona.mode,left:int(o.persona.left)};
@@ -440,7 +453,7 @@ const LACC=[
 const hasL=k=>P.job==='neet'&&!!(P.lacc&&P.lacc[k]);
 function grantLacc(L){ const w=P.work; if(!w) return; const fl=w.cleared?99:(w.stage||0); LACC.forEach(a=>{ if(a[4]&&fl>=a[4]&&!(P.lacc&&P.lacc[a[0]])){ P.lacc=P.lacc||{}; P.lacc[a[0]]=true; if(L) L.push(`<span class="mir">★ 伝説の装飾品「${a[1]}」を贈られた！（${a[3]}） ★</span>`); } }); }
 function buyLacc(k){ const a=LACC.find(x=>x[0]===k); if(!a||a[2]===null||P.job!=='neet'||(P.lacc&&P.lacc[k])||P.gold<a[2]) return; P.gold-=a[2]; P.lacc=P.lacc||{}; P.lacc[k]=true; save(); renderStatus(); panel('acc'); }
-const st=k=>P.base[k]*P.rebMul*masterMul()*accStat(k)*jobBonusC(k)*(hasL('shoes')?10:1);
+const st=k=>P.base[k]*P.rebMul*masterMul()*accStat(k)*jobBonusC(k)*(hasL('shoes')?10:1)*matMul(k);
 const RMUL=[1,3,10,10]; const rmul=()=>RMUL[JOBS[P.job].rank];
 // +99（20種＋99段＝119段目）に到達すると伝説の装備に置き換わる
 const GEAR_MAX=119;
@@ -458,9 +471,9 @@ const armPow=a=>a>=GEAR_MAX?6*Math.pow(5,GEAR_MAX)*1e4:a?6*Math.pow(5,a):0;
 const wpnPrice=w=>100*Math.pow(7,w);
 const armPrice=a=>80*Math.pow(7,a);
 const itemName=(list,i)=>i<=0?'なし':i>=GEAR_MAX?(list===WPN?LEG_W:LEG_A):(i<=list.length?list[i-1]:list[list.length-1]+'+'+(i-list.length));
-function atk(){return (st(mainKey())+wpnPow(P.wpn))*(1+P.lv*0.08)*(1+0.05*(jl(P.job).lv-1))*rmul()*(neetW()?1000:1)}
-function def(){return (st('vit')*0.5+armPow(P.arm))*rmul()}
-function maxhp(){return Math.floor((st('vit')*12+P.lv*10*P.rebMul+armPow(P.arm)*3)*rmul()*(neetA()?100:1))}
+function atk(){return (st(mainKey())+wpnPow(P.wpn))*(1+P.lv*0.08)*(1+0.05*(jl(P.job).lv-1))*rmul()*(neetW()?1000:1)*matMul('atk')}
+function def(){return (st('vit')*0.5+armPow(P.arm))*rmul()*matMul('def')}
+function maxhp(){return Math.floor((st('vit')*12+P.lv*10*P.rebMul+armPow(P.arm)*3)*rmul()*(neetA()?100:1)*matMul('hp'))}
 const need=lv=>Math.floor(15*Math.pow(1.3,lv-1));
 const rebReq=()=>30+10*P.reb;
 function enemyStats(t){return {hp:30*Math.pow(5.5,t),atk:10*Math.pow(5.2,t),def:4*Math.pow(5,t),agi:6+t*9,exp:12*Math.pow(4.3,t),gold:25*Math.pow(6,t)}}
@@ -471,8 +484,65 @@ const areaLv=t=>Math.max(1,Math.round(1+t*5.6));
 function makeEnemy(t){
   const a=AREAS[t%AREAS.length]; const i=Math.floor(Math.random()*3); const [nm,sp]=a[1][i];
   const name=t<AREAS.length?nm:t>=AREA_MAX?`次元の果ての${nm}`:`第${t-AREAS.length+1}次元の${nm}`;
-  return Object.assign(enemyStats(t+i*0.15),{name,sp,hue:(t*47+i*30)%360});
+  return Object.assign(enemyStats(t+i*0.15),{name,sp,hue:(t*47+i*30)%360,bk:bkKey(t%AREAS.length,i)});
 }
+// ============ 冒険：固有ドロップ・図鑑・番人（#8） ============
+// 固有品：エリアの系統（12種。次元の彼方も同じ系統をくり返す）ごとに1つ。1個ごとに対応する値が×1.01（複利・最大999個）
+const MATS=[
+  {n:'四つ葉のクローバー',k:'luk',t:'運'},{n:'森のどんぐり',k:'exp',t:'経験値'},{n:'古代の鉱石',k:'atk',t:'攻撃力'},
+  {n:'砂漠の砂時計',k:'agi',t:'素早さ'},{n:'溶けない氷',k:'def',t:'防御力'},{n:'火竜のうろこ',k:'str',t:'力'},
+  {n:'幽霊船の羅針盤',k:'gold',t:'お金'},{n:'天使の羽根',k:'hp',t:'最大HP'},{n:'魔界の角',k:'int',t:'知力'},
+  {n:'混沌のかけら',k:'drop',t:'能力の実の出やすさ'},{n:'虚無の砂',k:'vit',t:'体力'},{n:'時の歯車',k:'jexp',t:'熟練度'}];
+const MAT_MAX=999, MAT_RATE=.03;
+const matN=i=>(P&&P.mats&&P.mats[i])||0;
+const matMul=k=>{ const i=MATS.findIndex(m=>m.k===k); return i<0?1:Math.pow(1.01,matN(i)); };
+function matDrop(t,L,n=1){ const i=t%AREAS.length; P.mats=P.mats||{}; const a=matN(i); if(a>=MAT_MAX) return '';
+  P.mats[i]=Math.min(MAT_MAX,a+n); const M=MATS[i];
+  L.push(`<span class="mir">★ 固有品「${M.n}」を${n>1?n+'個':''}手に入れた！（${P.mats[i]}個：${M.t}×${fmtMul(matMul(M.k))}）</span>`);
+  return `${M.n}${n>1?'×'+n:''}`; }
+// 図鑑：系統ごとの3種（36種）。倒した数と、出会った一番深い層を記録する
+const bkKey=(a,i)=>`${a}_${i}`;
+function bkCount(e,t){ if(!e.bk) return; P.bk=P.bk||{}; P.bkT=P.bkT||{}; P.bk[e.bk]=(P.bk[e.bk]||0)+1; P.bkT[e.bk]=Math.max(P.bkT[e.bk]||0,t); }
+const bkFound=()=>Object.keys(P.bk||{}).filter(k=>P.bk[k]>0).length;
+// 番人：次元の彼方の10層ごと（第10層〜第300層の30体）。最深の番人の層では、10勝したあと番人を倒さないと先へ進めない
+const layerOf=t=>t-AREAS.length+1;
+const isGuardT=t=>t>=AREAS.length&&layerOf(t)%10===0;
+const GUARD_T=[]; for(let t=AREAS.length;t<=AREA_MAX;t++) if(isGuardT(t)) GUARD_T.push(t);
+const guardBeaten=t=>!!(P.guard&&P.guard[layerOf(t)]);
+const guardBlock=()=>isGuardT(P.maxArea)&&!guardBeaten(P.maxArea)&&!P.areaDone;
+const GUARD_TITLE=['門番','守護者','番兵','鎮守','墓守','監視者','裁定者','執行者','守り手','封印者'];
+function makeGuard(t){ const n=layerOf(t), a=AREAS[t%AREAS.length], i=(n/10)%3, [nm,sp]=a[1][i];
+  const s=enemyStats(t+.35); s.hp*=18; s.atk*=1.8; s.def*=1.4; s.exp*=40; s.gold*=60;
+  return Object.assign(s,{name:`第${n}層の${GUARD_TITLE[(n/10-1)%GUARD_TITLE.length]} ${nm}`,base:nm,sp,hue:(t*47+i*30+180)%360,guard:true,gt:t,bk:bkKey(t%AREAS.length,i)}); }
+function canGuard(t){ return isGuardT(t)&&!guardBeaten(t)&&(t<P.maxArea||(t===P.maxArea&&P.areaWins>=AREA_WINS)||(t===P.maxArea&&P.areaDone)); }
+function fightGuard(t,f){ if(takashiLock()||!canGuard(t)) return; last={type:'guard',t}; runBattle(makeGuard(t),-6,f); }
+// 番人を倒したとき
+function guardWin(e,L,c){ const t=e.gt, n=layerOf(t); P.guard=P.guard||{}; P.guard[n]=true;
+  L.push(`<span class="mir">★ ${e.name}を討ち取った！ ★</span>`);
+  matDrop(t,L,10);
+  if(t===P.maxArea&&!P.areaDone&&P.areaWins>=AREA_WINS){
+    if(P.maxArea>=AREA_MAX){ P.areaDone=true; c.trainMile=true;
+      L.push(`<span class="mir">★★★ 次元の果てを踏破した！ ★★★</span>`); grantNeetGear(L); L.push(`<span class="mir">これより先に、世界は存在しない。</span>`); }
+    else { P.maxArea++; P.areaWins=0; c.newArea=P.maxArea; L.push(`<span class="y">道が開けた！ 新エリア「${areaName(P.maxArea)}」が解放された！</span>`); }
+  }
+  c.trainMile=true; }
+// 図鑑の画面
+function bookHTML(){
+  const pic=(a,i,seen)=>{ const src=typeof PIX!=='undefined'&&PIX.z&&typeof PIX_AREA!=='undefined'?PIX.z[PIX_AREA[a][i]]:''; return src?`<img src="${src}" style="width:36px;height:36px;image-rendering:pixelated;${seen?'':'filter:brightness(0) opacity(.5)'}">`:''; };
+  const g=Object.keys(P.guard||{}).length;
+  let h=`<div class="small">図鑑 <span class="y">${bkFound()}/${AREAS.length*3}種</span>　番人 <span class="y">${g}/${GUARD_T.length}体</span>　固有品 <span class="y">${MATS.filter((m,i)=>matN(i)>0).length}/${MATS.length}種</span></div>`;
+  h+=`<div class="small" style="color:#9ab;margin:2px 0 6px">固有品は、その系統のエリア（次元の彼方の同じ系統の層でも）で敵を倒すと${Math.round(MAT_RATE*100)}%で手に入る。1個ごとに効果×1.01（複利・最大${MAT_MAX}個）。番人を倒すと10個。</div>`;
+  AREAS.forEach((A,a)=>{ const M=MATS[a], m=matN(a), seenArea=a<=P.maxArea;
+    h+=`<div class="win" style="margin:6px 0;padding:6px 8px"><div class="y">${seenArea?A[0]:'？？？'}</div>`;
+    h+=`<div class="small">${m?`<span class="mir">${M.n}</span> ${m}個：${M.t}×${fmtMul(matMul(M.k))}${m>=MAT_MAX?' <span class="y">MAX</span>':''}`:`<span style="color:#789">固有品：${seenArea?M.n.replace(/./g,'？'):'？？？'}</span>`}</div>`;
+    A[1].forEach(([nm],i)=>{ const k=bkKey(a,i), n=(P.bk&&P.bk[k])||0, dt=(P.bkT&&P.bkT[k])||0;
+      h+=`<div class="row" style="padding:2px 0"><div style="display:flex;gap:6px;align-items:center">${pic(a,i,n>0)}<div>${n?nm:'？？？'}<div class="small">${n?`倒した数 ${fmt(n)}　最深 ${dt<AREAS.length?A[0]:'第'+layerOf(dt)+'層'}`:'まだ出会っていない'}</div></div></div></div>`; });
+    h+=`</div>`; });
+  h+=`<div class="y" style="margin-top:8px">番人（次元の彼方の10層ごと）</div>`;
+  GUARD_T.forEach(t=>{ const n=layerOf(t), b=guardBeaten(t), reach=t<=P.maxArea;
+    h+=`<div class="row"><div>${reach?makeGuard(t).name:`第${n}層の番人 ？？？`}<div class="small">${b?'<span class="g">討伐済み</span>':reach?'<span class="o">未討伐</span>':'まだたどり着いていない'}</div></div>${canGuard(t)?`<button onclick="fightGuard(${t})">挑む</button>`:''}</div>`; });
+  return h; }
+
 const champName=k=>k<CHAMPS.length?CHAMPS[k]:`${k-CHAMPS.length+2}代目 無限王`;
 const CHAMP_MAX=300, GOD_TIER_MAX=330; // これ以上は数値があふれるので頭打ち
 function makeChamp(k){ k=Math.min(k,CHAMP_MAX-1);
@@ -582,7 +652,7 @@ function panel(p,arg){
   if((p==='area'||p==='champ')&&takashiLock()){ el.innerHTML=TK_MSG; return; }
   if(p==='area'){
     if(arg) areaTab=arg;
-    const tabs=[['adv','冒険'],['train','修練場'],['god','神々の座']].concat(hwOpen()?[['work','ハローワーク']]:[]).concat(finalOpen()?[['final','桁の神']]:[]);
+    const tabs=[['adv','冒険'],['train','修練場'],['god','神々の座'],['book','図鑑']].concat(hwOpen()?[['work','ハローワーク']]:[]).concat(finalOpen()?[['final','桁の神']]:[]);
     if(!tabs.some(x=>x[0]===areaTab)) areaTab='adv';
     h=`<div class="grid" style="grid-template-columns:repeat(${tabs.length},1fr);margin-bottom:8px">`+tabs.map(([k,n])=>`<button class="${areaTab===k?'sel':''}" style="font-size:13px;padding:7px 2px" onclick="panel('area','${k}')">${n}</button>`).join('')+`</div>`;
     if(areaTab==='final'){ const f=finalState();
@@ -592,12 +662,14 @@ function panel(p,arg){
         `<div class="small">ダメージは「桁数」で入る。転生${FINAL_REB}回を超えるほど強く刺さる。</div>`)+
         `</div><button ${f.cleared?'disabled':''} onclick="fightFinal()">挑む</button></div>`;
       h+=`<div class="small" style="margin-top:6px">伝説の品：`+legendList().map(([n,ok])=>`${ok?'✓':'・'}${n}`).join('　')+`</div>`;
+    } else if(areaTab==='book'){
+      h+=bookHTML();
     } else if(areaTab==='work'){
       h+=hwHTML();
     } else if(areaTab==='train'){
     { const J=JOBS[P.job], n=trainN(P.job), mk=P.kiwami&&P.kiwami[P.job];
-      h+=`<div class="row"><div><span class="c">${J.n}の修練場</span> <span class="small">ジョブ専用</span><div class="small">今の強さに合わせた相手。ジョブ経験値3倍・実2倍</div><div class="small">修練 ${fmt(n)}${mk?'回 <span class="mir">極意会得済</span>':'/1000'}　${n<100?'(100回で師範の褒美)':n<500?'(500回で秘伝書)':n<1000?'(1000回で極意)':''}</div></div><button onclick="fightTrain()">修練</button></div>`; }
-      h+=`<div class="small" style="margin-top:6px">修練場は今の職業ごとに別。行き詰まったらここでジョブレベルとお金を稼ごう。</div>`;
+      h+=`<div class="row"><div><span class="c">${J.n}の修練場</span> <span class="small">ジョブ専用</span><div class="small">今の強さに合わせた相手。<span class="o">熟練度は上がらない</span>・実2倍。1000勝でその職業の極意を会得</div><div class="small">修練 ${fmt(n)}${mk?'回 <span class="mir">極意会得済</span>':'/1000'}　${n<100?'(100回で師範の褒美)':n<500?'(500回で秘伝書)':n<1000?'(1000回で極意)':''}</div></div><button onclick="fightTrain()">修練</button></div>`; }
+      h+=`<div class="small" style="margin-top:6px">修練場は今の職業ごとに別。熟練度（ジョブレベル）は冒険で上がる。修練場では極意を目指そう（極意の効果は永続・全職業に有効）。</div>`;
     } else if(areaTab==='god'){
     const sec=makeSecret();
     h+=`<div class="row"><div><span class="r">神々の座</span> <span class="small">目安Lv ？？？ / 危険度 <span class="r">無謀</span></span><div class="small">${P.reb?`転生のたびに神は姿を変え、より強大になる…（第${P.reb+1}形態）`:'人の身では到底たどり着けぬ領域…'}</div></div><button onclick="fightSecret()">挑む</button></div>`;
@@ -605,9 +677,10 @@ function panel(p,arg){
       const total=P.maxArea+1, pages=Math.max(1,Math.ceil(total/AREA_PER_PAGE));
       if(areaPage>=pages) areaPage=pages-1; if(areaPage<0) areaPage=0;
       h+= P.areaDone ? `<div class="small mir" style="margin-bottom:4px">★ 次元の果てを踏破済み ★</div>` : `<div class="small" style="margin-bottom:4px">${P.maxArea>=AREA_MAX?'最終エリア！ ':''}最深エリアで${AREA_WINS}勝すると${P.maxArea>=AREA_MAX?'踏破':'次のエリアが解放'}（<span class="y">${P.areaWins}/${AREA_WINS}</span>）</div>`;
+      if(guardBlock()&&P.areaWins>=AREA_WINS) h+=`<div class="small o" style="margin-bottom:4px">${makeGuard(P.maxArea).name}が道をふさいでいる。「番人」を倒すと先へ進める。</div>`;
       const top=P.maxArea-areaPage*AREA_PER_PAGE, bottom=Math.max(0,top-AREA_PER_PAGE+1);
       for(let t=top;t>=bottom;t--){const e=enemyStats(t);
-        h+=`<div class="row"><div>${t===P.maxArea&&!P.areaDone?'<span class="o">【未攻略】</span>':''}${t===AREA_MAX?'<span class="mir">【最終】</span>':''}${areaName(t)}<div class="small">目安Lv${areaLv(t)} / 危険度 ${danger(e)}　累計${fmt(locTotal('a'+t))}戦</div></div><button onclick="fightArea(${t})">戦う</button></div>`;}
+        h+=`<div class="row"><div>${t===P.maxArea&&!P.areaDone?'<span class="o">【未攻略】</span>':''}${t===AREA_MAX?'<span class="mir">【最終】</span>':''}${areaName(t)}<div class="small">目安Lv${areaLv(t)} / 危険度 ${danger(e)}　累計${fmt(locTotal('a'+t))}戦${isGuardT(t)?(guardBeaten(t)?'　<span class="g">番人 討伐済み</span>':'　<span class="o">番人がいる</span>'):''}</div></div><div style="white-space:nowrap">${canGuard(t)?`<button class="y" onclick="fightGuard(${t})">番人</button> `:''}<button onclick="fightArea(${t})">戦う</button></div></div>`;}
       if(pages>1) h+=`<div class="grid" style="margin-top:8px;align-items:center"><button ${areaPage<=0?'disabled':''} onclick="areaPage--;panel('area')">◀ 前</button><div style="text-align:center" class="small">${areaPage+1} / ${pages}</div><button ${areaPage>=pages-1?'disabled':''} onclick="areaPage++;panel('area')">次 ▶</button></div>`;
     }
   } else if(p==='champ'&&P.champ>=CHAMP_MAX){
@@ -705,7 +778,7 @@ function gearHTML(isW){ if(isW?neetW():neetA()) return `<span class="mir">【無
 function buy(p,i){ if(i>GEAR_MAX) return; const wasW=legW(), wasA=legA();const pr=p==='wpn'?wpnPrice(i):armPrice(i); if(P.gold<pr)return; P.gold-=pr; if(p==='wpn')P.wpn=i; else P.arm=i; save(); renderStatus(); panel(p);}
 function buyAcc(k){const lv=accLv(k), pr=accPrice(lv); if(lv>=accCap()||P.gold<pr) return; P.gold-=pr; P.acc=P.acc||{}; accEqList(); P.acc[k]=lv+1; const l=accEqList(); if(!l.includes(k)&&l.length<accSlots()) l.push(k); save(); renderStatus(); panel('acc');}
 function eqAcc(k){ if(!accLv(k)) return; const l=accEqList(), i=l.indexOf(k); if(i>=0) l.splice(i,1); else if(l.length<accSlots()) l.push(k); save(); renderStatus(); panel('acc');}
-function changeJob(k){if(!canJob(k))return; P.job=k; trimAcc(); save(); renderStatus(); panel('job');}
+function changeJob(k){if(!canJob(k))return; if(P.job!==k) P.casBeg=null; P.job=k; trimAcc(); save(); renderStatus(); panel('job');}
 function addPt(k,n){n=Math.min(n,P.pts); P.base[k]+=n; P.pts-=n; save(); renderStatus(); panel('stat');}
 function rebirth(){if(P.lv<rebReq())return; P.rebMul*=1+P.lv/20; P.reb++; P.lv=1; P.exp=0; P.secret={}; P.blessed={}; save(); renderStatus(); panel('reb');}
 function resetSave(){ if(!resetArm){resetArm=true; panel('rec'); return;} resetArm=false; try{localStorage.removeItem(SAVE);localStorage.removeItem(LOGSAVE)}catch(e){} P=null; LOGS=[]; curPanel='area'; renderTitle(); show('sTitle'); }
@@ -714,15 +787,19 @@ function resetSave(){ if(!resetArm){resetArm=true; panel('rec'); return;} resetA
 let casinoGame='hl', casMsg='', betPct=.1, betLeave1=false, busy=false;
 const casMul=()=>ps('casino',1);
 const gamb=()=>casMul()>1;
-function betAmt(){ if(P.gold<1) return 0; if(betLeave1) return Math.max(0,P.gold-1); return Math.max(1,Math.min(P.gold,Math.floor(P.gold*betPct))); }
+function betAmt(){ if(P.gold<1) return 0; if(betLeave1) return Math.max(0,P.gold-1); const pc=P.job==='berserker'?Math.max(.5,betPct):betPct; return Math.max(1,Math.min(P.gold,Math.floor(P.gold*pc))); }
 function setBet(v){ if(busy) return; if(v<0) betLeave1=true; else {betLeave1=false; betPct=v;} panel('casino'); }
 // 戻ってくる総額（ギャンブラーは儲け分が1.5倍）
 function payout(bet,mult){ const prof=bet*mult-bet; return Math.floor(bet+(prof>0?prof*casMul():prof)); }
 let lastAllIn=false, betNote='';
 function takeBet(){ if(takashiLock()&&P.gold<1){ P.gold=10000; betNote='<div class="o">実家から仕送りが届いた…！ +10000G</div>'; save(); renderStatus(); }
-  const b=betAmt(); lastAllIn=b>0&&b===P.gold; if(b<1){casMsg='<span class="r">賭けるお金がない！</span>'; return 0;} P.gold-=b; return b; }
-function settle(bet,mult,txt){ const ret=payout(bet,mult); P.gold+=ret; if(ret>bet){P.earned=(P.earned||0)+ret-bet; if(lastAllIn) P.allInWins=(P.allInWins||0)+1;} if(P.gold===1) P.oneG=true;
-  casMsg = mult>0 ? `${txt} <span class="g">+${fmt(ret-bet)}G</span>` : `${txt} <span class="r">-${fmt(bet)}G</span>`;
+  const b=betAmt(); lastAllIn=b>0&&b===P.gold; if(b<1){casMsg='<span class="r">賭けるお金がない！</span>'; return 0;} const before=P.gold; P.gold-=b; casBegin(b,before); if(P.casArm){ casCtx.sure=true; P.casArm=false; } return b; }
+function settle(bet,mult,txt){ let ret=payout(bet,mult), back=0; const notes=casCtx?casCtx.notes:[];
+  if(ret>bet){ const w=casWinMul(); if(w.m!==1){ ret=bet+Math.floor((ret-bet)*w.m); if(w.t.length) notes.push(`<span class="c">【${JOBS[P.job].n}の特性】${w.t.join('・')}</span>`); } P.casStreak=(P.casStreak||0)+1; }
+  else if(mult===0){ const L=casOnLoss(bet); back=L.back; if(L.t) notes.push(`<span class="c">${L.t}</span>`); if(isT('swordsaint')&&P.casStreak&&chance(.5)) notes.push('<span class="c">【無心】連勝は途切れない</span>'); else P.casStreak=0; ret=back; }
+  P.gold+=ret; if(ret>bet){P.earned=(P.earned||0)+ret-bet; if(lastAllIn) P.allInWins=(P.allInWins||0)+1;} if(P.gold===1) P.oneG=true;
+  casMsg = mult>0 ? `${txt} <span class="g">+${fmt(ret-bet)}G</span>` : `${txt} <span class="r">-${fmt(bet-back)}G</span>`;
+  if(notes.length) casMsg+=`<div class="small">${notes.join('<br>')}</div>`; casCtx=null;
   if(P.gold===1) casMsg+=`<div class="small o">所持金がちょうど1Gになった…</div>`;
   if(betNote){ casMsg=betNote+casMsg; betNote=''; }
   casMsg+=personaTick(null,true);
@@ -731,11 +808,11 @@ function settle(bet,mult,txt){ const ret=payout(bet,mult); P.gold+=ret; if(ret>b
 function betUI(lock){
   const o=[[.01,'1%'],[.1,'10%'],[.5,'半分'],[1,'全額']];
   return `<div class="small">賭け金：<span class="y">${fmt(betAmt())}G</span>${gamb()?` <span class="c">（${JOBS[P.job].n}特典：儲け${+casMul().toFixed(2)}倍）</span>`:''}</div>
-  <div class="grid" style="grid-template-columns:repeat(5,1fr)">`+o.map(([v,l])=>`<button ${lock?'disabled':''} class="${!betLeave1&&betPct===v?'sel':''}" onclick="setBet(${v})">${l}</button>`).join('')+
+  <div class="grid" style="grid-template-columns:repeat(5,1fr)">`+o.map(([v,l])=>`<button ${lock||(P.job==='berserker'&&v<.5)?'disabled':''} class="${!betLeave1&&(P.job==='berserker'?Math.max(.5,betPct):betPct)===v?'sel':''}" onclick="setBet(${v})">${l}</button>`).join('')+
   `<button ${lock?'disabled':''} class="${betLeave1?'sel':''}" style="font-size:11px" onclick="setBet(-1)">1G残す</button></div>`;
 }
 function casinoHTML(){
-  let h=`<h2>ギャンブル場</h2><div class="small">所持金 <span class="y">${fmt(P.gold)}G</span></div>`;
+  let h=`<h2>ギャンブル場</h2><div class="small">所持金 <span class="y">${fmt(P.gold)}G</span></div>`+casTraitHTML();
   h+=`<div class="grid" style="grid-template-columns:repeat(4,1fr);margin:6px 0">`+[['hl','ハイ&ロー'],['slot','スロット'],['rou','ルーレット'],['dice','丁半']].map(([k,n])=>`<button ${busy||(takashiLock()&&k!=='slot')?'disabled':''} class="${casinoGame===k?'sel':''}" style="font-size:12px;padding:7px 2px" onclick="casMsg='';panel('casino','${k}')">${n}</button>`).join('')+`</div>`;
   if(takashiLock()&&casinoGame!=='slot') casinoGame='slot';
   if(casinoGame==='hl') h+=hlHTML();
@@ -745,6 +822,121 @@ function casinoHTML(){
   h+=`<div id="casMsg">${casMsg}</div>`;
   return h;
 }
+// ============ 職業ごとのギャンブル特性（#2） ============
+// t: そのまま効く（常時） / cd: 使ったあと、冒険・修練場で決まった回数の戦闘をこなすまで再使用できない
+// 再使用までの残り戦闘数は P.casCd[職業] に職業ごとに持つ（転職しても持ち越す）
+const CAS_TRAITS={
+  apprentice:{n:'ビギナーズラック',d:'その職業についてから5回の勝負は、負けても50%でやり直し'},
+  warrior:{n:'度胸',d:'全額勝負で勝つと、儲けが1.5倍'},
+  mage:{n:'確率計算',d:'ハイ&ローで、次のカードが上・下になる確率が見える'},
+  thief:{n:'くすね取り',d:'負けたとき、賭け金の1割をこっそり取り返す'},
+  priest:{n:'懺悔',d:'負けても、賭ける前の所持金の1割は手元に残る'},
+  gambler:{n:'勝負勘',d:'儲けが1.5倍'},
+  fighter:{n:'火事場',d:'所持金に対して大きく賭けるほど、負けをやり直しやすい（全額で30%）'},
+  hunter:{n:'目押し',d:'スロットで777がそろいやすい（3倍）'},
+  knight:{n:'堅守',d:'負けたときの損が3割減る'},
+  dancer:{n:'ひらり',d:'賭け金が所持金の1割以上の負けを、1回だけなかったことにする',cd:50},
+  bard:{n:'勝利の歌',d:'連勝するたびに、儲けが×1.5ずつ重なる（10連勝まで）'},
+  merchant:{n:'仲介料',d:'勝ったときの儲けが2割増える'},
+  alchemist:{n:'錬成',d:'スロットのハズレが、10%で🍒🍒に変わる'},
+  berserker:{n:'狂乱',d:'「半分」以上しか賭けられないが、儲けが2倍'},
+  archmage:{n:'千里眼',d:'ハイ&ローの確率が見える。さらに、次のカードを1回のぞける',cd:20},
+  ninja:{n:'分身',d:'勝ったとき、30%で分身も当てて儲けが2倍'},
+  bishop:{n:'お布施',d:'負けた額の2割を預かっておき、次に冒険で勝ったときに返ってくる'},
+  shark:{n:'大勝負',d:'儲けが2倍'},
+  kenou:{n:'連打',d:'ハイ&ローで当たるたび、賞金が2倍ではなく2.5倍になる'},
+  sniper:{n:'狙撃',d:'スロットでBAR・★・🔔がそろいやすい（2倍）'},
+  paladin:{n:'加護',d:'負けたときの損が半分になる。ただし儲けは1割減る'},
+  maiden:{n:'舞',d:'賭け金が所持金の1割以上の負けを、なかったことにする（2回分までためられる）',cd:30,charges:2},
+  maestro:{n:'楽聖の調べ',d:'連勝するたびに、儲けが×2ずつ重なる（10連勝まで）'},
+  tycoon:{n:'札束',d:'負けたとき、賭け金の半分を払って負けを取り消す',cd:50},
+  grandalch:{n:'大錬成',d:'スロットのハズレが、25%で🍒🍒に変わる'},
+  hero:{n:'勇気',d:'全額勝負で負けても、25%でやり直し'},
+  sage:{n:'叡智',d:'ハイ&ローの確率が見える。負けたときの損が2割減る'},
+  spellblade:{n:'魔法剣',d:'ハイ&ローで同じ数字が出たら、勝ちになる'},
+  assassin:{n:'急所',d:'次の1回を、必ず勝つ勝負にできる',cd:30},
+  swordsaint:{n:'無心',d:'負けても、50%で連勝が途切れない'},
+  dragoon:{n:'天翔',d:'全額勝負で勝つと、儲けが3倍'},
+  phantom:{n:'見抜く',d:'スロット台の設定を見抜ける（台を移ると見抜き直し）',cd:50},
+  luckking:{n:'天運',d:'儲けが3倍'},
+  tennyo:{n:'天女の舞',d:'連勝するたびに、儲けが×2.5ずつ重なる（10連勝まで）'},
+  chrono:{n:'時戻し',d:'負けた勝負を、1回だけ自動でやり直す',cd:100},
+  saint:{n:'慈悲',d:'全額勝負で負けても、半分は手元に残る'},
+  overlord:{n:'覇気',d:'座っているスロット台の設定を1段上げる（最大6）',cd:100},
+};
+const casT=()=>P.job==='neet'?null:CAS_TRAITS[P.job]||null;
+const isT=k=>P.job===k;
+const STREAK_MUL={bard:1.5,maestro:2,tennyo:2.5};
+// 再使用まで
+function casCdLeft(k=P.job){ P.casCd=P.casCd||{}; return P.casCd[k]||0; }
+function casReady(k=P.job){ const T=CAS_TRAITS[k]; if(!T||!T.cd) return false; if(T.charges) return casCharges()>0; return casCdLeft(k)<=0; }
+function casCharges(){ P.casCharge=P.casCharge||{}; return P.casCharge.maiden===undefined?2:P.casCharge.maiden; }
+function casUse(k=P.job){ const T=CAS_TRAITS[k]; P.casCd=P.casCd||{};
+  if(T.charges){ P.casCharge=P.casCharge||{}; P.casCharge.maiden=casCharges()-1; if(!P.casCd[k]) P.casCd[k]=T.cd; }
+  else P.casCd[k]=T.cd; }
+// 冒険・修練場の戦闘1回ごとに進める（全職業ぶん）
+function casCdTick(){ if(!P.casCd) return; for(const k of Object.keys(P.casCd)){ if(P.casCd[k]>0) P.casCd[k]--;
+  if(k==='maiden'&&P.casCd[k]<=0){ P.casCharge=P.casCharge||{}; const c=casCharges(); if(c<2){ P.casCharge.maiden=c+1; if(c+1<2) P.casCd[k]=CAS_TRAITS.maiden.cd; } }
+  if(P.casCd[k]<=0) delete P.casCd[k]; } }
+// 1回の勝負の状況（takeBet で作る）
+let casCtx=null;
+function casBegin(b,before){ casCtx={bet:b,before,allIn:b>0&&b===before,used:false,notes:[]};
+  if(isT('apprentice')){ P.casBeg=P.casBeg&&P.casBeg.job===P.job?P.casBeg:{job:P.job,n:0}; P.casBeg.n++; } }
+// 負けのとき、やり直すか（やり直したら true）。勝負1回につき1度まで
+function casRetry(){ const x=casCtx; if(!x||x.used) return false; let why='';
+  if(isT('apprentice')&&P.casBeg&&P.casBeg.job==='apprentice'&&P.casBeg.n<=5&&chance(.5)) why='ビギナーズラック';
+  else if(isT('fighter')&&x.before>0&&chance(.3*x.bet/x.before)) why='火事場';
+  else if(isT('hero')&&x.allIn&&chance(.25)) why='勇気';
+  else if(isT('chrono')&&casReady('chrono')){ casUse('chrono'); why='時戻し'; }
+  if(!why) return false; x.used=true; x.notes.push(`<span class="c">【${why}】負けをやり直した！</span>`); return true; }
+// 必ず勝つ（急所）
+const casSure=()=>!!(casCtx&&casCtx.sure);
+function casArm(){ if(!isT('assassin')||!casReady('assassin')||P.casArm) return; P.casArm=true; casUse('assassin'); casMsg='<span class="c">【急所】次の1回は、必ず勝つ。</span>'; save(); panel('casino'); }
+// 勝ったときの儲けの倍率
+function casWinMul(){ const x=casCtx||{}; let m=1, t=[];
+  if(isT('warrior')&&x.allIn){ m*=1.5; t.push('度胸×1.5'); }
+  if(isT('dragoon')&&x.allIn){ m*=3; t.push('天翔×3'); }
+  if(isT('merchant')){ m*=1.2; t.push('仲介料×1.2'); }
+  if(isT('berserker')){ m*=2; t.push('狂乱×2'); }
+  if(isT('paladin')){ m*=.9; }
+  if(isT('ninja')&&chance(.3)){ m*=2; t.push('分身×2'); }
+  const sm=STREAK_MUL[P.job], s=Math.min(10,P.casStreak||0); if(sm&&s>0){ m*=Math.pow(sm,s); t.push(`${s}連勝×${fmt(Math.pow(sm,s))}`); }
+  return {m,t}; }
+// 負けたときに戻ってくる額
+function casOnLoss(bet){ const x=casCtx||{bet,before:bet}; let back=0, t='';
+  const big=bet>=Math.max(1,(x.before||bet)*.1);
+  if(big&&isT('dancer')&&casReady('dancer')){ casUse('dancer'); return {back:bet,t:'【ひらり】負けをなかったことにした！'}; }
+  if(big&&isT('maiden')&&casReady('maiden')){ casUse('maiden'); return {back:bet,t:`【舞】負けをなかったことにした！（残り${casCharges()}回）`}; }
+  if(isT('tycoon')&&casReady('tycoon')&&P.gold>=Math.floor(bet/2)){ casUse('tycoon'); return {back:bet-Math.floor(bet/2),t:`【札束】${fmt(Math.floor(bet/2))}G を払って負けを取り消した`}; }
+  if(isT('knight')){ back=Math.floor(bet*.3); t='【堅守】損を3割減らした'; }
+  if(isT('thief')){ back=Math.floor(bet*.1); t='【くすね取り】1割を取り返した'; }
+  if(isT('sage')){ back=Math.floor(bet*.2); t='【叡智】損を2割減らした'; }
+  if(isT('paladin')){ back=Math.floor(bet*.5); t='【加護】損を半分にした'; }
+  if(isT('saint')&&x.allIn){ back=Math.max(back,Math.floor(bet*.5)); t='【慈悲】半分が手元に残った'; }
+  if(isT('priest')){ const keep=Math.floor((x.before||0)*.1); if(P.gold+back<keep){ back=keep-P.gold; t='【懺悔】1割が手元に残った'; } }
+  if(isT('bishop')){ const d=Math.floor((bet-back)*.2); if(d>0){ P.casDonate=(P.casDonate||0)+d; t=`【お布施】${fmt(d)}G を預けた（次に冒険で勝つと返ってくる）`; } }
+  return {back:Math.max(0,Math.min(bet,back)),t}; }
+// 冒険で勝ったとき：お布施が返ってくる
+function casDonateBack(L){ if(!P.casDonate) return; const g=P.casDonate; P.casDonate=0; P.gold+=g; L.push(`<span class="rw">お布施が返ってきた！ +${fmt(g)}G</span>`); }
+// ハイ&ローの確率
+function hlOdds(card){ const hi=(13-card)/13, lo=(card-1)/13, tie=1/13; return `<div class="small c" style="text-align:center">上 ${Math.round(hi*100)}%　下 ${Math.round(lo*100)}%　同じ ${Math.round(tie*100)}%</div>`; }
+function hlPeek(){ if(!isT('archmage')||!hl.active||!casReady('archmage')||hl.next) return; casUse('archmage'); hl.next=drawCard(); save(); panel('casino'); }
+// スロット：見抜く・覇気
+function slotPeek(){ if(!isT('phantom')||!casReady('phantom')||busy||slotHold) return; const m=machine(); if(m.peek) return; casUse('phantom'); m.peek=true; casMsg=`<span class="c">【見抜く】この台は設定${m.set}だ。</span>`; save(); panel('casino'); }
+function slotBoost(){ if(!isT('overlord')||!casReady('overlord')||busy||slotHold) return; const m=machine(); if(m.set>=6) return; casUse('overlord'); m.set++; m.boosted=(m.boosted||0)+1; casMsg=`<span class="c">【覇気】台の設定が1段上がった！</span>`; save(); panel('casino'); }
+// カジノ画面の「職業の特性」欄
+function casTraitHTML(){ const T=casT(); if(!T) return P.job==='neet'?`<div class="small" style="color:#9ab;margin:4px 0">無職：職業の特性なし</div>`:'';
+  let st='';
+  if(T.cd){ if(T.charges) st=`残り${casCharges()}回${casCharges()<2?`（あと${casCdLeft()}戦で1回分たまる）`:''}`;
+    else st=casReady()?'<span class="g">使える</span>':`<span class="o">あと${casCdLeft()}戦で再使用可</span>`; }
+  if(STREAK_MUL[P.job]&&P.casStreak) st=`${Math.min(10,P.casStreak)}連勝中`;
+  if(isT('bishop')&&P.casDonate) st=`預けたお布施 ${fmt(P.casDonate)}G`;
+  if(isT('assassin')&&P.casArm) st='<span class="g">次の1回は必ず勝つ</span>';
+  if(isT('apprentice')){ const n=P.casBeg&&P.casBeg.job==='apprentice'?P.casBeg.n:0; st=n<5?`あと${5-n}回`:'終了'; }
+  let btn='';
+  if(isT('assassin')&&!P.casArm) btn=`<button ${casReady()&&!busy&&!hl.active?'':'disabled'} style="margin-top:4px;width:100%" onclick="casArm()">急所を狙う（次の1回は必ず勝つ）</button>`;
+  return `<div class="win" style="margin:4px 0;padding:6px 8px"><div class="small"><span class="y">${JOBS[P.job].n}の特性【${T.n}】</span>${st?`　${st}`:''}</div><div class="small" style="color:#bcd">${T.d}${T.cd?`（使ったら、冒険・修練場で${T.cd}戦するまで使えない）`:''}</div>${btn}</div>`; }
+
 // --- ハイ&ロー ---
 const SUITS=['♠','♥','♦','♣'], CN=['','A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 let hl={active:false,card:0,suit:0,bet:0,pot:0,streak:0,prev:null};
@@ -757,6 +949,9 @@ function hlHTML(){
   let h=`<div class="small">次のカードが今より上か下かを当てる。当たるたびに賞金2倍。同じ数字は引き分け。最大${HL_MAX}連勝。</div>`+betUI(hl.active);
   h+=`<div class="big">${hl.prev?cardHTML(...hl.prev)+' → ':''}${hl.active?cardHTML(hl.card,hl.suit):'<span class="card back">?</span>'}</div>`;
   if(hl.active){
+    if(['mage','archmage','sage'].includes(P.job)) h+=hlOdds(hl.card);
+    if(hl.next) h+=`<div class="small c" style="text-align:center">【千里眼】次のカードは ${cardHTML(...hl.next)}</div>`;
+    else if(isT('archmage')) h+=`<button ${casReady()?'':'disabled'} style="width:100%;margin-bottom:4px" onclick="hlPeek()">千里眼で次のカードをのぞく</button>`;
     h+=`<div class="small" style="text-align:center">賞金 <span class="y">${fmt(hl.pot)}G</span>（${hl.streak}/${HL_MAX}連勝）</div>`;
     h+=`<div class="grid" style="margin-top:6px"><button onclick="hlGuess(1)">ハイ ▲</button><button onclick="hlGuess(0)">ロー ▼</button><button ${hl.streak?'':'disabled'} onclick="hlCollect()">降りる</button></div>`;
   } else h+=`<button style="width:100%;margin-top:6px" onclick="hlStart()">カードを引く</button>`;
@@ -771,9 +966,12 @@ function hlReward(n){ const B=HL_BONUS[n]; if(!B) return ''; const lv0=P.lv, L=[
   if(B.x2){ hl.pot*=2; t+=`、賞金さらに×2`; }
   save(); renderStatus(); return t+'</div>'; }
 function hlGuess(hi){
-  const [n,s]=drawCard(); hl.prev=[hl.card,hl.suit];
-  if(n===hl.card&&!persona('gamble')){ casMsg='同じ数字！ 引き分け、続行。'; }
-  else if(n===hl.card||(hi?n>hl.card:n<hl.card)){ hl.pot*=2; hl.streak++; P.hlBest=Math.max(P.hlBest||0,hl.streak); casMsg=`<span class="g">当たり！ 賞金 ${fmt(hl.pot)}G</span>`+hlReward(hl.streak);
+  const tieWin=persona('gamble')||isT('spellblade'), win=n=>n===hl.card?tieWin:(hi?n>hl.card:n<hl.card);
+  let [n,s]=hl.next||drawCard(); hl.next=null; hl.prev=[hl.card,hl.suit];
+  if(!win(n)&&(n!==hl.card||casSure())){ if(casSure()){ for(let i=0;i<60&&!win(n);i++) [n,s]=drawCard(); casCtx.notes.push('<span class="c">【急所】必ず勝つ！</span>'); } else if(casRetry()) [n,s]=drawCard(); }
+  if(casCtx) casCtx.sure=false;
+  if(n===hl.card&&!tieWin){ casMsg='同じ数字！ 引き分け、続行。'; }
+  else if(win(n)){ hl.pot*=isT('kenou')?2.5:2; hl.streak++; P.hlBest=Math.max(P.hlBest||0,hl.streak); casMsg=`<span class="g">当たり！ 賞金 ${fmt(hl.pot)}G</span>`+hlReward(hl.streak);
     if(hl.streak>=HL_MAX){ hl.card=n; hl.suit=s; const bonus=casMsg; hl.active=false; settle(hl.bet,hl.pot/hl.bet,`<span class="mir">★ ${HL_MAX}連勝パーフェクト！ ★</span>`); casMsg=bonus+casMsg; hl.prev=null; panel('casino'); return; } }
   else { hl.card=n; hl.suit=s; hl.active=false; settle(hl.bet,0,`ハズレ…（${hl.streak}連勝で終了）`); panel('casino'); return; }
   hl.card=n; hl.suit=s; panel('casino');
@@ -798,7 +996,8 @@ function newMachine(){ const tk=isTakashi(); let set;
   if(tk){ let r=Math.random(); set=6; for(let i=0;i<6;i++){ r-=TK_W[i]; if(r<0){ set=i+1; break; } } } else set=1+Math.floor(Math.random()*6);
   mach={set,spins:0,cnt:{},lose:0,answered:false,result:''}; }
 function machine(){ if(!mach) newMachine(); return mach; }
-function rollRole(){ const m=machine(), pr=roleProbs(persona('gamble')?6:m.set,isTakashi()); let r=Math.random(); for(const [k] of ROLES){ r-=pr[k]||0; if(r<0) return k; } return null; }
+function rollRole(){ const m=machine(), pr=roleProbs(persona('gamble')?6:m.set,isTakashi());
+  if(P.job==='hunter') pr['777']*=3; if(P.job==='sniper'){ pr['BAR']*=2; pr['★']*=2; pr['🔔']*=2; } let r=Math.random(); for(const [k] of ROLES){ r-=pr[k]||0; if(r<0) return k; } return null; }
 function reelsFor(role){ const o=()=>{ const n=['BAR','★','🔔','🍉']; return n[Math.floor(Math.random()*n.length)]; };
   if(role==='777') return ['7','7','7']; if(role==='🍒3') return ['🍒','🍒','🍒'];
   if(role==='🍒2'){ const a=['🍒','🍒',o()]; return a.sort(()=>Math.random()-.5); }
@@ -807,12 +1006,14 @@ function reelsFor(role){ const o=()=>{ const n=['BAR','★','🔔','🍉']; retu
 const payOf=role=>!role?0:(role==='777'&&isTakashi())?10:ROLES.find(r=>r[0]===role)[1];
 function slotStatsHTML(){
   const m=machine(), n=m.spins, wins=n-m.lose;
-  let h=`<div class="row"><b>設定：<span class="${m.answered?'mir':'y'}">${m.answered?m.set:'？？？'}</span></b><span class="small">${fmt(n)}回転　勝率 <span class="y">${n?(wins/n*100).toFixed(1):'0.0'}%</span></span></div>`;
+  let h=`<div class="row"><b>設定：<span class="${m.answered?'mir':m.peek?'c':'y'}">${m.answered||m.peek?m.set:'？？？'}</span>${m.boosted?`<span class="small c">（覇気+${m.boosted}）</span>`:''}</b><span class="small">${fmt(n)}回転　勝率 <span class="y">${n?(wins/n*100).toFixed(1):'0.0'}%</span></span></div>`;
   h+=`<div class="grid small" style="grid-template-columns:repeat(4,1fr);gap:2px 6px">`+ROLES.map(([k,,nm])=>{ const c=m.cnt[k]||0; return `<div>${nm} ${c}<span style="color:#789">${c?' (1/'+(n/c).toFixed(1)+')':''}</span></div>`; }).join('')+`<div>ハズレ ${m.lose}</div></div>`;
   if(m.answered) h+=`<div class="small" style="margin-top:4px">${m.result}</div>`;
   else if(n<SET_MIN) h+=`<div class="small" style="margin-top:4px;color:#9ab">${SET_MIN}回転すると設定を予想できる（あと${SET_MIN-n}回転）</div>`;
   else h+=`<div class="small y" style="margin-top:4px">この台の設定を予想する（1台1回）</div><div class="grid" style="grid-template-columns:repeat(6,1fr);gap:4px">`+[1,2,3,4,5,6].map(v=>`<button ${busy||slotHold?'disabled':''} onclick="guessSet(${v})">${v}</button>`).join('')+`</div>`;
   h+=`<details style="margin-top:6px"><summary class="small">設定判別の目安</summary><div class="small">勝率（当たり全体）：`+WINRATE.map((w,i)=>`設定${i+1}=${Math.round(w*100)}%`).join('　')+`<br>BAR・★・🔔・777は設定に関係なく一定。🍒と🍉は設定が高いほど出やすい。</div></details>`;
+  if(isT('phantom')&&!m.peek) h+=`<button style="width:100%;margin-top:6px" ${casReady()&&!busy&&!slotHold?'':'disabled'} onclick="slotPeek()">【見抜く】この台の設定を見抜く</button>`;
+  if(isT('overlord')&&m.set<6) h+=`<button style="width:100%;margin-top:6px" ${casReady()&&!busy&&!slotHold?'':'disabled'} onclick="slotBoost()">【覇気】この台の設定を1段上げる</button>`;
   h+=`<button style="width:100%;margin-top:6px;font-size:12px" ${busy||slotHold?'disabled':''} onclick="moveMachine()">台を移る（設定が変わる・記録はリセット）</button>`;
   return h;
 }
@@ -843,7 +1044,10 @@ function slotSpin(fast){
   if(busy) return res(null); const b=takeBet(); if(!b){ panel('casino'); return res({stop:true}); }
   const tkLock=takashiLock(), m=machine();
   busy=true; casMsg=''; renderStatus(); panel('casino');
-  const role=rollRole(), fin=reelsFor(role), stop=fast?[3,5,7]:[8,13,18], end=stop[2]; let tick=0;
+  let role=rollRole();
+  if(!role){ if(casSure()){ for(let i=0;i<200&&!role;i++) role=rollRole(); casCtx.notes.push('<span class="c">【急所】必ず勝つ！</span>'); } else if(casRetry()) role=rollRole(); }
+  if(!role&&((isT('alchemist')&&chance(.1))||(isT('grandalch')&&chance(.25)))){ role='🍒2'; casCtx&&casCtx.notes.push('<span class="c">【錬成】ハズレを🍒🍒に変えた！</span>'); }
+  const fin=reelsFor(role), stop=fast?[3,5,7]:[8,13,18], end=stop[2]; let tick=0;
   const iv=setInterval(()=>{ tick++;
     for(let i=0;i<3;i++) reels[i]=tick<stop[i]?pickSym():fin[i];
     const el=document.getElementById('reels'); if(el) el.innerHTML=reels.map(r=>`<div class="reel">${r}</div>`).join('');
@@ -882,7 +1086,10 @@ function rouHTML(){
 function rouSpin(){
   if(busy) return; const b=takeBet(); if(!b){panel('casino');return;}
   busy=true; casMsg=''; renderStatus(); panel('casino');
-  const fin=Math.floor(Math.random()*37); let tick=0;
+  const rouWin=f=>rouBet.startsWith('n')?+rouBet.slice(1)===f:f!==0&&({red:REDN.includes(f),black:!REDN.includes(f),odd:f%2===1,even:f%2===0,d1:f<=12,d2:f>12&&f<=24,d3:f>24})[rouBet];
+  let fin=Math.floor(Math.random()*37);
+  if(!rouWin(fin)){ if(casSure()){ for(let i=0;i<500&&!rouWin(fin);i++) fin=Math.floor(Math.random()*37); casCtx.notes.push('<span class="c">【急所】必ず勝つ！</span>'); } else if(casRetry()) fin=Math.floor(Math.random()*37); }
+  let tick=0;
   const iv=setInterval(()=>{ tick++; const n=tick<20?Math.floor(Math.random()*37):fin;
     const el=document.getElementById('rouNum'); if(el) el.innerHTML=`<span class="${REDN.includes(n)?'r':n===0?'g':''}">${n}</span>`;
     if(tick>=20){ clearInterval(iv); busy=false; rouRes=fin;
@@ -904,7 +1111,9 @@ function diceHTML(){
 function diceRoll(odd){
   if(busy) return; const b=takeBet(); if(!b){panel('casino');return;}
   busy=true; casMsg=''; renderStatus(); panel('casino');
-  const d=()=>1+Math.floor(Math.random()*6); const fin=[d(),d()]; let tick=0;
+  const d=()=>1+Math.floor(Math.random()*6), dWin=f=>((f[0]+f[1])%2===1)===!!odd; let fin=[d(),d()];
+  if(!dWin(fin)){ if(casSure()){ for(let i=0;i<100&&!dWin(fin);i++) fin=[d(),d()]; casCtx.notes.push('<span class="c">【急所】必ず勝つ！</span>'); } else if(casRetry()) fin=[d(),d()]; }
+  let tick=0;
   const iv=setInterval(()=>{ tick++; dice=tick<12?[d(),d()]:fin;
     const el=document.getElementById('diceBox'); if(el) el.textContent=DICE[dice[0]]+DICE[dice[1]];
     if(tick>=12){ clearInterval(iv); busy=false;
@@ -1116,6 +1325,16 @@ function buildAch(){
   Object.entries(ROUTES).forEach(([k,r])=>A.push(T('rt_'+k,'エンディング',ED_N[k],`${r.n}ルートのエンディングを見た`,()=>edGot(k))));
   A.push(T('rtall','エンディング','そして、また無職に','ハロワの5ルートすべてのエンディングを見た',()=>Object.keys(ROUTES).every(edGot)));
   A.push(T('edall','エンディング','全エンディング制覇','ハロワの5ルートと桁の神、すべてのエンディングを見た',()=>Object.keys(ROUTES).every(edGot)&&!!(P.final&&P.final.cleared)));
+  // 図鑑（#8）
+  A.push(T('bk1','図鑑','図鑑のはじまり','図鑑に1種登録した',()=>bkFound()>=1,true));
+  A.push(T('bk18','図鑑','半分の世界','図鑑に18種登録した',()=>bkFound()>=18,true));
+  A.push(T('bkall','図鑑','モンスター博士','図鑑の36種すべてを登録した',()=>bkFound()>=AREAS.length*3,true));
+  A.push(T('gd1','図鑑','番人殺し','番人を1体倒した',()=>Object.keys(P.guard||{}).length>=1,true));
+  A.push(T('gd10','図鑑','門を越える者','番人を10体倒した',()=>Object.keys(P.guard||{}).length>=10,true));
+  A.push(T('gdall','図鑑','すべての門を越えて','30体の番人をすべて倒した',()=>Object.keys(P.guard||{}).length>=GUARD_T.length,true));
+  A.push(T('mat1','図鑑','掘り出し物','固有品をはじめて手に入れた',()=>MATS.some((m,i)=>matN(i)>0),true));
+  A.push(T('matall','図鑑','蒐集家','12種の固有品をすべて手に入れた',()=>MATS.every((m,i)=>matN(i)>0),true));
+  A.push(T('mat999','図鑑','極めし蒐集','固有品を1種、999個集めた',()=>MATS.some((m,i)=>matN(i)>=MAT_MAX),true));
   A.push(T('all','マスター','インフレの果て','すべての実績を解除した',()=>ACHS.filter(a=>a.id!=='all').every(a=>P.ach[a.id])));
   return A;
 }
@@ -1239,13 +1458,14 @@ function rivalTol(R){ return R.t; }
 function contest(i){ const R=RIVALS[i]; if(!R) return; const fee=Math.max(50,Math.floor(enemyStats(Math.min(R.t,P.maxArea)).gold*5)); if(P.gold<fee) return;
   P.gold-=fee; P.contestTries=(P.contestTries||0)+1;
   let me=tolerance(), you=rivalTol(R), cup=0, lines=[], res=null; const nm=esc(P.name);
-  while(res===null&&cup<40){ cup++; me-=rnd(.4,1.6)*(1+cup*.05); you-=rnd(.4,1.6)*(1+cup*.05);
+  while(res===null&&cup<500){ cup++; me-=rnd(.4,1.6)*(1+cup*.05); you-=rnd(.4,1.6)*(1+cup*.05);
     if(cup%3===0||me<=0||you<=0) lines.push(`${cup}杯目… ${nm}${me<2?'の目が泳いでいる':'はまだ平気そうだ'}／${R.n}${you<2?'がふらついている':'は涼しい顔'}`);
     if(me<=0&&you<=0) res=chance(.5); else if(me<=0) res=false; else if(you<=0) res=true; }
   let msg=lines.slice(-4).join('<br>');
   if(res){ const prize=Math.floor(fee*(8+i*4)); P.gold+=prize; P.earned=(P.earned||0)+prize; P.contest=P.contest||{}; P.contest[R.id]=(P.contest[R.id]||0)+1; P.contestWins=(P.contestWins||0)+1;
     msg+=`<div class="mir">★ ${R.n}が先に倒れた！ ${nm}の勝ち！ ★ 賞金 ${fmt(prize)}G</div>`;
     if(isTakashi()) msg+=startPersona('gamble','shukuhai'); }
+  else if(res===null) msg+=`<div class="r">${cup}杯飲んでも決着がつかず、店じまい… 参加費 ${fmt(fee)}G は戻らない</div>`;
   else msg+=`<div class="r">${nm}は${cup}杯目で潰れた… 参加費 ${fmt(fee)}G は戻らない</div>`;
   barMsg=msg; save(); renderStatus(); panel('bar','contest'); }
 
@@ -1277,7 +1497,7 @@ function guideSteps(){
    [()=>P.wpn===0||P.arm===0, '「丸腰で外に出るでない。まずは武器屋と防具屋で装備をそろえるんじゃ」'],
    [()=>P.maxArea<3, `「冒険に出て、いちばん奥のエリアで10回勝つんじゃ。そうすれば次のエリアへ進める」（いま ${areaName(P.maxArea)}・${P.areaWins}/10勝）`],
    [()=>P.champ<1, '「腕試しに闘技場へ行ってみなされ。王者を倒すと、どっと経験値が入るぞ」'],
-   [()=>!hasRank(0), `「職業を極める時期じゃ。今の${J.n}のジョブレベルを10まで上げるんじゃ。勝てる相手がいなくなったら、修練場がいい」（JLv${jl(P.job).lv}/${JMAX}）`],
+   [()=>!hasRank(0), `「職業を極める時期じゃ。今の${J.n}のジョブレベルを10まで上げるんじゃ。熟練度は冒険で戦ってこそ上がるぞ」（JLv${jl(P.job).lv}/${JMAX}）`],
    [()=>!openRank(1)||!hasRank(1), '「下位職を極めたなら、転職所で中位職になれるはずじゃ。極めた職の上の職に就いて、また10まで鍛えなされ」'],
    [()=>P.reb<1, `「レベルが${rebReq()}を超えたら、転生の祭壇へ行くんじゃ。生まれ変わるたびに、能力に倍率がかかる」（いま Lv${P.lv}）`],
    [()=>!openRank(2)||!hasRank(2), '「上位職は、2つの職を極めた者だけがなれる。転職所の『？？？』の条件を見て、片方ずつ極めていきなされ」'],
@@ -1332,7 +1552,7 @@ function guideHTML(){
   const t=typeof steps[i][1]==='function'?steps[i][1]():steps[i][1];
   // 本筋とは別の、ひとことアドバイス（進行は止めない）
   const tips=[]; if(P.pts>0) tips.push(`能力ポイントが${P.pts}余っとる。『能力振り』で${KN[mainKey()]}に振るといい。`);
-  if(!takashiLock()&&P.maxArea>0&&/無謀|強敵/.test(danger(enemyStats(P.maxArea)))) tips.push('奥のエリアがきつそうじゃな。修練場で稼ぐか、装備を買い直すか、エールや火酒を一杯ひっかけるのも手じゃ。');
+  if(!takashiLock()&&P.maxArea>0&&/無謀|強敵/.test(danger(enemyStats(P.maxArea)))) tips.push('奥のエリアがきつそうじゃな。ひとつ浅いエリアで鍛え直すか、装備を買い直すか、エールや火酒を一杯ひっかけるのも手じゃ。');
   const post=postMode()&&i>=16;
   return `<div class="small" style="color:#9ab">隠居じいさん（相談は無料）</div>`+(post?`<div class="o" style="margin-top:4px">「内定おめでとう。…じゃが実はな、この世界にはまだ隠されたものがいくつかある。ひとつずつ教えてやろう」</div>`:'')+`<div class="c" style="margin-top:4px">${typeof t==='function'?t():t}</div>`+(post?secretListHTML():'')+
     (tips.length?`<div class="small o" style="margin-top:6px">ついでに：${tips.join('<br>')}</div>`:'')+
@@ -1465,7 +1685,7 @@ let last=null;
 function fightArea(t,f){ if(takashiLock()) return;last={type:'area',t}; runBattle(makeEnemy(t),t,f)}
 function fightChamp(f){ if(takashiLock()||P.champ>=CHAMP_MAX) return;last={type:'champ'}; runBattle(makeChamp(P.champ),-1,f)}
 function fightSecret(f){ if(takashiLock()) return;last={type:'secret'}; runBattle(makeSecret(),-2,f)}
-function again(f){ if(!last) return; if(last.type==='area') fightArea(last.t,f); else if(last.type==='champ') fightChamp(f); else if(last.type==='final') fightFinal(f); else if(last.type==='train') fightTrain(f); else fightSecret(f); }
+function again(f){ if(!last) return; if(last.type==='area') fightArea(last.t,f); else if(last.type==='guard') fightGuard(last.t,f); else if(last.type==='champ') fightChamp(f); else if(last.type==='final') fightFinal(f); else if(last.type==='train') fightTrain(f); else fightSecret(f); }
 // 長押し連戦
 let holdT=null, holdI=null, holdN=0, holdW=0;
 function holdStart(ev){ ev.preventDefault(); if(holdT||holdI||!$('#modal').classList.contains('hide')) return;
@@ -1557,23 +1777,27 @@ function simulate(e,t,fast){
     }
     L.push(`<span class="hpl">${nm} HP ${fmt(Math.max(0,c.php))}/${fmt(mhp)}　|　${e.name} HP ${fmt(Math.max(0,c.ehp))}</span>`);
   }
-  P.battles++; drinkTick(L);
+  P.battles++; drinkTick(L); if(t>=0||e.train) casCdTick();
   P.jobB=P.jobB||{}; P.jobB[P.job]=(P.jobB[P.job]||0)+1;
   if(e.secret) checkMasterUnlock(L);
   let sum='';
   if(res==='win'){
     P.kills++;
     const lk=st('luk');
-    const exp=Math.floor(e.exp*rnd(.9,1.1)*ps('exp',1)*drinkMul('exp')); const gold=Math.floor(e.gold*rnd(.8,1.2)*(1+lk/(lk+200))*ps('gold',1)*drinkMul('gold')*(c.secGold||1))+c.gold;
+    const exp=Math.floor(e.exp*rnd(.9,1.1)*ps('exp',1)*drinkMul('exp')*matMul('exp')); const gold=Math.floor(e.gold*rnd(.8,1.2)*(1+lk/(lk+200))*ps('gold',1)*drinkMul('gold')*(c.secGold||1)*matMul('gold'))+c.gold;
     L.push(`<span class="y">${e.name}を倒した！</span>`);
     L.push(`<span class="rw">${fmt(exp)}の経験値と ${fmt(gold)}G を手に入れた！</span>`);
-    P.gold+=gold; P.earned=(P.earned||0)+gold;
+    P.gold+=gold; P.earned=(P.earned||0)+gold; if(t>=0) casDonateBack(L);
     const lv0=P.lv;
     let drop='';
-    if(c.secDrop||chance((.04+lk/(lk+1000)*.1)*ps('drop',1)*(e.train?2:1))){const k=KEYS[Math.floor(Math.random()*5)]; const n=Math.max(1,Math.floor(rnd(1,4)*(Math.max(t,P.champ,P.maxArea*(e.train?1:0),0)+1)*(c.secFruitX||1))); P.lastFruit=true;
+    if(c.secDrop||chance((.04+lk/(lk+1000)*.1)*ps('drop',1)*(e.train?2:1)*matMul('drop'))){const k=KEYS[Math.floor(Math.random()*5)]; const n=Math.max(1,Math.floor(rnd(1,4)*(Math.max(t,P.champ,P.maxArea*(e.train?1:0),0)+1)*(c.secFruitX||1))); P.lastFruit=true;
       P.base[k]+=n; drop=`${KN[k]}の実(+${n})`; L.push(`<span class="g">${KN[k]}の実を拾った！ ${KN[k]}が${n}上がった！</span>`);}
     gainExp(exp,L);
-    const jg=gainJob(e.secret?10:e.champ?5:e.train?3*(1+Math.floor(P.maxArea/3)):1+Math.floor(Math.max(t,0)/3),L);
+    // 修練場では熟練度（JEXP）は上がらない（#7：熟練度が上がりすぎるため。修練場は極意を覚える場所）
+    const jg=e.train?'':gainJob(Math.max(1,Math.floor((e.secret?10:e.champ?5:1+Math.floor(Math.max(t,0)/3))*matMul('jexp'))),L);
+    if(t>=0||e.guard) bkCount(e,e.guard?e.gt:t);
+    if(t>=0&&chance(MAT_RATE)){ const md=matDrop(t,L); if(md) drop=drop?drop+' / '+md:md; }
+    if(e.guard) guardWin(e,L,c);
     if(e.champ){P.champ++; L.push(`<span class="mir">★ ${nm}は新チャンピオンになった！ ★</span>`); if(P.champ===CHAMPS.length) L.push(`<span class="mir">★ 闘技場の全王者を制覇した！ ★</span>`); checkMasterUnlock(L);}
     if(e.secret){P.godWins=(P.godWins||0)+1; P.godMaxForm=Math.max(P.godMaxForm||0,P.reb+1); if(c.usedMiracle||P.godWins===1) c.trainMile=true;}
     if(e.train){ P.train=P.train||{}; const n=P.train[P.job]=(P.train[P.job]||0)+1, J=JOBS[P.job];
@@ -1584,7 +1808,9 @@ function simulate(e,t,fast){
         L.push(`<span class="mir">${(J.main==='best'||J.hidden)?'全能力×1.5':KN[J.main]+'×2'}（永続・全職業に有効）</span>`); } }
     if(e.secret && !P.blessed[P.job]){P.blessed[P.job]=true; L.push(`<span class="mir">★ ${nm}は「奇跡の加護」を授かった！ ★</span>`); L.push(`<span class="mir">${JOBS[P.job].n}でいるかぎり、奇跡が頻繁に起きるようになった！</span>`);}
     if(t>=0&&t===P.maxArea&&!P.areaDone){P.areaWins++;
-      if(P.areaWins>=AREA_WINS&&P.maxArea>=AREA_MAX){ P.areaDone=true; c.trainMile=true;
+      if(P.areaWins>=AREA_WINS&&guardBlock()){ const first=P.areaWins===AREA_WINS; P.areaWins=AREA_WINS;
+        if(first){ L.push(`<span class="o">${makeGuard(t).name}が道をふさいでいる！ 番人を倒さないと先へ進めない。</span>`); c.trainMile=true; } }
+      else      if(P.areaWins>=AREA_WINS&&P.maxArea>=AREA_MAX){ P.areaDone=true; c.trainMile=true;
         L.push(`<span class="mir">★★★ 次元の果てを踏破した！ ★★★</span>`); grantNeetGear(L); L.push(`<span class="mir">これより先に、世界は存在しない。</span>`); }
       else if(P.areaWins>=AREA_WINS){P.maxArea++; P.areaWins=0; c.newArea=P.maxArea; L.push(`<span class="y">新エリア「${areaName(P.maxArea)}」が解放された！</span>`);}}
     sum=`<span class="g">勝利！</span> EXP+${fmt(exp)} / ${fmt(gold)}G${P.lv>lv0?` / <span class="lv">Lv${lv0}→${P.lv}</span>`:''}${drop?` / <span class="g">${drop}</span>`:''}${e.secret?' / <span class="mir">奇跡の加護</span>':''}${c.kaji?' / <span class="mir">火事場のクソ力</span>':''}${jg?` / <span class="c">${jg}</span>`:''}`;
@@ -1597,7 +1823,7 @@ function simulate(e,t,fast){
     L.push(`決着がつかない！ ${nm}は逃げ出した。`);
     sum=`<span class="o">引き分け（逃走）</span>`;
   }
-  const head=`${e.secret?'神々の座':e.champ?'闘技場':e.train?'修練場':areaName(t)}：${e.name}（${JOBS[P.job].n} Lv${P.lv}）`;
+  const head=`${e.secret?'神々の座':e.champ?'闘技場':e.train?'修練場':e.guard?areaName(e.gt):e.final?'桁の神':t<0?'':areaName(t)}：${e.name}（${JOBS[P.job].n} Lv${P.lv}）`;
   LOGS.unshift({head,sum,lines:L}); if(LOGS.length>20) LOGS.length=20;
   save(); if(!fast) saveLogs();
   return {L,sum,newArea:c.newArea,trainMile:c.trainMile};
@@ -1613,7 +1839,7 @@ function gainExp(e,L){
 function againLabel(){return last&&last.type==='champ'?'もう一戦':'もう一戦（長押しで連戦）'}
 // 場所ごとの戦闘数（今回入ってから／累計）
 let locKey=null, locRun=0;
-function locOf(e,t){ return e.final?'final':e.work?'work':e.secret?'god':e.champ?'champ':e.train?'train_'+P.job:'a'+t; }
+function locOf(e,t){ return e.guard?'a'+e.gt:e.final?'final':e.work?'work':e.secret?'god':e.champ?'champ':e.train?'train_'+P.job:'a'+t; }
 function locName(k){ return k==='final'?'桁の神':k==='work'?'ハローワーク':k==='god'?'神々の座':k==='champ'?'闘技場':k.startsWith('train_')?`${JOBS[k.slice(6)].n}の修練場`:areaName(+k.slice(1)); }
 const locTotal=k=>(P.locB&&P.locB[k])||0;
 function runBattle(e,t,fast){
@@ -1632,7 +1858,7 @@ function runBattle(e,t,fast){
   $('#nmP').textContent=`${P.name} Lv${P.lv}`;
   $('#result').innerHTML=sum+`<div class="small">所持金 ${fmt(P.gold)}G　<span class="c">${locName(lk)}：今回${fmt(locRun)}戦目（累計${fmt(P.locB[lk])}戦）</span></div><div class="small">${JOBS[P.job].n}での戦闘 ${fmt((P.jobB||{})[P.job]||0)}回　総戦闘${fmt(P.battles)}回</div>`;
   const box=$('#log'); box.innerHTML=L.map(x=>`<p>${x}</p>`).join(''); box.scrollTop=box.scrollHeight;
-  if(newArea!==undefined && t>=0){ holdEnd(); showAreaModal(newArea); }
+  if(newArea!==undefined && (t>=0||e.guard)){ holdEnd(); showAreaModal(newArea); }
   if(trainMile){ holdEnd(); }
 }
 // ---- 汎用ポップアップ（順番待ちあり） ----
@@ -2040,6 +2266,7 @@ function pixFor(el,key){
     if(e.train){ const r=Math.min(3,JOBS[P.job].rank); return {src:PIX.r[r],cls:['','bust','portrait','bust'][r]}; }
     if(e.secret) return pixGod(P?P.reb:0);
     if(e.champ) return pixChamp(e.name);
+    if(e.guard) return {src:PIX.z[pixEnemy(e.base,e.gt)],f:'drop-shadow(0 0 3px #ffd34d) saturate(1.3) contrast(1.1)'};
     return {src:PIX.z[pixEnemy(e.name,x.t)]};
   }
   if(key==='knight') return {src:PIX.h[P?P.job:'warrior']||PIX.h.warrior};
@@ -2082,6 +2309,7 @@ function artFor(el,key,hue){
     if(e.final) return finalSVG(hue);
     if(e.train) return dummySVG(JOBS[P.job].rank,hue);
     if(e.secret){ const r=P?P.reb:0; return enemySVG('アルケイオン'+Math.min(r,6),'dragon',hue,Math.min(.2,r*.03),{style:'cool',halo:'#ffe680',glow:true,crown:r>=3}); }
+    if(e.guard) return enemySVG(e.name,e.sp,hue,layerOf(e.gt)/300,{crown:true});
     if(e.champ) return enemySVG(e.name,'knight',hue,Math.min(.5,(P.champ||0)/600),{style:'cool',crown:(P.champ||0)%10===9});
     return enemySVG(e.name,e.sp,hue,t>=0?t/AREA_MAX:0);
   }

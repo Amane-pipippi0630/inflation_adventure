@@ -377,7 +377,12 @@ function sanitizeSave(o){
   r.casStreak=int(o.casStreak); r.casDonate=num(o.casDonate,0); r.casArm=bool(o.casArm);
   if(o.casBeg&&isJob(o.casBeg.job)) r.casBeg={job:o.casBeg.job,n:Math.min(99,int(o.casBeg.n))};
   ['drinks','personaN','yakeN','shukuhaiN','memLoss','contestTries','contestWins','loseStreak','hangover'].forEach(k=>r[k]=int(o[k]));
-  if(o.drink&&DRINKS.some(D=>D.id===o.drink.type)) r.drink={type:o.drink.type,left:int(o.drink.left)};
+  // お酒：同時に効く分（P.dk）。古いセーブの P.drink は P.dk に移す
+  const dk=Array.isArray(o.dk)?o.dk:(o.drink?[o.drink]:[]);
+  r.dk=dk.filter(d=>d&&DRINKS.some(D=>D.id===d.type)).slice(0,3).map(d=>({type:d.type,left:Math.min(9999,int(d.left)),pow:Math.min(2,Math.max(1,num(d.pow,1)))}));
+  r.cellar=(Array.isArray(o.cellar)?o.cellar:[]).filter(c=>c&&DRINKS.some(D=>D.id===c.type)).slice(0,3).map(c=>({type:c.type,t:Math.min(Date.now(),num(c.t,Date.now()))}));
+  r.cocktails=boolMap(o.cocktails,k=>COCKTAILS.some(c=>c.id===k)); r.agedMax=Math.min(48,num(o.agedMax,0));
+  r.rebBoost=bool(o.rebBoost); r.rebLess=bool(o.rebLess);
   if(o.persona&&PERSONA[o.persona.mode]) r.persona={mode:o.persona.mode,left:int(o.persona.left)};
   r.rumors=boolMap(o.rumors,k=>RUMORS.some(x=>x.id===k)); r.contest=numMap(o.contest,k=>RIVALS.some(x=>x.id===k));
   if(o.work&&typeof o.work==='object'){ const w=o.work, okR=k=>Object.prototype.hasOwnProperty.call(ROUTES,k);
@@ -453,7 +458,7 @@ const LACC=[
 const hasL=k=>P.job==='neet'&&!!(P.lacc&&P.lacc[k]);
 function grantLacc(L){ const w=P.work; if(!w) return; const fl=w.cleared?99:(w.stage||0); LACC.forEach(a=>{ if(a[4]&&fl>=a[4]&&!(P.lacc&&P.lacc[a[0]])){ P.lacc=P.lacc||{}; P.lacc[a[0]]=true; if(L) L.push(`<span class="mir">★ 伝説の装飾品「${a[1]}」を贈られた！（${a[3]}） ★</span>`); } }); }
 function buyLacc(k){ const a=LACC.find(x=>x[0]===k); if(!a||a[2]===null||P.job!=='neet'||(P.lacc&&P.lacc[k])||P.gold<a[2]) return; P.gold-=a[2]; P.lacc=P.lacc||{}; P.lacc[k]=true; save(); renderStatus(); panel('acc'); }
-const st=k=>P.base[k]*P.rebMul*masterMul()*accStat(k)*jobBonusC(k)*(hasL('shoes')?10:1)*matMul(k);
+const st=k=>P.base[k]*P.rebMul*masterMul()*accStat(k)*jobBonusC(k)*(hasL('shoes')?10:1)*matMul(k)*drinkMul('all');
 const RMUL=[1,3,10,10]; const rmul=()=>RMUL[JOBS[P.job].rank];
 // +99（20種＋99段＝119段目）に到達すると伝説の装備に置き換わる
 const GEAR_MAX=119;
@@ -475,7 +480,9 @@ function atk(){return (st(mainKey())+wpnPow(P.wpn))*(1+P.lv*0.08)*(1+0.05*(jl(P.
 function def(){return (st('vit')*0.5+armPow(P.arm))*rmul()*matMul('def')}
 function maxhp(){return Math.floor((st('vit')*12+P.lv*10*P.rebMul+armPow(P.arm)*3)*rmul()*(neetA()?100:1)*matMul('hp'))}
 const need=lv=>Math.floor(15*Math.pow(1.3,lv-1));
-const rebReq=()=>30+10*P.reb;
+// 転生に必要なLv。暫定で最大Lv1700（第300層の敵で届くのはLv1750前後。上限がないと転生170回あたりで詰む：#14）
+const REB_LV_MAX=1700;
+const rebReq=()=>Math.ceil(Math.min(REB_LV_MAX,30+10*P.reb)*(P.rebLess?.8:1));
 function enemyStats(t){return {hp:30*Math.pow(5.5,t),atk:10*Math.pow(5.2,t),def:4*Math.pow(5,t),agi:6+t*9,exp:12*Math.pow(4.3,t),gold:25*Math.pow(6,t)}}
 const AREA_MAX=12+299; // 次元の彼方 第300層が最終
 const areaName=t=>t<AREAS.length?AREAS[t][0]:t>=AREA_MAX?'次元の果て（第300層）':`次元の彼方 第${t-AREAS.length+1}層`;
@@ -637,7 +644,7 @@ function renderStatus(){
     const lg=LACC.filter(a=>hasL(a[0])); if(lg.length) h+=`<div class="small mir">伝説：${lg.length===LACC.length?'【社会人の身だしなみ一式】（全'+LACC.length+'種）':lg.map(a=>a[1]).join('、')}</div>`; }
   if(P.blessed[P.job]) h+=`<div class="small mir">★ 奇跡の加護を受けている ★</div>`;
   if(persona()) h+=`<div class="small mir">🍶 ${PERSONA[P.persona.mode].n}：${PERSONA[P.persona.mode].d}（あと${P.persona.left}回）</div>`;
-  else if(P.drink&&P.drink.left>0){ const D=DRINKS.find(x=>x.id===P.drink.type); if(D) h+=`<div class="small o">🍺 ${D.n}：${D.d.replace(/次の\d+戦、/,'')}（あと${P.drink.left}戦）</div>`; }
+  else if(activeDrinks().length){ activeDrinks().forEach(({d,D})=>h+=`<div class="small o">🍺 ${D.n}：${D.d}（あと${d.left}戦）</div>`); activeCocktails().forEach(c=>h+=`<div class="small mir">🍸 ${c.n}</div>`); }
   if(P.hangover>0) h+=`<div class="small r">二日酔い：攻撃力半分（あと${P.hangover}戦）</div>`;
   if(P.pts>0) h+=`<div class="small y">ステータスポイントが ${P.pts} 残っています</div>`;
   $('#status').innerHTML=h;
@@ -723,8 +730,8 @@ function panel(p,arg){
         h+=`<div class="row"><div>${j.n} <span class="small">${isMaster(k)?'<span class="mir">MASTER</span>':'JLv'+jl(k).lv}　戦闘${fmt((P.jobB||{})[k]||0)}回</span>${k===P.job?' <span class="y">(現在)</span>':''}${P.blessed[k]?' <span class="mir">★</span>':''}<div class="small">${j.d}${JOB_SECRETS[k]&&JOB_SECRETS[k].hint?`<br><span class="o">…${JOB_SECRETS[k].hint}</span>`:''}${jobSecretFound(k)?` <span class="mir">【秘密：${JOB_SECRETS[k].n}】</span>`:''}<br>メイン：${j.main==='best'?'一番高い能力':KN[j.main]}／技：${j.skill.n}<br><span class="y">マスター報酬：${j.main==='best'?'全能力×1.1':KN[j.main]+'×1.2'}</span>　<span class="c">修練${fmt(trainN(k))}回${P.kiwami&&P.kiwami[k]?'（極意）':''}</span>${j.rank>0&&j.rank<3?`<br><span class="o">攻撃・防御・HP ×${RMUL[j.rank]}</span>`:''}</div></div><button ${k===P.job?'disabled':''} onclick="changeJob('${k}')">転職</button></div>`;});
     });
   } else if(p==='reb'){
-    const mul=1+P.lv/20;
-    h=`<h2>転生の祭壇</h2><div class="small">Lv${rebReq()}以上で転生できます（転生するたびに必要Lvが+10）。レベルは1に戻りますが、全ステータスに<b class="y">×${mul.toFixed(2)}</b>の永続倍率がかかります（現在の倍率 ×${fmtMul(P.rebMul)}）。装備・お金・エリアは引き継ぎ。</div><div class="small o" style="margin-top:4px">※転生すると「奇跡の加護」は失われ、神々の座の神はさらに強大な姿に変わる。</div>`
+    const mul=(1+P.lv/20)*(P.rebBoost?2:1);
+    h=`<h2>転生の祭壇</h2><div class="small">Lv${rebReq()}以上で転生できます（転生するたびに必要Lvが+10。最大Lv${REB_LV_MAX}）。レベルは1に戻りますが、全ステータスに<b class="y">×${mul.toFixed(2)}</b>の永続倍率がかかります（現在の倍率 ×${fmtMul(P.rebMul)}）。装備・お金・エリアは引き継ぎ。</div>${P.rebMul>=Number.MAX_VALUE*.9999?`<div class="small" style="margin-top:4px"><span class="maxv">転生倍率は上限に届いています。</span>これ以上は増えませんが、転生はでき、転生回数（桁の神の条件など）は進みます。</div>`:''}<div class="small o" style="margin-top:4px">※転生すると「奇跡の加護」は失われ、神々の座の神はさらに強大な姿に変わる。</div>`
       +`<details style="margin-top:6px"><summary class="small y">倍率のしくみ</summary><div class="small" style="line-height:1.7">
       ・1回の転生で掛かる倍率は <b>×(1＋転生したときのLv÷20)</b>。Lv100なら×6、Lv1000なら×51、Lv2000なら×101。高いLvまで上げてから転生するほど伸びる。<br>
       ・この倍率は、転生のたびに<b>掛け算で重なる</b>（×6で3回転生すると6×6×6＝×216）。今は ×${fmtMul(P.rebMul)}、次の転生で ×${fmtMul(P.rebMul*mul)} になる。<br>
@@ -780,7 +787,7 @@ function buyAcc(k){const lv=accLv(k), pr=accPrice(lv); if(lv>=accCap()||P.gold<p
 function eqAcc(k){ if(!accLv(k)) return; const l=accEqList(), i=l.indexOf(k); if(i>=0) l.splice(i,1); else if(l.length<accSlots()) l.push(k); save(); renderStatus(); panel('acc');}
 function changeJob(k){if(!canJob(k))return; if(P.job!==k) P.casBeg=null; P.job=k; trimAcc(); save(); renderStatus(); panel('job');}
 function addPt(k,n){n=Math.min(n,P.pts); P.base[k]+=n; P.pts-=n; save(); renderStatus(); panel('stat');}
-function rebirth(){if(P.lv<rebReq())return; P.rebMul*=1+P.lv/20; P.reb++; P.lv=1; P.exp=0; P.secret={}; P.blessed={}; save(); renderStatus(); panel('reb');}
+function rebirth(){if(P.lv<rebReq())return; P.rebMul=Math.min(Number.MAX_VALUE,P.rebMul*(1+P.lv/20)*(P.rebBoost?2:1)); P.rebBoost=false; P.rebLess=false; P.reb++; P.lv=1; P.exp=0; P.secret={}; P.blessed={}; save(); renderStatus(); panel('reb');}
 function resetSave(){ if(!resetArm){resetArm=true; panel('rec'); return;} resetArm=false; try{localStorage.removeItem(SAVE);localStorage.removeItem(LOGSAVE)}catch(e){} P=null; LOGS=[]; curPanel='area'; renderTitle(); show('sTitle'); }
 
 // ============ ギャンブル場 ============
@@ -1271,6 +1278,11 @@ function buildAch(){
   A.push(T('set1','ギャンブル','設定看破','スロットの設定を見抜いた',()=>(P.setHits||0)>=1));
   A.push(T('set10','ギャンブル','設定判別の達人','スロットの設定を10回見抜いた',()=>(P.setHits||0)>=10));
   [[1,'一杯目'],[10,'ほろ酔い'],[30,'いい気分'],[50,'飲んべえ'],[100,'酒場の常連']].forEach(([v,n])=>A.push(T(v===1?'bar1':v===100?'bar100':'bar'+v,'酒場',n,v===1?'酒場でお酒を飲んだ':`お酒を${v}杯飲んだ`,()=>(P.drinks||0)>=v)));
+  A.push(T('sk5','酒場','酒豪','酒豪Lv5になった',()=>sakeLv()>=5,true));
+  A.push(T('sk10','酒場','酒神の友','酒豪Lv10になった',()=>sakeLv()>=10,true));
+  A.push(T('ck1','酒場','はじめてのカクテル','はしご酒でカクテルを作った',()=>Object.keys(P.cocktails||{}).length>=1,true));
+  A.push(T('ckall','酒場','バーテンダー',`カクテル${COCKTAILS.length}種をすべて作った`,()=>COCKTAILS.every(c=>P.cocktails&&P.cocktails[c.id]),true));
+  A.push(T('age48','酒場','熟成の極み','酒蔵で48時間寝かせたお酒を飲んだ',()=>(P.agedMax||0)>=48,true));
   A.push(T('mem','酒場','記憶がない','飲みすぎて記憶が飛んだ',()=>(P.memLoss||0)>=1));
   A.push(T('rumorAll','酒場','情報通','酒場の噂をすべて聞いた（知っていたものも含む）',()=>RUMORS.every(r=>P.rumors&&P.rumors[r.id])));
   A.push(T('cw1','酒場','飲み比べ初勝利','飲み比べで勝った',()=>(P.contestWins||0)>=1));
@@ -1378,15 +1390,55 @@ function makeTrain(){
 function fightTrain(f){ if(takashiLock()) return; last={type:'train'}; runBattle(makeTrain(),-4,f); }
 // ============ 酒場 ============
 // お酒：次のN戦だけ効く。1度に1杯（新しく飲むと上書き）
+// when：品書きに並ぶ条件（なければ最初から）。hint：並ぶ前に出す目安。hang：効き目が切れたあとの二日酔い（戦闘数）
+// k：exp/gold/atk/jexp/drop/all は倍率（酒豪Lvで強まる）、mir は加算、cas/train は回数、reb/rebLv は次の転生だけ
 const DRINKS=[
- {id:'ale', n:'エール',   d:'次の30戦、経験値×1.5', left:30, k:'exp',  v:1.5, price:20},
- {id:'wine',n:'赤ワイン', d:'次の30戦、お金×2',     left:30, k:'gold', v:2,   price:20},
- {id:'fire',n:'火酒',     d:'次の20戦、攻撃力×3',   left:20, k:'atk',  v:3,   price:30},
- {id:'miki',n:'神酒',     d:'次の10戦、奇跡率+10%', left:10, k:'mir',  v:.1,  price:400},
+ {id:'ale', n:'エール',   d:'経験値×1.5', left:30, k:'exp',  v:1.5, price:20},
+ {id:'wine',n:'赤ワイン', d:'お金×2',     left:30, k:'gold', v:2,   price:20},
+ {id:'fire',n:'火酒',     d:'攻撃力×3',   left:20, k:'atk',  v:3,   price:30},
+ {id:'miki',n:'神酒',     d:'奇跡率+10%', left:10, k:'mir',  v:.1,  price:400},
+ // お酒でしか得られない効果（#10 案3）
+ {id:'shoku',n:'職人の地酒', d:'熟練度（ジョブ経験値）×2', left:40, k:'jexp', v:2, price:60, when:()=>P.maxArea>=4, hint:'4つ目のエリアに着くと'},
+ {id:'kaji', n:'果実酒',     d:'能力の実が出やすい（×3）', left:40, k:'drop', v:3, price:60, when:()=>P.maxArea>=6, hint:'6つ目のエリアに着くと'},
+ {id:'shuren',n:'修練酒',    d:'修練場の修練回数が2倍で進む', left:50, k:'train', v:2, price:40, when:()=>Object.values(P.train||{}).some(v=>v>=100), hint:'修練場で100回勝つと'},
+ {id:'bakuto',n:'博徒の酒',  d:'ギャンブル特性の再使用までの戦闘数が2倍の速さで減る', left:50, k:'cas', v:2, price:60, when:()=>P.maxArea>=8, hint:'8つ目のエリアに着くと'},
+ {id:'waka', n:'若返りの酒', d:'次の転生に必要なLvが2割下がる（1回だけ）', left:0, k:'rebLv', v:.8, price:2000, when:()=>P.reb>=5, hint:'転生5回で'},
+ {id:'tensei',n:'転生酒',    d:'次の転生だけ、転生倍率×2', left:0, k:'reb', v:2, price:5000, when:()=>P.reb>=10, hint:'転生10回で'},
+ // 後半向けのお酒（#10 案2）
+ {id:'koshu',n:'古酒',       d:'経験値×10', left:100, k:'exp',  v:10,  price:300, when:()=>P.maxArea>=12, hint:'次元の彼方に着くと'},
+ {id:'ougon',n:'黄金酒',     d:'お金×100',  left:100, k:'gold', v:100, price:300, when:()=>P.maxArea>=40, hint:'次元の彼方 第29層に着くと'},
+ {id:'ryu',  n:'竜殺し',     d:'攻撃力×100', left:50, k:'atk',  v:100, price:500, when:()=>P.maxArea>=60, hint:'次元の彼方 第49層に着くと'},
+ {id:'keta', n:'桁の酒',     d:'全能力×1000。ただし切れたあと20戦、ひどい二日酔い', left:50, k:'all', v:1000, price:3000, hang:20, when:()=>P.reb>=30, hint:'転生30回で'},
 ];
+// 酒豪Lv：飲んだ杯数で上がる。効き目が強く・長くなり、二日酔いと記憶が飛ぶのが減る（#10 案4）
+const SAKE_NEED=[0,5,15,30,60,100,160,250,400,600,1000];
+const sakeLv=()=>{ const n=P.drinks||0; let l=0; while(l<SAKE_NEED.length-1&&n>=SAKE_NEED[l+1]) l++; return l; };
+const SAKE_TITLE=['下戸','ほろ酔い','いける口','酒好き','のんべえ','酒豪','大酒豪','うわばみ','酒仙','酒聖','酒神の友'];
+const sakePow=v=>Math.pow(v,1+sakeLv()*.1);
+const sakeLeft=n=>Math.round(n*(1+sakeLv()*.25));
+const drinkOpen=D=>!D.when||D.when();
 const drinkPrice=D=>Math.max(50,Math.floor(enemyStats(P.maxArea).gold*D.price));
-const drinkOn=k=>{ const d=P.drink; if(!d||d.left<=0) return null; const D=DRINKS.find(x=>x.id===d.type); return D&&D.k===k?D:null; };
-const drinkMul=k=>{ const D=drinkOn(k); return D?D.v:1; };
+// はしご酒（#10 案5）：酒豪Lv5で2杯、Lv10で3杯まで同時に効く。組み合わせでカクテルの追加効果
+const drinkSlots=()=>sakeLv()>=10?3:sakeLv()>=5?2:1;
+const activeDrinks=()=>(P.dk||[]).filter(d=>d.left>0).map(d=>({d,D:DRINKS.find(x=>x.id===d.type)})).filter(x=>x.D);
+const drinkOn=k=>{ const a=activeDrinks().find(x=>x.D.k===k); return a?a.D:null; };
+const drinkLeft=k=>{ const a=activeDrinks().find(x=>x.D.k===k); return a?a.d.left:0; };
+const COCKTAILS=[
+ {id:'hh',  n:'ハーフ＆ハーフ',   a:'ale',   b:'wine',  k:{exp:2,gold:2},   d:'経験値・お金がさらに×2'},
+ {id:'df',  n:'ドラゴンファイア', a:'fire',  b:'ryu',   k:{atk:10},        d:'攻撃力がさらに×10'},
+ {id:'sk',  n:'職人魂',           a:'shoku', b:'shuren',k:{jexp:2},        d:'熟練度がさらに×2'},
+ {id:'tk',  n:'天の果実',         a:'kaji',  b:'miki',  k:{drop:2,mir:.05},d:'能力の実がさらに×2・奇跡率+5%'},
+ {id:'cj',  n:'長者の宴',         a:'koshu', b:'ougon', k:{exp:10,gold:10},d:'経験値・お金がさらに×10'},
+ {id:'bs',  n:'博徒の祝杯',       a:'bakuto',b:'wine',  k:{gold:5},        d:'お金がさらに×5'},
+];
+const activeCocktails=()=>{ const ids=activeDrinks().map(x=>x.d.type); return COCKTAILS.filter(c=>ids.includes(c.a)&&ids.includes(c.b)); };
+// 倍率（mir は加算、cas/train は回数の倍率）。熟成したお酒は d.pow 乗でさらに効く
+function drinkMul(k){ let m=k==='mir'?0:1;
+  for(const {d,D} of activeDrinks()) if(D.k===k){ if(k==='mir') m+=D.v*(d.pow||1); else if(k==='cas'||k==='train') m=Math.max(m,D.v); else m*=Math.pow(sakePow(D.v),d.pow||1); }
+  for(const c of activeCocktails()) if(c.k[k]!==undefined){ if(k==='mir') m+=c.k[k]; else m*=c.k[k]; }
+  return m; }
+function drinkEff(D){ if(D.k==='mir') return D.d; if(D.k==='cas'||D.k==='train'||D.k==='reb'||D.k==='rebLv') return D.d;
+  const v=sakePow(D.v), lv=sakeLv(); return lv?D.d.replace(/×[\d.]+/,'×'+fmtMul(v))+`（酒豪Lv${lv}）`:D.d; }
 // 酔いどれたかし（第二人格）
 const PERSONA={battle:{n:'酔いどれたかし（戦闘）',left:50,d:'攻撃力×10'},gamble:{n:'酔いどれたかし（博打）',left:30,d:'スロットは設定6、ハイ&ローの引き分けも勝ち'}};
 const persona=m=>!!(P.persona&&P.persona.left>0&&(!m||P.persona.mode===m));
@@ -1400,21 +1452,43 @@ function personaTick(L,isGamble){ // 戦闘1回・ギャンブル1回ごとに�
   if(P.persona&&P.persona.left>0&&(P.persona.mode==='gamble')===!!isGamble){ P.persona.left--; if(P.persona.left<=0){ P.persona=null; P.hangover=5; t='<div class="o">…酔いが覚めた。頭が痛い。二日酔いで次の5戦は攻撃力が半分。</div>'; } }
   if(L&&t) L.push(t); return t; }
 function drinkTick(L){
-  if(P.drink&&P.drink.left>0){ P.drink.left--; if(P.drink.left<=0){ const D=DRINKS.find(x=>x.id===P.drink.type); P.drink=null; L.push(`<span class="small">${D?D.n:'お酒'}の効き目が切れた。</span>`); } }
   if(P.hangover>0){ P.hangover--; if(!P.hangover) L.push('<span class="small">二日酔いが治った。</span>'); }
+  for(const d of (P.dk||[])){ if(d.left<=0) continue; d.left--; if(d.left<=0){ const D=DRINKS.find(x=>x.id===d.type); L.push(`<span class="small">${D?D.n:'お酒'}の効き目が切れた。</span>`);
+    if(D&&D.hang){ P.hangover=Math.max(P.hangover||0,Math.max(1,D.hang-sakeLv()*2)); L.push(`<span class="o">…ひどい二日酔いだ。次の${P.hangover}戦は攻撃力が半分。</span>`); } } }
+  if(P.dk) P.dk=P.dk.filter(d=>d.left>0);
   personaTick(L,false);
 }
 function battleBuffs(L){ let m=drinkMul('atk'); const nm=esc(P.name);
   if(persona('battle')){ m*=10; L.push(`<span class="mir">${nm}${DRUNK_LINES[Math.floor(Math.random()*DRUNK_LINES.length)]}（酔いどれ あと${P.persona.left}戦）</span>`); }
-  else if(drinkOn('atk')) L.push(`<span class="small o">火酒が効いている…（あと${P.drink.left}戦）</span>`);
+  else if(drinkOn('atk')) L.push(`<span class="small o">${drinkOn('atk').n}が効いている…（あと${drinkLeft('atk')}戦）</span>`);
   if(P.hangover>0){ m*=.5; L.push(`<span class="small o">二日酔いで力が出ない…（あと${P.hangover}戦）</span>`); }
   return m; }
-function buyDrink(id){ const D=DRINKS.find(x=>x.id===id), pr=drinkPrice(D); if(!D||P.gold<pr) return;
-  P.gold-=pr; P.drinks=(P.drinks||0)+1; let msg='';
-  if(isTakashi()){ const mode=(id==='wine'||id==='miki')?'gamble':'battle'; msg=startPersona(mode,'bar') || `<div class="o">たかしは${D.n}を飲んだが、もう一人のたかしはすでに起きている…</div>`; }
-  else { P.drink={type:id,left:D.left}; msg=`<div class="g">${D.n}を飲んだ！ ${D.d}</div>`; }
-  if(chance(.05)){ const lost=Math.floor(P.gold*.1); P.gold-=lost; P.memLoss=(P.memLoss||0)+1; msg+=`<div class="r">…気がつくと朝だった。記憶が飛んでいる。財布が軽い…（-${fmt(lost)}G）</div>`; }
-  barMsg=msg; save(); renderStatus(); panel('bar'); }
+function buyDrink(id){ const D=DRINKS.find(x=>x.id===id); if(!D||!drinkOpen(D)) return; const pr=drinkPrice(D); if(P.gold<pr) return;
+  P.gold-=pr; barMsg=applyDrink(D,1); save(); renderStatus(); panel('bar'); }
+function applyDrink(D,pow){ const id=D.id; P.drinks=(P.drinks||0)+1; let msg=''; const lv0=sakeLv(), ck0=activeCocktails().map(c=>c.id);
+  if(isTakashi()&&['ale','wine','fire','miki'].includes(id)){ const mode=(id==='wine'||id==='miki')?'gamble':'battle'; msg=startPersona(mode,'bar') || `<div class="o">たかしは${D.n}を飲んだが、もう一人のたかしはすでに起きている…</div>`; }
+  else if(D.k==='reb'){ P.rebBoost=true; msg=`<div class="g">${D.n}を飲んだ！ 次の転生だけ、転生倍率×${D.v}。</div>`; }
+  else if(D.k==='rebLv'){ P.rebLess=true; msg=`<div class="g">${D.n}を飲んだ！ 次の転生に必要なLvが Lv${rebReq()} に下がった。</div>`; }
+  else { const n=Math.round(sakeLeft(D.left)*pow); P.dk=(P.dk||[]).filter(d=>d.left>0);
+    const same=P.dk.find(d=>d.type===id);
+    if(same){ same.left=n; same.pow=pow; }
+    else { if(P.dk.length>=drinkSlots()){ P.dk.sort((a,b)=>a.left-b.left); const old=P.dk.shift(), OD=DRINKS.find(x=>x.id===old.type); if(OD) msg+=`<div class="small o">${OD.n}の酔いが覚めた（同時に効くのは${drinkSlots()}杯まで）</div>`; }
+      P.dk.push({type:id,left:n,pow}); }
+    msg+=`<div class="g">${D.n}を飲んだ！ 次の${n}戦、${drinkEff(D)}${pow>1?`（熟成×${pow.toFixed(2)}）`:''}</div>`;
+    for(const c of activeCocktails()) if(!ck0.includes(c.id)){ P.cocktails=P.cocktails||{}; const first=!P.cocktails[c.id]; P.cocktails[c.id]=true; msg+=`<div class="mir">★ カクテル「${c.n}」！ ${c.d}${first?'（はじめて作った）':''} ★</div>`; } }
+  if(sakeLv()>lv0) msg+=`<div class="mir">★ 酒豪Lv${sakeLv()}「${SAKE_TITLE[sakeLv()]}」になった！ お酒がより強く・長く効く ★</div>`;
+  if(chance(Math.max(.005,.05*(1-sakeLv()*.09)))){ const lost=Math.floor(P.gold*.1); P.gold-=lost; P.memLoss=(P.memLoss||0)+1; msg+=`<div class="r">…気がつくと朝だった。記憶が飛んでいる。財布が軽い…（-${fmt(lost)}G）</div>`; }
+  return msg; }
+// 酒蔵（#10 案6）：お酒を預けて寝かせると、実際の時間で熟成する（48時間で最大。効き目が最大2乗・続く戦闘数が最大2倍）
+const CELLAR_MAX=3, AGE_FULL_H=48;
+const ageH=c=>Math.max(0,Math.min(AGE_FULL_H,(Date.now()-c.t)/3600000));
+const agePow=c=>1+ageH(c)/AGE_FULL_H;
+const cellarOk=D=>drinkOpen(D)&&D.left>0;
+function cellarPut(id){ const D=DRINKS.find(x=>x.id===id); if(!D||!cellarOk(D)) return; P.cellar=P.cellar||[]; if(P.cellar.length>=CELLAR_MAX) return;
+  const pr=drinkPrice(D); if(P.gold<pr) return; P.gold-=pr; P.cellar.push({type:id,t:Date.now()});
+  barMsg=`<div class="g">${D.n}を酒蔵に預けた。寝かせるほどうまくなる（48時間で最高）。</div>`; save(); renderStatus(); panel('bar'); }
+function cellarTake(i){ P.cellar=P.cellar||[]; const c=P.cellar[i]; if(!c) return; const D=DRINKS.find(x=>x.id===c.type); P.cellar.splice(i,1); if(!D){ save(); panel('bar'); return; }
+  const h=ageH(c); P.agedMax=Math.max(P.agedMax||0,h); barMsg=`<div class="small">${Math.floor(h)}時間${Math.floor((h%1)*60)}分寝かせた${D.n}を開けた。</div>`+applyDrink(D,agePow(c)); save(); renderStatus(); panel('bar'); }
 // 噂話：条件を満たすと聞ける。自力で見つけたものは出てこない
 const RUMORS=[
  {id:'kaji',t:'「格闘家ってのは、財布が空っぽになるほど強くなるらしい。1枚残すのがコツだとか」',when:()=>true,found:()=>(P.kajiN||0)>0},
@@ -1428,6 +1502,9 @@ const RUMORS=[
  {id:'god100',t:'「神々の座に百回も通ったバカな見習いがいてな。百回目に何かが起きたらしい」',when:()=>!!P.unlocked.apprentice,found:()=>Object.keys(P.blessed||{}).length>0||(P.godWins||0)>0},
  {id:'neet',t:'「全部極めて、闘技場のてっぺんに立って、神様にも会った奴は…最後には働かなくなるらしい」',when:()=>upperOpen(),found:()=>!!P.unlocked.neet},
  {id:'hellowork',t:'「無職がハロワで履歴書を出したり面談を乗り越えたりすると、いい身なりの品を贈られるって話だ」',when:()=>!!P.unlocked.neet,found:()=>!!(P.lacc&&P.lacc.tie)},
+ {id:'sake',t:'「酒ってのは、飲めば飲むほど強くなる。酒豪と呼ばれる連中は、同じ一杯でも効き目が段違いだ」',when:()=>P.maxArea>=3,found:()=>sakeLv()>=3},
+ {id:'ladder',t:'「酒に強くなると、二杯、三杯とはしごできる。組み合わせ次第で“カクテル”になるらしい」',when:()=>sakeLv()>=3,found:()=>Object.keys(P.cocktails||{}).length>0},
+ {id:'cellar',t:'「マスターの酒蔵に預けておくと、酒は寝かせた分だけうまくなる。二晩寝かせりゃ別物だ」',when:()=>P.maxArea>=12,found:()=>(P.agedMax||0)>=24},
 ];
 const upperOpen=()=>Object.entries(JOBS).some(([k,j])=>j.rank===2&&canJob(k));
 const rumorPrice=()=>Math.max(100,Math.floor(enemyStats(P.maxArea).gold*10));
@@ -1552,6 +1629,8 @@ function guideHTML(){
   const t=typeof steps[i][1]==='function'?steps[i][1]():steps[i][1];
   // 本筋とは別の、ひとことアドバイス（進行は止めない）
   const tips=[]; if(P.pts>0) tips.push(`能力ポイントが${P.pts}余っとる。『能力振り』で${KN[mainKey()]}に振るといい。`);
+  if(P.maxArea>=3&&(P.drinks||0)<5&&!isTakashi()) tips.push('酒場のお酒は、飲むほど酒に強くなって効き目が上がるぞ。たまには一杯やっていけ。');
+  if(sakeLv()>=5&&activeDrinks().length<2) tips.push('おぬしほどの酒豪なら、二杯はしごできる。組み合わせ次第でカクテルになるぞ。');
   if(!takashiLock()&&P.maxArea>0&&/無謀|強敵/.test(danger(enemyStats(P.maxArea)))) tips.push('奥のエリアがきつそうじゃな。ひとつ浅いエリアで鍛え直すか、装備を買い直すか、エールや火酒を一杯ひっかけるのも手じゃ。');
   const post=postMode()&&i>=16;
   return `<div class="small" style="color:#9ab">隠居じいさん（相談は無料）</div>`+(post?`<div class="o" style="margin-top:4px">「内定おめでとう。…じゃが実はな、この世界にはまだ隠されたものがいくつかある。ひとつずつ教えてやろう」</div>`:'')+`<div class="c" style="margin-top:4px">${typeof t==='function'?t():t}</div>`+(post?secretListHTML():'')+
@@ -1564,8 +1643,18 @@ function barHTML(){
   let h=`<h2>酒場</h2><div class="grid" style="margin-bottom:6px;grid-template-columns:repeat(4,1fr)">`+tabs.map(([k,n])=>`<button class="${barTab===k?'sel':''}" onclick="barMsg='';panel('bar','${k}')">${n}</button>`).join('')+`</div>`;
   if(barTab==='guide'){ h+=guideHTML(); }
   else if(barTab==='drink'){
-    h+=`<div class="small">${isTakashi()?'<span class="o">たかしが飲むと…もう一人のたかしが出てくる。エール・火酒は戦闘、ワイン・神酒は博打。</span>':'お酒は1度に1杯だけ効く（新しく飲むと上書き）。冒険・修練場・闘技場・神々の座の戦闘で効く。'}</div>`;
-    DRINKS.forEach(D=>{ const pr=drinkPrice(D); h+=`<div class="row"><div>${D.n}<div class="small">${D.d}　${fmt(pr)}G</div></div><button ${P.gold<pr?'disabled':''} onclick="buyDrink('${D.id}')">飲む</button></div>`; });
+    h+=`<div class="small">${isTakashi()?'<span class="o">たかしが飲むと…もう一人のたかしが出てくる。エール・火酒は戦闘、ワイン・神酒は博打。</span>':'同時に効くお酒は酒豪Lvで1〜3杯（あふれたら、残りの少ないものから覚める）。冒険・修練場・闘技場・神々の座の戦闘で効く。'}</div>`;
+    { const lv=sakeLv(), nx=SAKE_NEED[lv+1]; h+=`<div class="small" style="margin:4px 0"><span class="y">酒豪Lv${lv}「${SAKE_TITLE[lv]}」</span>　飲んだ杯数 ${fmt(P.drinks||0)}${nx?`（次のLvまで あと${nx-(P.drinks||0)}杯）`:'（最高）'}<br><span style="color:#9ab">酒豪Lvが上がるほど、効き目が強く（倍率が${lv?'^'+(1+lv*.1).toFixed(1):'上がる'}）・長く（×${(1+lv*.25).toFixed(2)}）なり、二日酔いや記憶が飛ぶことが減る。</span></div>`;
+      const ad=activeDrinks(); h+=`<div class="small">同時に効くお酒：${ad.length}/${drinkSlots()}杯${drinkSlots()<3?`（酒豪Lv${drinkSlots()===1?5:10}で${drinkSlots()+1}杯まで）`:''}</div>`;
+      ad.forEach(({d,D})=>h+=`<div class="small g">いま効いている：${D.n}（あと${d.left}戦${d.pow>1?`・熟成×${d.pow.toFixed(2)}`:''}）</div>`);
+      activeCocktails().forEach(c=>h+=`<div class="small mir">カクテル「${c.n}」：${c.d}</div>`);
+      if(P.rebBoost) h+=`<div class="small g">転生酒が効いている：次の転生だけ転生倍率×2</div>`; if(P.rebLess) h+=`<div class="small g">若返りの酒が効いている：次の転生は Lv${rebReq()} から</div>`; }
+    if(drinkSlots()>=2) h+=`<details style="margin:4px 0"><summary class="small y">カクテルの組み合わせ（${COCKTAILS.filter(c=>P.cocktails&&P.cocktails[c.id]).length}/${COCKTAILS.length}）</summary>`+COCKTAILS.map(c=>{ const k=P.cocktails&&P.cocktails[c.id], A=DRINKS.find(x=>x.id===c.a), B=DRINKS.find(x=>x.id===c.b); return `<div class="small">${k?`「${c.n}」${A.n}＋${B.n}：${c.d}`:'？？？ ＋ ？？？'}</div>`; }).join('')+`</details>`;
+    DRINKS.forEach(D=>{ if(!drinkOpen(D)){ h+=`<div class="row"><div><span style="opacity:.6">？？？</span><div class="small">${D.hint}、品書きに並ぶ</div></div><button disabled>飲む</button></div>`; return; }
+      const pr=drinkPrice(D), dur=D.left?`次の${sakeLeft(D.left)}戦、`:''; h+=`<div class="row"><div>${D.n}<div class="small">${dur}${drinkEff(D)}　${fmt(pr)}G</div></div><button ${P.gold<pr?'disabled':''} onclick="buyDrink('${D.id}')">飲む</button></div>`; });
+    if(P.maxArea>=12){ P.cellar=P.cellar||[]; h+=`<div class="y" style="margin-top:8px">酒蔵（${P.cellar.length}/${CELLAR_MAX}）</div><div class="small" style="color:#9ab">お酒を預けて寝かせると、実際の時間で熟成する。48時間で最高（効き目が2乗・続く戦闘数が2倍）。</div>`;
+      P.cellar.forEach((c,i)=>{ const D=DRINKS.find(x=>x.id===c.type); if(!D) return; const hh=ageH(c); h+=`<div class="row"><div>${D.n}<div class="small">${Math.floor(hh)}時間${Math.floor((hh%1)*60)}分　熟成×${agePow(c).toFixed(2)}${hh>=AGE_FULL_H?' <span class="mir">飲みごろ</span>':''}</div></div><button onclick="cellarTake(${i})">開ける</button></div>`; });
+      if(P.cellar.length<CELLAR_MAX) h+=`<div class="small" style="margin-top:4px">預ける：</div><div class="grid" style="grid-template-columns:repeat(3,1fr)">`+DRINKS.filter(cellarOk).map(D=>`<button style="font-size:12px" ${P.gold<drinkPrice(D)?'disabled':''} onclick="cellarPut('${D.id}')">${D.n}</button>`).join('')+`</div>`; }
   } else if(barTab==='rumor'){
     const pr=rumorPrice(); h+=`<div class="small">マスターにお金を払うと、まだ知らない噂を1つ教えてくれる。</div><button style="width:100%;margin:6px 0" onclick="buyRumor()">噂を聞く（${fmt(pr)}G）</button>`;
     const heard=RUMORS.filter(r=>P.rumors&&P.rumors[r.id]); if(heard.length) h+=`<div class="small y">これまでに聞いた噂</div>`+heard.map(r=>`<div class="small" style="margin:3px 0">${r.found()?'✓ ':'・'}${r.t}</div>`).join('');
@@ -1627,7 +1716,7 @@ const isNight=()=>{ const h=new Date().getHours(); return h>=22||h<4; };
 const hpR=c=>c.php/c.mhp;
 // 相手の危険度（戦う前の見積もり）：無謀=2、強敵=1、それ以外=0
 const riskOf=e=>{ const d=danger(e); return /無謀/.test(d)?2:/強敵/.test(d)?1:0; };
-const drunkNow=()=>!!((P.drink&&P.drink.left>0)||persona());
+const drunkNow=()=>!!(activeDrinks().length||persona());
 const digits777=()=>Math.floor(P.gold)%1000===777;
 const JOB_SECRETS={
  warrior:  {n:'背水の陣',      hint:'無謀な相手に挑むほど、追い詰められるほど強くなるらしい', type:'both', c:(c,e)=>riskOf(e)>=2, d:c=>hpR(c)<.1, fx:{atk:100}, msg:'背水の陣！ 攻撃力×100'},
@@ -1727,7 +1816,7 @@ function playerHit(c){
     else if(s.coin){flat=P.gold*rnd(.005,.02)*(s.cm||1); L.push(`<span class="sk">${nm}の${s.n}！ 小銭が宙を舞う！</span>`);}
     else {mult=s.m; L.push(`<span class="sk">${nm}の${s.n}！</span>`);}
   }
-  const mirP=.004+luk/(luk+5000)*.02+(P.blessed[P.job]?.12:0)+accMir()+(drinkOn('mir')?.1:0);
+  const mirP=.004+luk/(luk+5000)*.02+(P.blessed[P.job]?.12:0)+accMir()+drinkMul('mir');
   if(chance(mirP)){mult*=100; P.miracles=(P.miracles||0)+1; L.push(`<span class="mir">★☆ 奇跡が起きた！ ☆★</span>`);}
   else if(!sure&&(c.secCrit||chance(.04+luk/(luk+300)*.25+ps('crit',0)))){mult*=(legW()||neetW())?30:3; L.push(neetW()?`<span class="crit">会心の一撃！ 辞表が叩きつけられた！</span>`:legW()?`<span class="crit">会心の一撃！ オーバーフローが桁をあふれさせる！</span>`:`<span class="crit">会心の一撃！</span>`);}
   const a=atk()*c.buff*rnd(1.3,1.7)*mult+flat;
@@ -1777,7 +1866,7 @@ function simulate(e,t,fast){
     }
     L.push(`<span class="hpl">${nm} HP ${fmt(Math.max(0,c.php))}/${fmt(mhp)}　|　${e.name} HP ${fmt(Math.max(0,c.ehp))}</span>`);
   }
-  P.battles++; drinkTick(L); if(t>=0||e.train) casCdTick();
+  P.battles++; drinkTick(L); if(t>=0||e.train){ casCdTick(); if(drinkOn('cas')) casCdTick(); }
   P.jobB=P.jobB||{}; P.jobB[P.job]=(P.jobB[P.job]||0)+1;
   if(e.secret) checkMasterUnlock(L);
   let sum='';
@@ -1790,20 +1879,20 @@ function simulate(e,t,fast){
     P.gold+=gold; P.earned=(P.earned||0)+gold; if(t>=0) casDonateBack(L);
     const lv0=P.lv;
     let drop='';
-    if(c.secDrop||chance((.04+lk/(lk+1000)*.1)*ps('drop',1)*(e.train?2:1)*matMul('drop'))){const k=KEYS[Math.floor(Math.random()*5)]; const n=Math.max(1,Math.floor(rnd(1,4)*(Math.max(t,P.champ,P.maxArea*(e.train?1:0),0)+1)*(c.secFruitX||1))); P.lastFruit=true;
+    if(c.secDrop||chance((.04+lk/(lk+1000)*.1)*ps('drop',1)*(e.train?2:1)*matMul('drop')*drinkMul('drop'))){const k=KEYS[Math.floor(Math.random()*5)]; const n=Math.max(1,Math.floor(rnd(1,4)*(Math.max(t,P.champ,P.maxArea*(e.train?1:0),0)+1)*(c.secFruitX||1))); P.lastFruit=true;
       P.base[k]+=n; drop=`${KN[k]}の実(+${n})`; L.push(`<span class="g">${KN[k]}の実を拾った！ ${KN[k]}が${n}上がった！</span>`);}
     gainExp(exp,L);
     // 修練場では熟練度（JEXP）は上がらない（#7：熟練度が上がりすぎるため。修練場は極意を覚える場所）
-    const jg=e.train?'':gainJob(Math.max(1,Math.floor((e.secret?10:e.champ?5:1+Math.floor(Math.max(t,0)/3))*matMul('jexp'))),L);
+    const jg=e.train?'':gainJob(Math.max(1,Math.floor((e.secret?10:e.champ?5:1+Math.floor(Math.max(t,0)/3))*matMul('jexp')*drinkMul('jexp'))),L);
     if(t>=0||e.guard) bkCount(e,e.guard?e.gt:t);
     if(t>=0&&chance(MAT_RATE)){ const md=matDrop(t,L); if(md) drop=drop?drop+' / '+md:md; }
     if(e.guard) guardWin(e,L,c);
     if(e.champ){P.champ++; L.push(`<span class="mir">★ ${nm}は新チャンピオンになった！ ★</span>`); if(P.champ===CHAMPS.length) L.push(`<span class="mir">★ 闘技場の全王者を制覇した！ ★</span>`); checkMasterUnlock(L);}
     if(e.secret){P.godWins=(P.godWins||0)+1; P.godMaxForm=Math.max(P.godMaxForm||0,P.reb+1); if(c.usedMiracle||P.godWins===1) c.trainMile=true;}
-    if(e.train){ P.train=P.train||{}; const n=P.train[P.job]=(P.train[P.job]||0)+1, J=JOBS[P.job];
-      if(n===100){ const g=Math.floor(e.gold*200); P.gold+=g; P.earned=(P.earned||0)+g; L.push(`<span class="y">修練100回達成！ 師範から ${fmt(g)}G を授かった！</span>`); c.trainMile=true; }
-      if(n===500){ const ex=Math.floor(need(P.lv)*5); L.push(`<span class="y">修練500回達成！ 秘伝書を読んだ！</span>`); gainExp(ex,L); c.trainMile=true; }
-      if(n===1000){ P.kiwami=P.kiwami||{}; P.kiwami[P.job]=true; c.trainMile=true;
+    if(e.train){ P.train=P.train||{}; const n0=P.train[P.job]||0, n=P.train[P.job]=n0+(drinkOn('train')?2:1), J=JOBS[P.job], hit=m=>n0<m&&n>=m;
+      if(hit(100)){ const g=Math.floor(e.gold*200); P.gold+=g; P.earned=(P.earned||0)+g; L.push(`<span class="y">修練100回達成！ 師範から ${fmt(g)}G を授かった！</span>`); c.trainMile=true; }
+      if(hit(500)){ const ex=Math.floor(need(P.lv)*5); L.push(`<span class="y">修練500回達成！ 秘伝書を読んだ！</span>`); gainExp(ex,L); c.trainMile=true; }
+      if(hit(1000)){ P.kiwami=P.kiwami||{}; P.kiwami[P.job]=true; c.trainMile=true;
         L.push(`<span class="mir">★ 修練1000回！「${J.n}の極意」を会得した！ ★</span>`);
         L.push(`<span class="mir">${(J.main==='best'||J.hidden)?'全能力×1.5':KN[J.main]+'×2'}（永続・全職業に有効）</span>`); } }
     if(e.secret && !P.blessed[P.job]){P.blessed[P.job]=true; L.push(`<span class="mir">★ ${nm}は「奇跡の加護」を授かった！ ★</span>`); L.push(`<span class="mir">${JOBS[P.job].n}でいるかぎり、奇跡が頻繁に起きるようになった！</span>`);}

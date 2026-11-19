@@ -59,7 +59,7 @@ canvas{image-rendering:pixelated;width:84px;height:84px}
 #modal{position:fixed;inset:0;background:#000a;z-index:20;display:none;}
 #modal:not(.hide){display:flex;}
 #modal{align-items:center;justify-content:center;padding:20px}
-#modal .win{max-width:420px;width:100%;text-align:center}
+#modal .win{max-width:420px;width:100%;text-align:center;max-height:85vh;overflow-y:auto}
 #toast{position:fixed;top:10px;pointer-events:none;left:50%;transform:translateX(-50%);z-index:30;background:linear-gradient(#5a3a00,#2a1a00);border:2px solid #ffe066;border-radius:7px;padding:8px 14px;font-size:14px;max-width:90vw;transition:opacity .3s;pointer-events:none}
 rt{font-size:9px;color:#bcd}
 #casMsg{min-height:1.6em;margin-top:6px;text-align:center}
@@ -79,6 +79,10 @@ rt{font-size:9px;color:#bcd}
 </head>
 <body>
 <div id="toast" class="hide"></div>
+<div id="modal" class="hide" onclick="if(event.target===this)closeModal()"><div class="win">
+  <h2 id="mTitle"></h2><div id="mBody" class="small" style="margin-bottom:10px"></div>
+  <div id="mBtns" class="grid2"></div>
+</div></div>
 <div id="app">
   <h1>インフレアドベンチャー</h1>
   <div class="sub">― 桁がおかしくなるまで戦え ―</div>
@@ -150,10 +154,6 @@ rt{font-size:9px;color:#bcd}
     </div>
     <div class="win" id="result"></div>
     <div class="win"><div id="log" class="logbox"></div></div>
-    <div id="modal" class="hide" onclick="if(event.target===this)closeModal()"><div class="win">
-      <h2 id="mTitle"></h2><div id="mBody" class="small" style="margin-bottom:10px"></div>
-      <div class="grid2"><button id="mGo" class="y">次のエリアへ進む</button><button id="mStay">このまま続ける</button></div>
-    </div></div>
     <div id="bBar">
       <button id="btnAgain">もう一戦（長押しで連戦）</button>
       <button onclick="goMain()">戻る</button>
@@ -347,7 +347,8 @@ function sanitizeSave(o){
    'jackpots','j777','jpin','jrou','setHits','hlBest','allInWins','kajiN','miracles'].forEach(k=>r[k]=num(o[k],0));
   r.lv=Math.max(1,int(o.lv,1)); r.wpn=Math.min(GEAR_MAX,int(o.wpn)); r.arm=Math.min(GEAR_MAX,int(o.arm)); r.reb=int(o.reb); r.pts=int(o.pts);
   r.maxArea=Math.min(AREA_MAX,int(o.maxArea)); r.areaWins=int(o.areaWins); r.champ=int(o.champ);
-  r.rebMul=Math.max(1,num(o.rebMul,1)); r.oneG=bool(o.oneG); r.areaDone=bool(o.areaDone); if(o.guideHeard!==undefined&&o.guideHeard!==null) r.guideHeard=Math.floor(num(o.guideHeard,-1)); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA);
+  r.rebMul=Math.max(1,num(o.rebMul,1)); r.oneG=bool(o.oneG); r.areaDone=bool(o.areaDone); if(o.guideHeard!==undefined&&o.guideHeard!==null) r.guideHeard=Math.floor(num(o.guideHeard,-1)); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA); r.endingSeen=bool(o.endingSeen); r.everTakashi=bool(o.everTakashi);
+  r.playMs=int(o.playMs); r.startedAt=int(o.startedAt); if(o.pops&&typeof o.pops==='object') r.pops=boolMap(o.pops);
   if(o.final&&typeof o.final==='object') r.final={hp:Math.min(FINAL_HP,Math.max(0,num(o.final.hp,FINAL_HP))),cleared:bool(o.final.cleared),seen:bool(o.final.seen),dmg:num(o.final.dmg)};
   r.base={}; KEYS.forEach(k=>r.base[k]=Math.max(0,num(o.base&&o.base[k],1)));
   r.jlv={}; if(o.jlv&&typeof o.jlv==='object') for(const k of Object.keys(o.jlv)) if(isJob(k)&&o.jlv[k]) r.jlv[k]={lv:Math.min(JMAX,Math.max(1,int(o.jlv[k].lv,1))),exp:int(o.jlv[k].exp)};
@@ -450,7 +451,7 @@ function atk(){return (st(mainKey())+wpnPow(P.wpn))*(1+P.lv*0.08)*(1+0.05*(jl(P.
 function def(){return (st('vit')*0.5+armPow(P.arm))*rmul()}
 function maxhp(){return Math.floor((st('vit')*12+P.lv*10*P.rebMul+armPow(P.arm)*3)*rmul()*(neetA()?100:1))}
 const need=lv=>Math.floor(15*Math.pow(1.3,lv-1));
-const rebReq=()=>30+20*P.reb;
+const rebReq=()=>30+10*P.reb;
 function enemyStats(t){return {hp:30*Math.pow(5.5,t),atk:10*Math.pow(5.2,t),def:4*Math.pow(5,t),agi:6+t*9,exp:12*Math.pow(4.3,t),gold:25*Math.pow(6,t)}}
 const AREA_MAX=12+299; // 次元の彼方 第300層が最終
 const areaName=t=>t<AREAS.length?AREAS[t][0]:t>=AREA_MAX?'次元の果て（第300層）':`次元の彼方 第${t-AREAS.length+1}層`;
@@ -529,7 +530,7 @@ function startNew(){
   const name=nm0.slice(0,10);
   const tkStart=TAKASHI.includes(name); if(tkStart) pickedJob='gambler';
   const g=JOBS[pickedJob].g; const base={}; KEYS.forEach(k=>base[k]=Math.round(5+g[k]*4));
-  P={name,job:pickedJob,lv:1,exp:0,gold:tkStart?10000:100,pts:0,base,wpn:0,arm:0,reb:0,rebMul:1,maxArea:0,areaWins:0,champ:0,kills:0,maxDmg:0,battles:0,yomi:yomi0,secret:{},blessed:{},unlocked:JOBS[pickedJob].hidden?{[pickedJob]:true}:{},jlv:{}};
+  P={name,job:pickedJob,lv:1,exp:0,gold:tkStart?10000:100,pts:0,base,wpn:0,arm:0,reb:0,rebMul:1,maxArea:0,areaWins:0,champ:0,kills:0,maxDmg:0,battles:0,startedAt:Date.now(),playMs:0,pops:{},yomi:yomi0,secret:{},blessed:{},unlocked:JOBS[pickedJob].hidden?{[pickedJob]:true}:{},jlv:{}};
   LOGS=[]; saveLogs(); save(); goMain();
 }
 function goMain(){ closeModal(); holdEnd(); if(!P) return; show('sMain'); renderStatus(); panel(curPanel||'area'); }
@@ -647,7 +648,7 @@ function panel(p,arg){
     });
   } else if(p==='reb'){
     const mul=1+P.lv/20;
-    h=`<h2>転生の祭壇</h2><div class="small">Lv${rebReq()}以上で転生できます（転生するたびに必要Lvが+20）。レベルは1に戻りますが、全ステータスに<b class="y">×${mul.toFixed(2)}</b>の永続倍率がかかります（現在の倍率 ×${fmtMul(P.rebMul)}）。装備・お金・エリアは引き継ぎ。</div><div class="small o" style="margin-top:4px">※転生すると「奇跡の加護」は失われ、神々の座の神はさらに強大な姿に変わる。</div>`;
+    h=`<h2>転生の祭壇</h2><div class="small">Lv${rebReq()}以上で転生できます（転生するたびに必要Lvが+10）。レベルは1に戻りますが、全ステータスに<b class="y">×${mul.toFixed(2)}</b>の永続倍率がかかります（現在の倍率 ×${fmtMul(P.rebMul)}）。装備・お金・エリアは引き継ぎ。</div><div class="small o" style="margin-top:4px">※転生すると「奇跡の加護」は失われ、神々の座の神はさらに強大な姿に変わる。</div>`;
     h+=`<button style="width:100%;margin-top:8px" ${P.lv<rebReq()?'disabled':''} onclick="rebirth()">転生する</button>`;
   } else if(p==='stat'){
     h=`<h2>能力振り（残り ${P.pts}pt）</h2>`;
@@ -670,7 +671,8 @@ function panel(p,arg){
     h=achHTML();
   } else if(p==='rec'){
     h=`<h2>記録</h2>`;
-    [['最大ダメージ',fmt(P.maxDmg)],['倒した敵',fmt(P.kills)],['戦闘回数',fmt(P.battles)],['撃破した王者',P.champ+'人'],['神々の座 撃破',(P.godWins||0)+'回'],['神々の座 挑戦',(P.godTries||0)+'回'],['修練場 勝利（合計）',fmt(Object.values(P.train||{}).reduce((a,b)=>a+b,0))+'回'],['会得した極意',Object.keys(P.kiwami||{}).length+'個'],['ギャンブル大当たり',(P.jackpots||0)+'回'],[P.unlocked.neet?'ハローワーク':'？？？',P.unlocked.neet?(P.work?(P.work.cleared?'内定（完走）':`第${P.work.floor+1}関門`):'―'):'？？？'],['転生回数',P.reb+'回'],['到達エリア',areaName(P.maxArea)]].forEach(([a,b])=>h+=`<div class="row"><span>${a}</span><span class="y">${b}</span></div>`);
+    [['プレイ時間',fmtTime(P.playMs||0)],['最大ダメージ',fmt(P.maxDmg)],['倒した敵',fmt(P.kills)],['戦闘回数',fmt(P.battles)],['撃破した王者',P.champ+'人'],['神々の座 撃破',(P.godWins||0)+'回'],['神々の座 挑戦',(P.godTries||0)+'回'],['修練場 勝利（合計）',fmt(Object.values(P.train||{}).reduce((a,b)=>a+b,0))+'回'],['会得した極意',Object.keys(P.kiwami||{}).length+'個'],['ギャンブル大当たり',(P.jackpots||0)+'回'],[P.unlocked.neet?'ハローワーク':'？？？',P.unlocked.neet?(P.work?(P.work.cleared?'内定（完走）':`第${P.work.floor+1}関門`):'―'):'？？？'],['転生回数',P.reb+'回'],['到達エリア',areaName(P.maxArea)]].forEach(([a,b])=>h+=`<div class="row"><span>${a}</span><span class="y">${b}</span></div>`);
+    if(P.work&&P.work.cleared) h+=`<button style="width:100%;margin-top:8px" onclick="showEnding()">エンディングをもう一度見る</button>`;
     h+=`<div class="y" style="margin-top:10px">セーブの書き出し・読み込み</div>
       <div class="small">ブラウザのデータが消えたときや、別のスマホに移すときのために、セーブコードを保存しておけます。</div>
       <button style="width:100%;margin-top:6px" onclick="copyCode()">セーブコードをコピー</button>
@@ -1066,9 +1068,11 @@ function buildAch(){
 }
 let ACHS=null, toastT=null, toastQ=[];
 function checkAch(){
+  if(P&&isTakashi()){ P.everTakashi=true; try{ localStorage.setItem('inflation_adventure_takashi','1'); }catch(e){} }
   try{ if(P) grantNeetGear(null); }catch(e){}
   if(!P) return; try{grantLacc(null)}catch(e){} P.been=P.been||{}; P.been[P.job]=true; if(!ACHS) ACHS=buildAch(); P.ach=P.ach||{};
   for(const a of ACHS){ if(!P.ach[a.id] && a.f()){ P.ach[a.id]=Date.now(); toastQ.push(a.n); } }
+  try{ checkPops(); }catch(e){}
   if(toastQ.length&&!toastT) nextToast();
 }
 function nextToast(){ const el=$('#toast'); if(!toastQ.length){ el.classList.add('hide'); toastT=null; return; }
@@ -1197,6 +1201,22 @@ const hasRank=r=>Object.entries(JOBS).some(([k,j])=>j.rank===r&&!j.hidden&&isMas
 const openRank=r=>Object.entries(JOBS).some(([k,j])=>j.rank===r&&!j.hidden&&canJob(k));
 const openMasters=()=>Object.entries(JOBS).filter(([k,j])=>!j.hidden&&isMaster(k)).length;
 const openTotal=()=>Object.entries(JOBS).filter(([k,j])=>!j.hidden).length;
+
+// ---- 内定後：隠し要素（ここで初めて「まだある」と明かす） ----
+const SECRETS=[
+ {n:'伝説の武具',            f:()=>legW()&&legA(), t:'「武器屋と防具屋の品を、+99まで鍛え上げてみなされ。桁があふれて、別物に化けるはずじゃ」', g:'武器と防具を+99まで鍛える'},
+ {n:'伝説の装飾品',          f:()=>LACC.every(a=>P.lacc&&P.lacc[a[0]]), t:'「装飾品屋の奥に、無職にしか売らん品がある。腕時計と革靴じゃ。値は張るがの」', g:'装飾品屋で高級腕時計と磨かれた革靴を買う'},
+ {n:'次元の果て',            f:()=>!!P.areaDone, t:`「冒険の果ての果て、第300層『次元の果て』を踏破しなされ。そこに一張羅が眠っとる」`, g:()=>`次元の果て（第300層）を踏破する（いま ${areaName(P.maxArea)}）`},
+ {n:'桁の神',               f:()=>!!(P.final&&P.final.cleared), t:()=>`「伝説の品がすべてそろえば、桁の神が現れる。輪廻の結界は、転生を${FINAL_REB}回重ねた者でなければ破れんぞ」（転生 ${P.reb}/${FINAL_REB}回）`, g:()=>`桁の神を倒す（転生 ${P.reb}/${FINAL_REB}回）`},
+ {n:'闘技場の頂',            f:()=>P.champ>=CHAMP_MAX, t:()=>`「闘技場の王者は${CHAMP_MAX}人おる。全員倒した者は、まだおらんそうじゃ」（いま ${P.champ}人）`, g:()=>`闘技場の王者を${CHAMP_MAX}人倒す（${P.champ}人）`},
+ {n:'百芸の極意',            f:()=>Object.keys(JOBS).every(k=>P.kiwami&&P.kiwami[k]), t:()=>`「修練場で千回勝つと“極意”が身につく。すべての職でな」（${Object.keys(P.kiwami||{}).length}/${Object.keys(JOBS).length}職）`, g:()=>`すべての職の極意を会得する（${Object.keys(P.kiwami||{}).length}/${Object.keys(JOBS).length}）`},
+ {n:'酒神',                 f:()=>!!(P.contest&&P.contest.bacchus), t:'「この酒場の飲み比べ、最後に控えとるのは酒の神様じゃ。勝てたら大したもんじゃ」', g:'飲み比べで酒神バッカスに勝つ'},
+ {n:'台の心',               f:()=>(P.setHits||0)>=1, t:'「ギャンブル場のスロットには“設定”がある。小役の出方をよく見て、台の心を読んでみなされ」', g:'スロットの設定を見抜く'},
+ {n:'名前の秘密',            f:()=>{ try{ return !!P.everTakashi||localStorage.getItem('inflation_adventure_takashi')==='1'; }catch(e){ return !!P.everTakashi; } }, t:'「名前ひとつで、運命が変わる者がおる。…『たかし』という名で始めてみるといい。何かが起きるぞ。今の冒険は、記録画面でセーブコードを書き出してからにしなされ。あとで戻ってこられる」', g:'『たかし』という名前で遊んでみる'},
+ {n:'スライムの秘密',        f:()=>titleUnlocked(), t:'「はじまりの画面のスライム、あれを何度もつついてみたことはあるか？ 5回ほど、素早くな」', g:'タイトル画面のスライムを素早く5回つつく'},
+];
+const postMode=()=>!!(P.work&&P.work.cleared);
+const secretFound=()=>SECRETS.filter(x=>{ try{ return x.f(); }catch(e){ return false; } }).length;
 function guideSteps(){
   const J=JOBS[P.job];
   return [
@@ -1216,7 +1236,7 @@ function guideSteps(){
    [()=>!P.unlocked.neet, `「神々の座でもう一度勝つか、合わせて100回挑むんじゃ。そうすれば、最後の道が開ける」（勝利${P.godWins||0}回・挑戦${P.godTries||0}回）`],
    [()=>P.job!=='neet', '「…ついに、働かずしてすべてを極めた者『無職』への道が開けたな。転職所へ行きなされ」'],
    [()=>!(P.work&&P.work.cleared), ()=>{ const w=workState(); return `「冒険の『ハローワーク』で社会に挑むんじゃ。ここではダメージが縮む。転生、闘技場、神々の座、ギャンブルの大当たりで社会的信用を上げると、ぐっと楽になる」（第${w.floor+1}/${WORK.length}関門・信用×${trust().toFixed(2)}）`; }],
-  ].concat(legendAll()?[[()=>!(P.final&&P.final.cleared), ()=>`「…伝説の品をすべてそろえたか。ならば最後の相手、桁の神のもとへ行くがいい。ただし輪廻の結界は、転生を${FINAL_REB}回重ねた者でなければ破れんぞ」（転生 ${P.reb}/${FINAL_REB}回）`]]:[]);
+  ].concat(postMode()?SECRETS.map(x=>[()=>!x.f(),x.t]):[]);
 }
 // メイン画面に出す短い目標（guideSteps と同じ順番）
 function guideGoals(){ const J=JOBS[P.job]; return [
@@ -1236,7 +1256,7 @@ function guideGoals(){ const J=JOBS[P.job]; return [
   `神々の座で勝つか、100回挑む（勝利${P.godWins||0}・挑戦${P.godTries||0}）`,
   '転職所で無職になる',
   ()=>{ const w=workState(); return `ハローワークで社会に挑む（第${w.floor+1}/${WORK.length}関門）`; },
-].concat(legendAll()?[()=>`桁の神を倒す（転生 ${P.reb}/${FINAL_REB}回・残り${fmt(finalState().hp)}桁）`]:[]); }
+].concat(postMode()?SECRETS.map(x=>x.g):[]); }
 const guideIndex=()=>guideSteps().findIndex(([c])=>c());
 function goalHTML(){
   if(!P) return '';
@@ -1246,15 +1266,18 @@ function goalHTML(){
   if(cur>heard) return `<div class="small mir">★ 目標達成！ 酒場で隠居じいさんに次の話を聞こう（タップで酒場へ）</div>`;
   const g=guideGoals()[cur]; return `<div class="small c">🎯 目標：${typeof g==='function'?g():g}</div>`;
 }
+function secretListHTML(){ return `<div class="y" style="margin-top:8px">隠し要素 発見 ${secretFound()} / ${SECRETS.length}</div><div class="small">`+SECRETS.map(x=>{ let ok=false; try{ ok=x.f(); }catch(e){} return ok?`✓ ${x.n}`:'・？？？'; }).join('　')+`</div>`; }
 function guideHTML(){
   const steps=guideSteps(); const i=steps.findIndex(([c])=>c());
   if(P.guideHeard!==i){ P.guideHeard=i; save(); setTimeout(renderStatus,0); }
+  if(i<0&&postMode()) return `<div class="mir">隠居じいさん「…驚いた。この世界の隠し事を、すべて見つけてしもうたか。もう本当に、わしから言うことは何もない」</div>`+secretListHTML();
   if(i<0) return '<div class="mir">隠居じいさん「内定おめでとう。もうわしから言うことは何もない。あとは好きに生きなされ。次元の果てを目指すもよし、酒場で飲むもよしじゃ」</div>';
   const t=typeof steps[i][1]==='function'?steps[i][1]():steps[i][1];
   // 本筋とは別の、ひとことアドバイス（進行は止めない）
   const tips=[]; if(P.pts>0) tips.push(`能力ポイントが${P.pts}余っとる。『能力振り』で${KN[mainKey()]}に振るといい。`);
   if(!takashiLock()&&P.maxArea>0&&/無謀|強敵/.test(danger(enemyStats(P.maxArea)))) tips.push('奥のエリアがきつそうじゃな。修練場で稼ぐか、装備を買い直すか、エールや火酒を一杯ひっかけるのも手じゃ。');
-  return `<div class="small" style="color:#9ab">隠居じいさん（相談は無料）</div><div class="c" style="margin-top:4px">${t}</div>`+
+  const post=postMode()&&i>=16;
+  return `<div class="small" style="color:#9ab">隠居じいさん（相談は無料）</div>`+(post?`<div class="o" style="margin-top:4px">「内定おめでとう。…じゃが実はな、この世界にはまだ隠されたものがいくつかある。ひとつずつ教えてやろう」</div>`:'')+`<div class="c" style="margin-top:4px">${typeof t==='function'?t():t}</div>`+(post?secretListHTML():'')+
     (tips.length?`<div class="small o" style="margin-top:6px">ついでに：${tips.join('<br>')}</div>`:'')+
     `<div class="small" style="margin-top:6px;color:#789">道のり ${i+1} / ${steps.length}</div>`;
 }
@@ -1491,17 +1514,49 @@ function runBattle(e,t,fast){
   if(newArea!==undefined && t>=0){ holdEnd(); showAreaModal(newArea); }
   if(trainMile){ holdEnd(); }
 }
-function showAreaModal(na){
-  $('#mTitle').innerHTML=`<span class="mir">新エリア解放！</span>`;
-  const e=enemyStats(na);
-  $('#mBody').innerHTML=`「<span class="y">${areaName(na)}</span>」へ行けるようになった。<br>目安Lv${areaLv(na)} / 危険度 ${danger(e)}<br><br>次のエリアに進む？ それともここで鍛える？`;
-  $('#mGo').onclick=()=>{ $('#modal').classList.add('hide'); last={type:'area',t:na}; fightArea(na); };
-  $('#mStay').onclick=()=>{ $('#modal').classList.add('hide'); };
-  $('#modal').classList.remove('hide');
+// ---- 汎用ポップアップ（順番待ちあり） ----
+let popQ=[];
+function showPopup(o){ popQ.push(o); if($('#modal').classList.contains('hide')) nextPopup(); }
+function nextPopup(){ const o=popQ.shift(); if(!o){ $('#modal').classList.add('hide'); return; }
+  holdEnd(); slotHold=false;
+  $('#mTitle').innerHTML=o.title; $('#mBody').innerHTML=o.body;
+  const bb=$('#mBtns'); bb.innerHTML=''; bb.className=(o.buttons||[]).length>2?'':'grid2';
+  (o.buttons||[{label:'閉じる'}]).forEach(x=>{ const b=document.createElement('button'); b.innerHTML=x.label; if(x.cls) b.className=x.cls; b.style.marginTop='4px'; if(bb.className==='') b.style.width='100%';
+    b.onclick=()=>{ $('#modal').classList.add('hide'); if(x.fn) x.fn(); nextPopup(); }; bb.appendChild(b); });
+  $('#modal').classList.remove('hide'); }
+function closeModal(){ $('#modal').classList.add('hide'); nextPopup(); }
+function showAreaModal(na){ const e=enemyStats(na);
+  showPopup({title:'<span class="mir">新エリア解放！</span>',body:`「<span class="y">${areaName(na)}</span>」へ行けるようになった。<br>目安Lv${areaLv(na)} / 危険度 ${danger(e)}<br><br>次のエリアに進む？ それともここで鍛える？`,
+    buttons:[{label:'次のエリアへ進む',cls:'y',fn:()=>{ last={type:'area',t:na}; fightArea(na); }},{label:'このまま続ける'}]}); }
+const goTo=(p,arg)=>()=>{ show('sMain'); renderStatus(); panel(p,arg); };
+const BTN_GUIDE={label:'酒場の隠居じいさんに話を聞きに行こう',fn:goTo('bar','guide')};
+// 条件を満たした瞬間に出すお知らせ（一度だけ）
+function popDefs(){ return [
+  {id:'rank1',c:()=>openRank(1),title:'中位職が解放された！',body:'下位職を極めたことで、その上の職に就けるようになった。',btn:{label:'転職所を見に行こう',cls:'y',fn:goTo('job')}},
+  {id:'rank2',c:()=>openRank(2),title:'上位職が解放された！',body:'2つの職を極めた者だけが就ける、上位の職が開いた。',btn:{label:'転職所を見に行こう',cls:'y',fn:goTo('job')}},
+  {id:'appr',c:()=>!!P.unlocked.apprentice,title:'<span class="mir">見習い？が現れた…！</span>',body:'転職所に、なんとも頼りない職業が加わった。',btn:{label:'転職所を見に行こう',cls:'y',fn:goTo('job')}},
+  {id:'neet',c:()=>!!P.unlocked.neet,title:'<span class="mir">無職への道が開かれた！</span>',body:'すべてを極めた先に、働かずしてすべてを手にする職があった。',btn:{label:'転職所を見に行こう',cls:'y',fn:goTo('job')}},
+  {id:'work',c:()=>P.job==='neet',title:'<span class="mir">ハローワークが出現した！</span>',body:'無職だけが挑める、社会との戦い。冒険の画面に「ハローワーク」のタブが増えた。',btn:{label:'ハローワークを見に行こう',cls:'y',fn:goTo('area','work')}},
+  {id:'final',c:()=>legendAll(),title:'<span class="mir">桁の神が出現した！</span>',body:'伝説の品がすべてそろった時、数えきれぬものの神が姿を現した。冒険の画面に「桁の神」のタブが増えた。',btn:{label:'桁の神を見に行こう',cls:'y',fn:goTo('area','final')}},
+]; }
+function checkPops(){ if(!P) return; const first=!P.pops; P.pops=P.pops||{};
+  for(const d of popDefs()){ let ok=false; try{ ok=d.c(); }catch(e){} if(ok&&!P.pops[d.id]){ P.pops[d.id]=true; if(!first) showPopup({title:d.title,body:d.body,buttons:[d.btn,BTN_GUIDE,{label:'閉じる'}]}); } }
+  if(P.work&&P.work.cleared&&!P.endingSeen){ P.endingSeen=true; if(!first) showEnding(); }
 }
-function closeModal(){ $('#modal').classList.add('hide'); }
+// ---- 内定エンディング ----
+const fmtTime=ms=>{ const m=Math.floor(ms/60000); return m<60?`${m}分`:`${Math.floor(m/60)}時間${m%60}分`; };
+function showEnding(){
+  const days=P.startedAt?Math.max(1,Math.ceil((Date.now()-P.startedAt)/86400000)):null;
+  const rows=[['プレイ時間',fmtTime(P.playMs||0)],days?['冒険を始めてから',`${days}日目`]:null,['総戦闘数',fmt(P.battles)+'回'],['倒した敵',fmt(P.kills)+'体'],['最大ダメージ',fmt(P.maxDmg)],
+    ['稼いだお金',fmt(P.earned||0)+'G'],['最高レベル',`Lv${fmt(P.maxLv||P.lv)}`],['転生回数',P.reb+'回'],['マスターした職業',`${masterCount()}職`],['到達エリア',areaName(P.maxArea)],
+    ['闘技場',`${P.champ}人撃破`],['神々の座',`${P.godWins||0}勝 / ${P.godTries||0}回挑戦`],['ギャンブル大当たり',(P.jackpots||0)+'回'],['実績',`${Object.keys(P.ach||{}).length} / ${(ACHS||buildAch()).length}`]].filter(Boolean);
+  showPopup({title:'<span class="mir">★ 内 定 ★</span>',
+    body:`<div class="y" style="margin-bottom:6px">${esc(P.name)}の冒険の記録</div>`+rows.map(([a,b])=>`<div class="row"><span>${a}</span><span class="y">${b}</span></div>`).join('')+
+      `<div style="margin-top:10px">― ここまで遊んでくれて、ありがとう ―</div><div class="o" style="margin-top:10px">…でも、この世界にはまだ何かあるかも？</div>`,
+    buttons:[BTN_GUIDE,{label:'閉じる'}]}); }
 
 // ============ 起動 ============
+setInterval(()=>{ if(P&&document.visibilityState!=='hidden') P.playMs=(P.playMs||0)+5000; },5000);
 load(); renderTitle(); show('sTitle'); $('#inName').addEventListener('input',nameHint);
 </script>
 </body>

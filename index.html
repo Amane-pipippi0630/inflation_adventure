@@ -1776,17 +1776,17 @@ function fightChamp(f){ if(takashiLock()||P.champ>=CHAMP_MAX) return;last={type:
 function fightSecret(f){ if(takashiLock()) return;last={type:'secret'}; runBattle(makeSecret(),-2,f)}
 function again(f){ if(!last) return; if(last.type==='area') fightArea(last.t,f); else if(last.type==='guard') fightGuard(last.t,f); else if(last.type==='champ') fightChamp(f); else if(last.type==='final') fightFinal(f); else if(last.type==='train') fightTrain(f); else fightSecret(f); }
 // 長押し連戦
-let holdT=null, holdI=null, holdN=0, holdW=0;
+let holdT=null, holdI=null, holdN=0, holdW=0, holdL=0;
 function holdStart(ev){ ev.preventDefault(); if(holdT||holdI||!$('#modal').classList.contains('hide')) return;
-  holdN=0; holdW=0; again();
+  holdN=0; holdW=0; holdL=0; again();
   if(last&&last.type==='champ') return;
   holdT=setTimeout(()=>{ holdT=null; $('#btnAgain').classList.add('holding');
-    holdI=setInterval(()=>{ again(true); if(!holdI) return; holdN++; if($('#result').dataset.win==='1') holdW++;
+    holdI=setInterval(()=>{ again(true); if(!holdI) return; holdN++; const r=$('#result').dataset.res; if(r==='win') holdW++; else if(r==='lose') holdL++;
       $('#btnAgain').textContent=`連戦中… ${holdN}回（${holdW}勝）`; },60); },350);
 }
 function holdEnd(){ const was=!!holdI; clearTimeout(holdT); clearInterval(holdI); holdT=holdI=null;
   const b=$('#btnAgain'); b.classList.remove('holding'); b.textContent=againLabel();
-  if(was){ saveLogs(); $('#result').insertAdjacentHTML('beforeend',`<div class="y small">連戦 ${holdN}回終了（${holdW}勝 ${holdN-holdW}敗）</div>`); } }
+  if(was){ saveLogs(); $('#result').insertAdjacentHTML('beforeend',`<div class="y small">連戦 ${holdN}回終了（${holdW}勝 ${holdL}敗${holdN-holdW-holdL?` ${holdN-holdW-holdL}回は決着つかず`:''}）</div>`); } }
 (()=>{const b=$('#btnAgain'); b.addEventListener('pointerdown',holdStart);
   ['pointerup','pointerleave','pointercancel'].forEach(t=>b.addEventListener(t,holdEnd));
   b.addEventListener('contextmenu',e=>e.preventDefault());
@@ -1942,7 +1942,9 @@ function runBattle(e,t,fast){
   catch(err){ holdEnd(); $('#result').innerHTML=`<span class="r">エラーが起きました：${esc(err&&err.message||err)}</span><div class="small">「戻る」で戻れます。この文面を教えてもらえれば直します。</div>`; $('#log').innerHTML=''; return; }
   const {L,sum,newArea,trainMile}=R;
   locRun++; P.locB=P.locB||{}; P.locB[lk]=(P.locB[lk]||0)+1;
-  $('#result').dataset.win=(sum.includes('勝利')||sum.includes('突破'))?'1':'0';
+  const won=sum.includes('勝利')||sum.includes('突破')||sum.includes('倒した'); $('#result').dataset.win=won?'1':'0';
+  // 連戦の集計用：勝ち／負け／決着つかず（桁の神を削っただけ・逃走など）
+  $('#result').dataset.res=won?'win':sum.includes('敗北')?'lose':'draw';
   if(e.final){ $('#nmE').textContent=finalState().cleared?'（静寂）':FINAL_NAME; }
   $('#nmP').textContent=`${P.name} Lv${P.lv}`;
   $('#result').innerHTML=sum+`<div class="small">所持金 ${fmt(P.gold)}G　<span class="c">${locName(lk)}：今回${fmt(locRun)}戦目（累計${fmt(P.locB[lk])}戦）</span></div><div class="small">${JOBS[P.job].n}での戦闘 ${fmt((P.jobB||{})[P.job]||0)}回　総戦闘${fmt(P.battles)}回</div>`;

@@ -232,7 +232,11 @@ const psJob=(k,def)=>{
   if(P.job==='neet'){ let v=def; Object.entries(JOBS).forEach(([jk,j])=>{ if(jk!=='neet'&&j.pass&&j.pass[k]!==undefined&&isMaster(jk)) v = (k==='crit'||k==='eva') ? v+j.pass[k] : v*j.pass[k]; }); return v; }
   const p=JOBS[P.job].pass; return p&&p[k]!==undefined?p[k]:def};
 const mainKey=()=>{const m=JOBS[P.job].main; return m==='best'?KEYS.reduce((a,b)=>st(b)>st(a)?b:a):m};
-function canJob(k){const j=JOBS[k]; if(j.hidden) return !!P.unlocked[k]; if(j.rank===0) return true; if(j.rank===1) return isMaster(j.base); if(j.rank===2) return j.req.every(isMaster); return false;}
+// 名前が「たかし」なら、ギャンブラーをマスターするまでギャンブラー固定
+const TAKASHI=['たかし','タカシ'];
+const isTakashi=()=>!!P&&TAKASHI.includes(P.name);
+const takashiLock=()=>isTakashi()&&!isMaster('gambler');
+function canJob(k){ if(takashiLock()&&k!=='gambler') return false; const j=JOBS[k]; if(j.hidden) return !!P.unlocked[k]; if(j.rank===0) return true; if(j.rank===1) return isMaster(j.base); if(j.rank===2) return j.req.every(isMaster); return false;}
 function reqText(j){ if(j.rank===1) return `条件：${isMaster(j.base)?'✓':''}${JOBS[j.base].n}マスター`; if(j.rank===2) return '条件：'+j.req.map(k=>(isMaster(k)?'✓':'')+JOBS[k].n).join(' ＋ ')+' マスター'; return ''; }
 const isSecretJob=j=>j===SECRET_JOB||j==='neet';
 function pickSkill(){ const J=JOBS[P.job]; if(P.job!=='neet') return J.skill;
@@ -467,6 +471,7 @@ function danger(e){
 // ============ 画面 ============
 function show(id){['sTitle','sMain','sBattle'].forEach(s=>$('#'+s).classList.toggle('hide',s!==id)); window.scrollTo(0,0)}
 let pickedJob='warrior', slimeTaps=[];
+function nameHint(){ const v=$('#inName').value.trim(); if(TAKASHI.includes(v)) $('#jobDesc').innerHTML='<span class="o">たかしは、ギャンブラーとして生きる運命にある…</span>'; else $('#jobDesc').textContent=JOBS[pickedJob].d; }
 const UNLOCK_KEY='inflation_adventure_unlock';
 function titleUnlocked(){try{return localStorage.getItem(UNLOCK_KEY)==='1'}catch(e){return false}}
 function tapSlime(cv){
@@ -502,6 +507,7 @@ function startNew(){
   if(P&&!newArm){ newArm=true; $('#btnStart').textContent='本当に消してはじめる？（もう一度押す）'; $('#btnStart').classList.add('sel'); return; }
   newArm=false; $('#btnStart').textContent='冒険をはじめる'; $('#btnStart').classList.remove('sel');
   const name=nm0.slice(0,10);
+  if(TAKASHI.includes(name)) pickedJob='gambler';
   const g=JOBS[pickedJob].g; const base={}; KEYS.forEach(k=>base[k]=Math.round(5+g[k]*4));
   P={name,job:pickedJob,lv:1,exp:0,gold:100,pts:0,base,wpn:0,arm:0,reb:0,rebMul:1,maxArea:0,areaWins:0,champ:0,kills:0,maxDmg:0,battles:0,yomi:yomi0,secret:{},blessed:{},unlocked:JOBS[pickedJob].hidden?{[pickedJob]:true}:{},jlv:{}};
   LOGS=[]; saveLogs(); save(); goMain();
@@ -587,6 +593,7 @@ function panel(p,arg){
         h+=`<div class="row"><div>${n}${own?' <span class="y">(所持)</span>':''}<div class="small">${d}${own?'':'　'+fmt(pr)+'G'}</div></div><button ${own||P.job!=='neet'||P.gold<pr?'disabled':''} onclick="buyLacc('${k}')">${own?'所持':'買う'}</button></div>`; });
     }
   } else if(p==='job'){
+    if(takashiLock()){ h=`<h2>転職所</h2><div class="o">「たかし、お前はギャンブラーだ。ギャンブラーを極めるまでは、ほかの道はない」</div><div class="small" style="margin-top:6px">ギャンブラーをマスターすると転職できるようになる。（現在 JLv${jl('gambler').lv}/${JMAX}）</div>`; el.innerHTML=h; return; }
     h=`<h2>転職所</h2><div class="small">ステータスはそのままで、条件を満たした職業ならいつでも転職できます（無料）。中位職は対応する下位職のマスター、上位職は2つの職業のマスターが条件。ジョブレベルは勝つたびに上がり、JLv${JMAX}でマスター。マスターするたびに全能力×1.05（永続）。</div><div class="small">マスター数：${masterCount()}</div>`;
     RANKS.forEach((rn,r)=>{
       h+=`<div class="y" style="margin-top:8px">${rn}</div>`;
@@ -703,7 +710,7 @@ function hlCollect(){ hl.active=false; settle(hl.bet,hl.pot/hl.bet,`${hl.streak}
 // --- スロット ---
 const SYM=[['7',1,100],['BAR',2,40],['★',3,20],['🔔',4,10],['🍉',5,8],['🍒',6,5]];
 let reels=['7','7','7'];
-function pickSym(){let r=Math.random()*21; for(const x of SYM){r-=x[1]; if(r<0) return x[0]} return '🍒'}
+function pickSym(){ const tk=isTakashi(), tot=tk?30:21; let r=Math.random()*tot; for(const x of SYM){ r-=(tk&&x[0]==='7')?10:x[1]; if(r<0) return x[0]} return '🍒'}
 function slotHTML(){
   return `<div class="small">3つ揃えば配当。777で×100！ 🍒が2つでも×2。</div>`+betUI(busy)+
    `<div id="reels">${reels.map(r=>`<div class="reel">${r}</div>`).join('')}</div>`+
@@ -719,7 +726,10 @@ function slotSpin(){
     const el=document.getElementById('reels'); if(el) el.innerHTML=reels.map(r=>`<div class="reel">${r}</div>`).join('');
     if(tick>=18){ clearInterval(iv); busy=false;
       let m=0, t='ハズレ…';
-      if(fin[0]===fin[1]&&fin[1]===fin[2]){ m=SYM.find(x=>x[0]===fin[0])[2]; t=fin[0]==='7'?'<span class="mir">★★ 777 大当たり！！ ★★</span>':`${fin[0]}が揃った！ ×${m}`; if(fin[0]==='7'){ P.jackpots=(P.jackpots||0)+1; P.j777=(P.j777||0)+1; } }
+      if(fin[0]===fin[1]&&fin[1]===fin[2]){ m=SYM.find(x=>x[0]===fin[0])[2]; t=fin[0]==='7'?'<span class="mir">★★ 777 大当たり！！ ★★</span>':`${fin[0]}が揃った！ ×${m}`; if(fin[0]==='7'){ P.jackpots=(P.jackpots||0)+1; P.j777=(P.j777||0)+1;
+        if(isTakashi()){ const lv0=P.lv, L=[]; for(let i=0;i<3;i++) gainExp(Math.max(0,need(P.lv)-P.exp),L);
+          const nb=100; P.battles+=nb; P.jobB=P.jobB||{}; P.jobB[P.job]=(P.jobB[P.job]||0)+nb;
+          t+=`<div class="lv">たかしの魂が震える！ Lv${lv0}→${P.lv}、戦闘数+${nb}</div>`; } } }
       else if(fin.filter(x=>x==='🍒').length===2){ m=2; t='🍒が2つ！ ×2'; }
       settle(b,m,t); if(curPanel==='casino') panel('casino'); }
   },50);
@@ -1131,7 +1141,7 @@ function showAreaModal(na){
 function closeModal(){ $('#modal').classList.add('hide'); }
 
 // ============ 起動 ============
-load(); renderTitle(); show('sTitle');
+load(); renderTitle(); show('sTitle'); $('#inName').addEventListener('input',nameHint);
 </script>
 </body>
 </html>

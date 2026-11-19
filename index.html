@@ -327,7 +327,11 @@ function drawSprite(cv,key,hue,flip){
 // ============ セーブ ============
 const SAVE='inflation_adventure_v1', LOGSAVE='inflation_adventure_logs';
 let P=null, LOGS=[];
-function save(){try{checkAch()}catch(e){} try{localStorage.setItem(SAVE,JSON.stringify(P))}catch(e){}}
+// 数値が∞になるとJSONでnullになり読み込みで0に戻るため、保存前に上限へ丸める
+function fixNums(o,d=0){ if(!o||typeof o!=='object'||d>6) return; for(const k in o){ const v=o[k];
+  if(typeof v==='number'){ if(v===Infinity) o[k]=Number.MAX_VALUE; else if(v===-Infinity) o[k]=-Number.MAX_VALUE; else if(v!==v) o[k]=0; }
+  else if(v&&typeof v==='object') fixNums(v,d+1); } }
+function save(){ if(P) fixNums(P); try{checkAch()}catch(e){} try{localStorage.setItem(SAVE,JSON.stringify(P))}catch(e){}}
 function saveLogs(){try{localStorage.setItem(LOGSAVE,JSON.stringify(LOGS))}catch(e){}}
 // 読み込んだセーブを、決まった形（数値・真偽・既知のID）だけに整える。改ざんされたセーブコードで画面に変な表示や
 // スクリプトが入り込まないようにするため。
@@ -385,7 +389,7 @@ const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=8192)s+=String.fromCharCode.
 const ub64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
 async function pipe(u8,stream){ const w=stream.writable.getWriter(); w.write(u8); w.close(); return new Uint8Array(await new Response(stream.readable).arrayBuffer()); }
 async function makeCode(){
-  const o=JSON.parse(JSON.stringify(P)); o.ach=Object.keys(P.ach||{}).join(',');
+  fixNums(P); const o=JSON.parse(JSON.stringify(P)); o.ach=Object.keys(P.ach||{}).join(',');
   const json=JSON.stringify(o,(k,v)=>typeof v==='number'&&!Number.isInteger(v)?+v.toPrecision(10):v);
   if(typeof CompressionStream==='undefined') return 'IA1:'+btoa(unescape(encodeURIComponent(JSON.stringify(P))));
   return 'IA2:'+b64u(await pipe(new TextEncoder().encode(json),new CompressionStream('deflate-raw')));
@@ -670,7 +674,7 @@ function panel(p,arg){
     h=achHTML();
   } else if(p==='rec'){
     h=`<h2>記録</h2>`;
-    [['プレイ時間',fmtTime(P.playMs||0)],['最大ダメージ',fmt(P.maxDmg)],['倒した敵',fmt(P.kills)],['戦闘回数',fmt(P.battles)],['撃破した王者',P.champ+'人'],['神々の座 撃破',(P.godWins||0)+'回'],['神々の座 挑戦',(P.godTries||0)+'回'],['修練場 勝利（合計）',fmt(Object.values(P.train||{}).reduce((a,b)=>a+b,0))+'回'],['会得した極意',Object.keys(P.kiwami||{}).length+'個'],['ギャンブル大当たり',(P.jackpots||0)+'回'],[P.unlocked.neet?'ハローワーク':'？？？',P.unlocked.neet?(P.work?(P.work.cleared?'内定（完走）':`第${P.work.floor+1}関門`):'―'):'？？？'],['転生回数',P.reb+'回'],['到達エリア',areaName(P.maxArea)]].forEach(([a,b])=>h+=`<div class="row"><span>${a}</span><span class="y">${b}</span></div>`);
+    [['プレイ時間',fmtTime(P.playMs||0)],['最大ダメージ',fmt(P.maxDmg)],['倒した敵',fmt(P.kills)],['戦闘回数',fmt(P.battles)],['撃破した王者',P.champ+'人'],['神々の座 撃破',(P.godWins||0)+'回'],['神々の座 挑戦',(P.godTries||0)+'回'],['修練場 勝利（合計）',fmt(Object.values(P.train||{}).reduce((a,b)=>a+b,0))+'回'],['会得した極意',Object.keys(P.kiwami||{}).length+'個'],['ギャンブル大当たり',(P.jackpots||0)+'回'],[P.unlocked.neet?'ハローワーク':'？？？',P.unlocked.neet?(P.work?(P.work.cleared?`内定（${Object.keys(P.work.endings||{}).filter(k=>ROUTES[k]).length}/${Object.keys(ROUTES).length}ルート）`:(HW_STAGES[P.work.stage||0]+(P.work.stage===4?`（${ROUND_N[P.work.round||0]}）`:''))):'―'):'？？？'],['転生回数',P.reb+'回'],['到達エリア',areaName(P.maxArea)]].forEach(([a,b])=>h+=`<div class="row"><span>${a}</span><span class="y">${b}</span></div>`);
     if(P.work&&P.work.cleared) h+=`<button style="width:100%;margin-top:8px" onclick="showEnding()">エンディングをもう一度見る</button>`;
     h+=`<div class="y" style="margin-top:10px">セーブの書き出し・読み込み</div>
       <div class="small">ブラウザのデータが消えたときや、別のスマホに移すときのために、セーブコードを保存しておけます。</div>

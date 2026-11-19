@@ -347,7 +347,7 @@ function sanitizeSave(o){
    'jackpots','j777','jpin','jrou','setHits','hlBest','allInWins','kajiN','miracles'].forEach(k=>r[k]=num(o[k],0));
   r.lv=Math.max(1,int(o.lv,1)); r.wpn=Math.min(GEAR_MAX,int(o.wpn)); r.arm=Math.min(GEAR_MAX,int(o.arm)); r.reb=int(o.reb); r.pts=int(o.pts);
   r.maxArea=Math.min(AREA_MAX,int(o.maxArea)); r.areaWins=int(o.areaWins); r.champ=int(o.champ);
-  r.rebMul=Math.max(1,num(o.rebMul,1)); r.oneG=bool(o.oneG); r.areaDone=bool(o.areaDone); if(o.guideHeard!==undefined&&o.guideHeard!==null) r.guideHeard=Math.floor(num(o.guideHeard,-1)); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA); r.endingSeen=bool(o.endingSeen); r.everTakashi=bool(o.everTakashi);
+  r.rebMul=Math.max(1,num(o.rebMul,1)); r.oneG=bool(o.oneG); r.areaDone=bool(o.areaDone); if(o.guideHeard!==undefined&&o.guideHeard!==null) r.guideHeard=Math.floor(num(o.guideHeard,-1)); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA); r.jsec=boolMap(o.jsec,isJob); r.lastFruit=bool(o.lastFruit); r.endingSeen=bool(o.endingSeen); r.everTakashi=bool(o.everTakashi);
   r.playMs=int(o.playMs); r.startedAt=int(o.startedAt); if(o.pops&&typeof o.pops==='object') r.pops=boolMap(o.pops);
   if(o.final&&typeof o.final==='object') r.final={hp:Math.min(FINAL_HP,Math.max(0,num(o.final.hp,FINAL_HP))),cleared:bool(o.final.cleared),seen:bool(o.final.seen),dmg:num(o.final.dmg)};
   r.base={}; KEYS.forEach(k=>r.base[k]=Math.max(0,num(o.base&&o.base[k],1)));
@@ -644,7 +644,7 @@ function panel(p,arg){
         const ok=canJob(k);
         if(!ok){ const hint = j.rank===2 && !j.req.some(isMaster);
           h+=`<div class="row"><div><span style="opacity:.6">${hint?'？？？':j.n}</span><div class="small">${hint?'条件：？？？ ＋ ？？？':reqText(j)}</div></div><button disabled>転職</button></div>`; return; }
-        h+=`<div class="row"><div>${j.n} <span class="small">${isMaster(k)?'<span class="mir">MASTER</span>':'JLv'+jl(k).lv}　戦闘${fmt((P.jobB||{})[k]||0)}回</span>${k===P.job?' <span class="y">(現在)</span>':''}${P.blessed[k]?' <span class="mir">★</span>':''}<div class="small">${j.d}<br>メイン：${j.main==='best'?'一番高い能力':KN[j.main]}／技：${j.skill.n}<br><span class="y">マスター報酬：${j.main==='best'?'全能力×1.1':KN[j.main]+'×1.2'}</span>　<span class="c">修練${fmt(trainN(k))}回${P.kiwami&&P.kiwami[k]?'（極意）':''}</span>${j.rank>0&&j.rank<3?`<br><span class="o">攻撃・防御・HP ×${RMUL[j.rank]}</span>`:''}</div></div><button ${k===P.job?'disabled':''} onclick="changeJob('${k}')">転職</button></div>`;});
+        h+=`<div class="row"><div>${j.n} <span class="small">${isMaster(k)?'<span class="mir">MASTER</span>':'JLv'+jl(k).lv}　戦闘${fmt((P.jobB||{})[k]||0)}回</span>${k===P.job?' <span class="y">(現在)</span>':''}${P.blessed[k]?' <span class="mir">★</span>':''}<div class="small">${j.d}${JOB_SECRETS[k]&&JOB_SECRETS[k].hint?`<br><span class="o">…${JOB_SECRETS[k].hint}</span>`:''}${jobSecretFound(k)?` <span class="mir">【秘密：${JOB_SECRETS[k].n}】</span>`:''}<br>メイン：${j.main==='best'?'一番高い能力':KN[j.main]}／技：${j.skill.n}<br><span class="y">マスター報酬：${j.main==='best'?'全能力×1.1':KN[j.main]+'×1.2'}</span>　<span class="c">修練${fmt(trainN(k))}回${P.kiwami&&P.kiwami[k]?'（極意）':''}</span>${j.rank>0&&j.rank<3?`<br><span class="o">攻撃・防御・HP ×${RMUL[j.rank]}</span>`:''}</div></div><button ${k===P.job?'disabled':''} onclick="changeJob('${k}')">転職</button></div>`;});
     });
   } else if(p==='reb'){
     const mul=1+P.lv/20;
@@ -1063,6 +1063,8 @@ function buildAch(){
   A.push(T('tr1','修練場','初めての修練','修練場で1回勝った',()=>Object.values(P.train||{}).some(v=>v>=1)));
   Object.entries(JOBS).forEach(([k,j])=>A.push(T('kw_'+k,'修練場',`${j.n}の極意`,`${j.n}の修練場で1000回勝った`,()=>!!(P.kiwami&&P.kiwami[k]))));
   A.push(T('kwall','修練場','百芸の達人','すべての職業の極意を会得した',()=>Object.keys(JOBS).every(k=>P.kiwami&&P.kiwami[k])));
+  Object.keys(JOB_SECRETS).forEach(k=>A.push(T('js_'+k,'職業の秘密',`${JOBS[k].n}の秘密`,`${JOBS[k].n}の秘密「${JOB_SECRETS[k].n}」を見つけた`,()=>jobSecretFound(k))));
+  A.push(T('jsall','職業の秘密','すべての職の秘密','すべての職業の秘密を見つけた',()=>Object.keys(JOB_SECRETS).every(jobSecretFound)));
   A.push(T('all','マスター','インフレの果て','すべての実績を解除した',()=>ACHS.filter(a=>a.id!=='all').every(a=>P.ach[a.id])));
   return A;
 }
@@ -1346,6 +1348,65 @@ function simulateFinal(e,fast){
   save(); if(!fast) saveLogs();
   return {L,sum,trainMile:c.trainMile};
 }
+// ============ 職業の秘密（各職業の隠し効果） ============
+// type:'start' は戦闘開始時に判定、'dyn' は自分の手番ごとに判定（HPが減ったら等）。発動したらその戦闘中ずっと有効。
+// 効果：atk(攻撃倍率) taken(被ダメ倍率) eva(回避+) crit(必ず会心) skill(技が必ず出る) multi(追加攻撃回数) zero(最初のN回の被弾を0) gold(お金倍率) drop(実を必ず拾う) fruitX(実の量倍率)
+let curRun=0; // この場所で今回何戦目か（runBattle がセット）
+const isNight=()=>{ const h=new Date().getHours(); return h>=22||h<4; };
+const hpR=c=>c.php/c.mhp;
+const drunkNow=()=>!!((P.drink&&P.drink.left>0)||persona());
+const digits777=()=>Math.floor(P.gold)%1000===777;
+const JOB_SECRETS={
+ warrior:  {n:'背水の陣',      hint:'追い詰められるほど強くなるらしい',           type:'dyn',   c:c=>hpR(c)<.1,                   fx:{atk:100},             msg:'HPがわずか…！ 背水の陣！ 攻撃力×100'},
+ mage:     {n:'純粋魔力',      hint:'知力だけを極めると何かが起きるらしい',       type:'start', c:()=>st('int')>=st('str')*100,  fx:{skill:1},             msg:'力を捨てた魔力が満ちる…！ 大魔法が止まらない'},
+ thief:    {n:'王冠泥棒',      hint:'王者の前では手癖が悪くなるらしい',           type:'start', c:(c,e)=>!!e.champ,               fx:{gold:10},             msg:'王者の王冠に手が伸びる…！ 賞金×10'},
+ priest:   {n:'神の慈悲',      hint:'神の前では祈りが届くらしい',                 type:'start', c:(c,e)=>!!e.secret,              fx:{taken:.5},            msg:'祈りが神に届いた… 神竜の攻撃が半分に'},
+ gambler:  {n:'フィーバー',    hint:'縁起のいい金額を握りしめると…',             type:'start', c:()=>P.gold===777,               fx:{atk:777},             msg:'所持金777G！ フィーバー突入！ 攻撃力×777'},
+ fighter:  {n:'火事場のクソ力', hint:'',                                          type:'start', c:(c)=>!!c.kaji,                  fx:{},                    msg:''},
+ hunter:   {n:'狩りの極み',    hint:'同じ狩場に通い続けると…',                   type:'start', c:()=>curRun>=100,                fx:{crit:1},              msg:'この狩場は知り尽くした…！ 会心100%'},
+ knight:   {n:'完全防御',      hint:'万全の状態なら、最初の一撃は…',             type:'start', c:()=>true,                       fx:{zero:1},              msg:'盾を構えた… 最初の一撃は通さない', silentUntil:'zero'},
+ dancer:   {n:'月下の舞',      hint:'夜になると…',                               type:'start', c:()=>isNight(),                  fx:{eva:.5},              msg:'月明かりの下で舞う… 回避+50%'},
+ bard:     {n:'酔いどれの歌',  hint:'酒が入ると歌声が変わるらしい',               type:'start', c:()=>drunkNow(),                 fx:{atk:5},               msg:'酒が入って歌声が冴える…！ 攻撃力×5'},
+ merchant: {n:'札束の壁',      hint:'金持ちになるほど…',                         type:'start', c:()=>P.gold>=1e16,               fx:{taken:.1},            msg:'札束を積み上げて壁にした！ 受けるダメージ1/10'},
+ alchemist:{n:'賢者の閃き',    hint:'実を拾った直後は冴えているらしい',           type:'start', c:(c)=>!!c.fruitFresh,            fx:{drop:1},              msg:'さっきの実の味がひらめきを呼ぶ… 実を必ず拾う'},
+ apprentice:{n:'奇跡の加護',   hint:'',                                          type:'none'},
+ berserker:{n:'狂乱の血',      hint:'血を流すほど狂っていくらしい',               type:'dyn',   c:c=>hpR(c)<.3,                   fx:{atk:1000},            msg:'血が騒ぐ…！ 狂乱の血！ 攻撃力×1000'},
+ archmage: {n:'魔の深淵',      hint:'知力だけを極めると何かが起きるらしい',       type:'start', c:()=>st('int')>=st('str')*100,  fx:{skill:1,atk:3},       msg:'魔の深淵をのぞいた… 大魔法が止まらず、威力×3'},
+ ninja:    {n:'夜影分身',      hint:'夜になると影が増えるらしい',                 type:'start', c:()=>isNight(),                  fx:{multi:2},             msg:'夜の闇に影が溶ける… 毎ターン3回攻撃'},
+ bishop:   {n:'神域の加護',    hint:'神の前では祈りが届くらしい',                 type:'start', c:(c,e)=>!!e.secret,              fx:{taken:.25},           msg:'神域の加護… 神竜の攻撃が1/4に'},
+ shark:    {n:'七の刻印',      hint:'財布の端数に縁起を担ぐと…',                 type:'start', c:()=>digits777(),                fx:{atk:7777},            msg:'所持金の下3桁が777！ 七の刻印！ 攻撃力×7777'},
+ kenou:    {n:'火事場・極',    hint:'追い詰められると、拳王の何かが目覚めるらしい', type:'start', c:()=>P.gold===1,               fx:{atk:10,taken:.5},     msg:'所持金1G…！ 拳王の火事場が極まる！ さらに攻撃力×10・被ダメ半分'},
+ sniper:   {n:'千里眼',        hint:'同じ狩場に通い続けると…',                   type:'start', c:()=>curRun>=200,                fx:{crit:1,atk:10},       msg:'獲物の動きがすべて見える…！ 会心100%・攻撃力×10'},
+ paladin:  {n:'聖なる三重盾',  hint:'万全の状態なら、最初の攻撃は…',             type:'start', c:()=>true,                       fx:{zero:3},              msg:'聖なる盾が三重に輝く… 最初の3回の攻撃を通さない', silentUntil:'zero'},
+ maiden:   {n:'月影の舞',      hint:'夜になると…',                               type:'start', c:()=>isNight(),                  fx:{eva:.8},              msg:'月影の中で舞う… 回避+80%'},
+ maestro:  {n:'酩酊の交響曲',  hint:'酒が入ると歌声が変わるらしい',               type:'start', c:()=>drunkNow(),                 fx:{atk:20},              msg:'酔いが旋律を狂わせる…！ 攻撃力×20'},
+ tycoon:   {n:'金城鉄壁',      hint:'金持ちになるほど…',                         type:'start', c:()=>P.gold>=1e20,               fx:{taken:.01,gold:3},    msg:'財力で城を築いた！ 受けるダメージ1/100・お金×3'},
+ grandalch:{n:'錬成の連鎖',    hint:'実を拾った直後は冴えているらしい',           type:'start', c:(c)=>!!c.fruitFresh,            fx:{drop:1,fruitX:10},    msg:'錬成が連鎖する… 実を必ず拾い、効果×10'},
+ hero:     {n:'勇者の覚醒',    hint:'王者の前で倒れかけると…',                   type:'dyn',   c:(c)=>hpR(c)<.1&&!!c.e.champ,     fx:{atk:10000},           msg:'まだ倒れられない…！ 勇者が覚醒する！ 攻撃力×1万'},
+ sage:     {n:'森羅の悟り',    hint:'神の前で知恵を極めると…',                   type:'start', c:(c,e)=>!!e.secret&&st('int')>=st('str')*100, fx:{skill:1,taken:.25}, msg:'森羅万象を悟った… 技が止まらず、被ダメ1/4'},
+ spellblade:{n:'魔剣解放',     hint:'追い詰められると剣が魔を帯びるらしい',       type:'dyn',   c:c=>hpR(c)<.3,                   fx:{skill:1,atk:100},     msg:'魔剣が解き放たれた…！ 魔法剣が止まらない・攻撃力×100'},
+ assassin: {n:'闇夜の狩人',    hint:'夜、同じ狩場に通い続けると…',               type:'start', c:()=>isNight()&&curRun>=100,     fx:{crit:1,atk:100},      msg:'闇夜はすべて我が狩場… 会心100%・攻撃力×100'},
+ swordsaint:{n:'無我の境地',   hint:'財布も体も限界のとき…',                     type:'dyn',   c:c=>P.gold===1&&hpR(c)<.3,        fx:{atk:1e6},             msg:'すべてを失い、無我の境地へ…！ 攻撃力×100万'},
+ dragoon:  {n:'竜の目覚め',    hint:'同じ狩場に通い続け、万全で挑むと…',         type:'start', c:()=>curRun>=100,                fx:{zero:1,atk:100},      msg:'竜が目を覚ました…！ 最初の一撃を防ぎ、攻撃力×100'},
+ phantom:  {n:'月夜の大怪盗',  hint:'夜、王者の前では…',                         type:'start', c:(c,e)=>isNight()&&!!e.champ,     fx:{gold:100},            msg:'月夜に大怪盗参上！ 王者の財宝をいただく… 賞金×100'},
+ luckking: {n:'天運の極み',    hint:'大金持ちが縁起を担ぐと…',                   type:'start', c:()=>digits777()&&P.gold>=1e10,   fx:{atk:77777,gold:7},    msg:'天運が極まった！ 攻撃力×77777・お金×7'},
+ tennyo:   {n:'羽衣の月夜',    hint:'夜、酒が入ると…',                           type:'start', c:()=>isNight()&&drunkNow(),      fx:{eva:.9,atk:50},       msg:'月夜に羽衣が舞う… 回避+90%・攻撃力×50'},
+ chrono:   {n:'時の酩酊',      hint:'酒と実の両方がそろうと…',                   type:'start', c:(c)=>drunkNow()&&!!c.fruitFresh, fx:{multi:1,drop:1},     msg:'時がゆがむ… 毎ターン2回攻撃・実を必ず拾う'},
+ saint:    {n:'聖夜の祈り',    hint:'夜、神の前で祈ると…',                       type:'start', c:(c,e)=>isNight()&&!!e.secret,    fx:{taken:.01},           msg:'聖夜の祈りが神に届いた… 受けるダメージ1/100'},
+ overlord: {n:'覇王の矜持',    hint:'一文無し寸前でも、万全なら…',               type:'start', c:()=>P.gold===1,                 fx:{atk:1e5,zero:1},      msg:'所持金1Gでも覇王は退かぬ…！ 攻撃力×10万・最初の一撃を防ぐ'},
+ neet:     {n:'本気を出す',    hint:'一文無しになったとき、ようやく…',           type:'start', c:()=>P.gold===0,                 fx:{atk:1e6},             msg:'…所持金0G。ようやく、本気を出す時が来た。攻撃力×100万'},
+};
+// 騎士・聖騎士の「万全」条件：戦闘開始時HP満タン（毎戦HP満タンで始まるので、実質いつでも。最初の被弾で判明）
+function applySecret(c,S){ const fx=S.fx||{}; c.secOn=true;
+  if(fx.atk) c.buff*=fx.atk; if(fx.taken) c.secTaken=(c.secTaken||1)*fx.taken; if(fx.eva) c.secEva=(c.secEva||0)+fx.eva;
+  if(fx.crit) c.secCrit=true; if(fx.skill) c.secSkill=true; if(fx.multi) c.secMulti=(c.secMulti||0)+fx.multi; if(fx.zero) c.secZero=(c.secZero||0)+fx.zero;
+  if(fx.gold) c.secGold=(c.secGold||1)*fx.gold; if(fx.drop) c.secDrop=true; if(fx.fruitX) c.secFruitX=(c.secFruitX||1)*fx.fruitX;
+  if(!S.silentUntil) markSecret(c); }
+function markSecret(c){ const S=JOB_SECRETS[P.job]; if(!S||!S.msg) return; c.L.push(`<span class="mir">【${JOBS[P.job].n}の秘密】${S.msg}</span>`);
+  P.jsec=P.jsec||{}; if(!P.jsec[P.job]){ P.jsec[P.job]=true; c.L.push(`<span class="y">★ 職業の秘密「${S.n}」を発見した！</span>`); } }
+function secretStart(c,e,t){ const S=JOB_SECRETS[P.job]; if(!S||S.type!=='start') return; let ok=false; try{ ok=S.c(c,e,t); }catch(x){} if(ok) applySecret(c,S); }
+function secretDyn(c){ const S=JOB_SECRETS[P.job]; if(!S||S.type!=='dyn'||c.secOn) return; let ok=false; try{ ok=S.c(c); }catch(x){} if(ok) applySecret(c,S); }
+const jobSecretFound=k=>k==='fighter'?(P.kajiN||0)>0:k==='apprentice'?!!(P.blessed&&P.blessed.apprentice):!!(P.jsec&&P.jsec[k]);
 // ============ 戦闘 ============
 let last=null;
 function fightArea(t,f){ if(takashiLock()) return;last={type:'area',t}; runBattle(makeEnemy(t),t,f)}
@@ -1381,7 +1442,8 @@ function playerHit(c){
   }
   if(chance(Math.min(.25,e.agi/(e.agi+st('agi'))*.12))){L.push(`${e.name}は攻撃をかわした！`);return;}
   let mult=1, sure=false, flat=0, pierce=false, drain=false;
-  if(chance(J.skill.p+luk/(luk+2000)*.1+(jl(P.job).lv-1)*.01)){const s=pickSkill(); pierce=!!s.pierce; drain=!!s.drain;
+  if(c.L&&!c.work&&!c.final) secretDyn(c);
+  if(c.secSkill||chance(J.skill.p+luk/(luk+2000)*.1+(jl(P.job).lv-1)*.01)){const s=pickSkill(); pierce=!!s.pierce; drain=!!s.drain;
     if(s.heal){const h=Math.floor(c.mhp*.5); c.php=Math.min(c.mhp,c.php+h); L.push(`<span class="sk">${nm}は${s.n}を唱えた！</span> HPが<span class="heal">${fmt(h)}</span>回復！`);}
     else if(s.gamble){mult=pickGamble(); L.push(`<span class="sk">${nm}の${s.n}！ ルーレットは… <b>×${mult}</b>！</span>`); if(mult===0){L.push('…しかし何も起きなかった。');return;}}
     else if(s.steal){const g=Math.floor(e.gold*rnd(.3,1)*(s.sm||1)); c.gold+=g; L.push(`<span class="sk">${nm}は${fmt(g)}G盗んだ！</span>`);}
@@ -1394,7 +1456,7 @@ function playerHit(c){
   }
   const mirP=.004+luk/(luk+5000)*.02+(P.blessed[P.job]?.12:0)+accMir()+(drinkOn('mir')?.1:0);
   if(chance(mirP)){mult*=100; P.miracles=(P.miracles||0)+1; L.push(`<span class="mir">★☆ 奇跡が起きた！ ☆★</span>`);}
-  else if(!sure&&chance(.04+luk/(luk+300)*.25+ps('crit',0))){mult*=(legW()||neetW())?30:3; L.push(neetW()?`<span class="crit">会心の一撃！ 辞表が叩きつけられた！</span>`:legW()?`<span class="crit">会心の一撃！ オーバーフローが桁をあふれさせる！</span>`:`<span class="crit">会心の一撃！</span>`);}
+  else if(!sure&&(c.secCrit||chance(.04+luk/(luk+300)*.25+ps('crit',0)))){mult*=(legW()||neetW())?30:3; L.push(neetW()?`<span class="crit">会心の一撃！ 辞表が叩きつけられた！</span>`:legW()?`<span class="crit">会心の一撃！ オーバーフローが桁をあふれさせる！</span>`:`<span class="crit">会心の一撃！</span>`);}
   const a=atk()*c.buff*rnd(1.3,1.7)*mult+flat;
   const d=Math.floor(pierce?Math.max(a,1):Math.max(a-e.def*.5,a*.08,1));
   if(c.final){ const cd=Math.floor(Math.log10(d+1)*c.M); c.ehp-=cd; c.dealt+=cd; if(d>P.maxDmg) P.maxDmg=d;
@@ -1409,9 +1471,10 @@ function playerHit(c){
 function enemyHit(c){
   const e=c.e,L=c.L,ag=st('agi'),lk=st('luk'),nm=esc(P.name);
   if(c.stun){c.stun=false; L.push(`${e.name}は見とれて動けない！`); return;}
-  if(chance(Math.min(.4,ag/(ag+e.agi)*.15+lk/(lk+3000)*.05+ps('eva',0)))){L.push(`${nm}は身をかわした！`);return;}
+  if(c.secZero>0){ c.secZero--; if(!c.secZeroShown){ c.secZeroShown=true; markSecret(c); } L.push(`${e.name}の攻撃！ …しかし盾がすべて受け止めた！ ダメージ0`); return; }
+  if(chance(Math.min(.95,ag/(ag+e.agi)*.15+lk/(lk+3000)*.05+ps('eva',0)+(c.secEva||0)))){L.push(`${nm}は身をかわした！`);return;}
   let m=1; if(chance(.04)){m=2.5; L.push(`<span class="crit">${e.name}の痛恨の一撃！</span>`);}
-  const a=e.atk*rnd(1.3,1.7)*m*ps('taken',1)*(c.kaji?.1:1)*(neetA()?.001:legA()?.1:1); const d=Math.floor(Math.max(a-def()*.5,a*.08,1));
+  const a=e.atk*rnd(1.3,1.7)*m*ps('taken',1)*(c.kaji?.1:1)*(neetA()?.001:legA()?.1:1)*(c.secTaken||1); const d=Math.floor(Math.max(a-def()*.5,a*.08,1));
   c.php-=d; L.push(`${e.name}の攻撃！ ${nm}は<span class="edmg">${fmt(d)}</span>のダメージ！`);
 }
 function simulate(e,t,fast){
@@ -1419,6 +1482,7 @@ function simulate(e,t,fast){
   const L=c.L, nm=esc(P.name);
   if(P.job==='fighter'&&P.gold===1){c.kaji=true; c.buff=10000; P.kajiN=(P.kajiN||0)+1;}
   c.buff*=battleBuffs(L);
+  c.fruitFresh=!!P.lastFruit; P.lastFruit=false; secretStart(c,e,t);
   if(e.secret){
     P.secret[P.job]=(P.secret[P.job]||0)+1; P.godTries=(P.godTries||0)+1;
     if(isSecretJob(P.job) && P.secret[P.job]===SECRET_TRIES && !P.blessed[P.job]) c.forceMiracle=true;
@@ -1434,6 +1498,7 @@ function simulate(e,t,fast){
         const dbl=(P.job==='thief'&&chance(.35))||(st('agi')>e.agi*2&&chance(.25));
         playerHit(c);
         if(dbl&&c.ehp>0){L.push(`<span class="sk">連続攻撃！</span>`); playerHit(c);}
+        for(let x=0;x<(c.secMulti||0)&&c.ehp>0;x++){ L.push(`<span class="sk">影の追撃！</span>`); playerHit(c); }
         if(c.ehp<=0){res='win';break;}
       } else { enemyHit(c); if(c.php<=0){res='lose';break;} }
     }
@@ -1446,13 +1511,13 @@ function simulate(e,t,fast){
   if(res==='win'){
     P.kills++;
     const lk=st('luk');
-    const exp=Math.floor(e.exp*rnd(.9,1.1)*ps('exp',1)*drinkMul('exp')); const gold=Math.floor(e.gold*rnd(.8,1.2)*(1+lk/(lk+200))*ps('gold',1)*drinkMul('gold'))+c.gold;
+    const exp=Math.floor(e.exp*rnd(.9,1.1)*ps('exp',1)*drinkMul('exp')); const gold=Math.floor(e.gold*rnd(.8,1.2)*(1+lk/(lk+200))*ps('gold',1)*drinkMul('gold')*(c.secGold||1))+c.gold;
     L.push(`<span class="y">${e.name}を倒した！</span>`);
     L.push(`<span class="rw">${fmt(exp)}の経験値と ${fmt(gold)}G を手に入れた！</span>`);
     P.gold+=gold; P.earned=(P.earned||0)+gold;
     const lv0=P.lv;
     let drop='';
-    if(chance((.04+lk/(lk+1000)*.1)*ps('drop',1)*(e.train?2:1))){const k=KEYS[Math.floor(Math.random()*5)]; const n=Math.max(1,Math.floor(rnd(1,4)*(Math.max(t,P.champ,P.maxArea*(e.train?1:0),0)+1)));
+    if(c.secDrop||chance((.04+lk/(lk+1000)*.1)*ps('drop',1)*(e.train?2:1))){const k=KEYS[Math.floor(Math.random()*5)]; const n=Math.max(1,Math.floor(rnd(1,4)*(Math.max(t,P.champ,P.maxArea*(e.train?1:0),0)+1)*(c.secFruitX||1))); P.lastFruit=true;
       P.base[k]+=n; drop=`${KN[k]}の実(+${n})`; L.push(`<span class="g">${KN[k]}の実を拾った！ ${KN[k]}が${n}上がった！</span>`);}
     gainExp(exp,L);
     const jg=gainJob(e.secret?10:e.champ?5:e.train?3*(1+Math.floor(P.maxArea/3)):1+Math.floor(Math.max(t,0)/3),L);
@@ -1503,7 +1568,7 @@ function runBattle(e,t,fast){
   show('sBattle'); if(!holdI) $('#btnAgain').textContent=againLabel();
   drawSprite($('#cvP'),'knight',JOBS[P.job].hue,false); $('#nmP').textContent=`${P.name} Lv${P.lv}`;
   drawSprite($('#cvE'),e.sp,e.hue,true); $('#nmE').textContent=e.name;
-  const lk=locOf(e,t); if(lk!==locKey){locKey=lk; locRun=0;}
+  const lk=locOf(e,t); if(lk!==locKey){locKey=lk; locRun=0;} curRun=locRun+1;
   let R;
   try{ R=e.final?simulateFinal(e,fast):e.work?simulateWork(e,fast):simulate(e,t,fast); }
   catch(err){ holdEnd(); $('#result').innerHTML=`<span class="r">エラーが起きました：${esc(err&&err.message||err)}</span><div class="small">「戻る」で戻れます。この文面を教えてもらえれば直します。</div>`; $('#log').innerHTML=''; return; }

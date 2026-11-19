@@ -537,9 +537,13 @@ function renderStatus(){
   h+=`<div class="grid2 small"><div>HP <span class="g">${fmt(maxhp())}</span></div><div>所持金 <span class="y">${fmt(P.gold)}G</span></div>`;
   h+=`<div>攻撃 <span class="r">${fmt(atk())}</span></div><div>防御 <span class="c">${fmt(def())}</span></div></div>`;
   h+=`<div class="grid small" style="margin-top:4px">`+KEYS.map(k=>`<div>${KN[k]} ${fmt(st(k))}</div>`).join('')+`</div>`;
-  h+=`<div class="small">武器：${itemName(WPN,P.wpn)}　防具：${itemName(ARM,P.arm)}</div>`;
-  { const l=accEqs(); h+=`<div class="small">装飾品（${l.length}/${accSlots()}枠）：${l.length?l.map(a=>`${a.n}+${a.lv}`).join('、'):'なし'}</div>`;
-    const lg=LACC.filter(a=>hasL(a[0])); if(lg.length) h+=`<div class="small mir">伝説：${lg.map(a=>a[1]).join('、')}</div>`; }
+  h+=`<div class="small">武器：${gearHTML(true)}　防具：${gearHTML(false)}</div>`;
+  { const l=accEqs(); let txt;
+    if(l.length===ACC.length){ const lo=Math.min(...l.map(a=>a.lv)), hi=Math.max(...l.map(a=>a.lv));
+      txt= lo===hi&&lo>=accCap() ? `<span class="mir">【全${ACC.length}種セット】+${lo} MAX</span>` : `<span class="y">【全${ACC.length}種セット】</span>${lo===hi?'+'+lo:`+${lo}〜+${hi}`}`; }
+    else txt= l.length?l.map(a=>`${a.n}+${a.lv}`).join('、'):'なし';
+    h+=`<div class="small">装飾品（${l.length}/${accSlots()}枠）：${txt}</div>`;
+    const lg=LACC.filter(a=>hasL(a[0])); if(lg.length) h+=`<div class="small mir">伝説：${lg.length===LACC.length?'【社会人の身だしなみ一式】（全'+LACC.length+'種）':lg.map(a=>a[1]).join('、')}</div>`; }
   if(P.blessed[P.job]) h+=`<div class="small mir">★ 奇跡の加護を受けている ★</div>`;
   if(persona()) h+=`<div class="small mir">🍶 ${PERSONA[P.persona.mode].n}：${PERSONA[P.persona.mode].d}（あと${P.persona.left}回）</div>`;
   else if(P.drink&&P.drink.left>0){ const D=DRINKS.find(x=>x.id===P.drink.type); if(D) h+=`<div class="small o">🍺 ${D.n}：${D.d.replace(/次の\d+戦、/,'')}（あと${P.drink.left}戦）</div>`; }
@@ -593,7 +597,7 @@ function panel(p,arg){
     h+=`<div class="small">目安Lv${c.lv} / 危険度 ${danger(c)}</div><div class="small">HP ${fmt(c.hp)}　攻撃 ${fmt(c.atk)}　防御 ${fmt(c.def)}</div><div class="small">撃破した王者：${P.champ}人</div>`;
   } else if(p==='wpn'||p==='arm'){
     const isW=p==='wpn', cur=isW?P.wpn:P.arm;
-    h=`<h2>${isW?'武器屋':'防具屋'}</h2><div class="small">装備中：${itemName(isW?WPN:ARM,cur)}（${isW?'攻撃':'防御'}+${fmt(isW?wpnPow(cur):armPow(cur))}）</div>`;
+    h=`<h2>${isW?'武器屋':'防具屋'}</h2><div class="small">装備中：${gearHTML(isW)}（${isW?'攻撃':'防御'}+${fmt(isW?wpnPow(cur):armPow(cur))}）</div>`;
     if(cur>=GEAR_MAX){ h+=`<div class="mir" style="margin:8px 0">★ 伝説の${isW?'剣':'鎧'}を装備中 ★</div><div class="small">${isW?'攻撃力×1万、会心の一撃のダメージがさらに×10。':'防御力×1万、受けるダメージ1/10。'}この先に、もう装備は存在しない。</div>`; el.innerHTML=h; return; }
     { const mx=maxTier(isW); if(mx>cur) h+=`<button class="y" style="width:100%;margin:6px 0" onclick="buy('${p}',${mx})">買えるだけ買う → ${mx>=GEAR_MAX?(isW?'インフレソード':'インフレアーマー')+'+99 → ？？？':itemName(isW?WPN:ARM,mx)}（${fmt(isW?wpnPrice(mx):armPrice(mx))}G）</button>`; }
     for(let i=cur+1;i<=Math.min(cur+3,GEAR_MAX);i++){const pr=isW?wpnPrice(i):armPrice(i);
@@ -666,6 +670,8 @@ function panel(p,arg){
 }
 // 今の所持金で買える一番上の段階（1回分の値段だけ払って直接その段階へ）
 function maxTier(isW){ const base=isW?100:80; if(P.gold<base*7) return isW?P.wpn:P.arm; return Math.min(GEAR_MAX, Math.max(isW?P.wpn:P.arm, Math.floor(Math.log(P.gold/base)/Math.log(7)+1e-9))); }
+// +99（伝説装備）は【伝説】付きで表示
+function gearHTML(isW){ const i=isW?P.wpn:P.arm; return i>=GEAR_MAX?`<span class="mir">【伝説】${itemName(isW?WPN:ARM,i)}</span>`:itemName(isW?WPN:ARM,i); }
 function buy(p,i){ if(i>GEAR_MAX) return; const wasW=legW(), wasA=legA();const pr=p==='wpn'?wpnPrice(i):armPrice(i); if(P.gold<pr)return; P.gold-=pr; if(p==='wpn')P.wpn=i; else P.arm=i; save(); renderStatus(); panel(p);}
 function buyAcc(k){const lv=accLv(k), pr=accPrice(lv); if(lv>=accCap()||P.gold<pr) return; P.gold-=pr; P.acc=P.acc||{}; accEqList(); P.acc[k]=lv+1; const l=accEqList(); if(!l.includes(k)&&l.length<accSlots()) l.push(k); save(); renderStatus(); panel('acc');}
 function eqAcc(k){ if(!accLv(k)) return; const l=accEqList(), i=l.indexOf(k); if(i>=0) l.splice(i,1); else if(l.length<accSlots()) l.push(k); save(); renderStatus(); panel('acc');}

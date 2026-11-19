@@ -348,6 +348,7 @@ function sanitizeSave(o){
   r.lv=Math.max(1,int(o.lv,1)); r.wpn=Math.min(GEAR_MAX,int(o.wpn)); r.arm=Math.min(GEAR_MAX,int(o.arm)); r.reb=int(o.reb); r.pts=int(o.pts);
   r.maxArea=Math.min(AREA_MAX,int(o.maxArea)); r.areaWins=int(o.areaWins); r.champ=int(o.champ);
   r.rebMul=Math.max(1,num(o.rebMul,1)); r.oneG=bool(o.oneG); r.areaDone=bool(o.areaDone); if(o.guideHeard!==undefined&&o.guideHeard!==null) r.guideHeard=Math.floor(num(o.guideHeard,-1)); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA);
+  if(o.final&&typeof o.final==='object') r.final={hp:Math.min(FINAL_HP,Math.max(0,num(o.final.hp,FINAL_HP))),cleared:bool(o.final.cleared),seen:bool(o.final.seen),dmg:num(o.final.dmg)};
   r.base={}; KEYS.forEach(k=>r.base[k]=Math.max(0,num(o.base&&o.base[k],1)));
   r.jlv={}; if(o.jlv&&typeof o.jlv==='object') for(const k of Object.keys(o.jlv)) if(isJob(k)&&o.jlv[k]) r.jlv[k]={lv:Math.min(JMAX,Math.max(1,int(o.jlv[k].lv,1))),exp:int(o.jlv[k].exp)};
   r.acc=numMap(o.acc,k=>ACC.some(a=>a[0]===k)); Object.keys(r.acc).forEach(k=>r.acc[k]=Math.min(ACC_LIMIT,int(r.acc[k])));
@@ -569,10 +570,17 @@ function panel(p,arg){
   if((p==='area'||p==='champ')&&takashiLock()){ el.innerHTML=TK_MSG; return; }
   if(p==='area'){
     if(arg) areaTab=arg;
-    const tabs=[['adv','冒険'],['train','修練場'],['god','神々の座']].concat(P.unlocked.neet?[['work','ハローワーク']]:[]);
+    const tabs=[['adv','冒険'],['train','修練場'],['god','神々の座']].concat(P.unlocked.neet?[['work','ハローワーク']]:[]).concat(finalOpen()?[['final','桁の神']]:[]);
     if(!tabs.some(x=>x[0]===areaTab)) areaTab='adv';
     h=`<div class="grid" style="grid-template-columns:repeat(${tabs.length},1fr);margin-bottom:8px">`+tabs.map(([k,n])=>`<button class="${areaTab===k?'sel':''}" style="font-size:13px;padding:7px 2px" onclick="panel('area','${k}')">${n}</button>`).join('')+`</div>`;
-    if(areaTab==='work'){
+    if(areaTab==='final'){ const f=finalState();
+      h+=`<div class="row"><div><span class="mir">${FINAL_NAME}</span>`+(f.cleared?`<div class="small mir">★ 撃破済み ― インフレの果てを見た</div>`:
+        `<div class="small">残り ${fmt(f.hp)} / ${fmt(FINAL_HP)} 桁</div><div class="bar"><i style="width:${(1-f.hp/FINAL_HP)*100}%;background:linear-gradient(90deg,#a5f,#fd5,#f55)"></i></div>`+
+        `<div class="small ${P.reb>=FINAL_REB?'c':'o'}">輪廻の結界：転生 ${P.reb}/${FINAL_REB}回${P.reb>=FINAL_REB?'（破れる！）':'（まだ破れない）'}</div>`+
+        `<div class="small">ダメージは「桁数」で入る。転生${FINAL_REB}回を超えるほど強く刺さる。</div>`)+
+        `</div><button ${f.cleared?'disabled':''} onclick="fightFinal()">挑む</button></div>`;
+      h+=`<div class="small" style="margin-top:6px">伝説の品：`+legendList().map(([n,ok])=>`${ok?'✓':'・'}${n}`).join('　')+`</div>`;
+    } else if(areaTab==='work'){
     { const w=workState(), F=WORK[w.floor];
       h+=`<div class="row"><div><span class="mir">ハローワーク</span> <span class="small">無職専用</span>`+
         (w.cleared?`<div class="small mir">★ 内定済み（完走）</div>`:
@@ -978,6 +986,7 @@ function buildAch(){
   A.push(T('ch5','闘技場','名のある闘士','闘技場で王者を5人倒した',()=>P.champ>=5));
   A.push(T('ch10','闘技場','闘技場制覇','闘技場の全王者10人を倒した',()=>P.champ>=10));
   A.push(T('ch20','闘技場','無限王殺し','闘技場で王者を20人倒した',()=>P.champ>=20));
+  A.push(T('ch300','闘技場','闘技場完全制覇',`闘技場の王者${CHAMP_MAX}人をすべて倒した`,()=>P.champ>=CHAMP_MAX));
   [[30,'闘技場の主'],[50,'五十代目の玉座'],[75,'王者狩り'],[100,'百代の覇者']].forEach(([v,n])=>A.push(T('ch'+v,'闘技場',n,`闘技場で王者を${v}人倒した`,()=>P.champ>=v)));
   // 神々の座
   A.push(T('g1','神々の座','無謀な挑戦','神々の座に挑んだ',()=>(P.godTries||0)>=1));
@@ -1034,6 +1043,8 @@ function buildAch(){
   A.push(T('leg','装備','桁あふれの勇者','伝説の剣と鎧をそろえた',()=>legW()&&legA()));
   A.push(T('neetW','装備',NEET_W,'内定祝いに無職専用の武器を授かった',()=>!!P.neetW));
   A.push(T('neetA','装備',NEET_A,'次元の果てで無職専用の防具を見つけた',()=>!!P.neetA));
+  A.push(T('legAll','装備','伝説コンプリート','伝説の品をすべてそろえた',()=>legendAll()));
+  A.push(T('final','冒険','インフレの果て','桁の神を倒した',()=>!!(P.final&&P.final.cleared)));
   A.push(T('neetWA','装備','最強の無職','無職専用の武器と防具をそろえた',()=>!!(P.neetW&&P.neetA)));
   A.push(T('areaDone','冒険','完全踏破','次元の果て（第300層）を踏破した',()=>!!P.areaDone));
   LACC.forEach(([k,n])=>A.push(T('la_'+k,'装飾品',n,`伝説の装飾品「${n}」を手に入れた`,()=>!!(P.lacc&&P.lacc[k]))));
@@ -1205,7 +1216,7 @@ function guideSteps(){
    [()=>!P.unlocked.neet, `「神々の座でもう一度勝つか、合わせて100回挑むんじゃ。そうすれば、最後の道が開ける」（勝利${P.godWins||0}回・挑戦${P.godTries||0}回）`],
    [()=>P.job!=='neet', '「…ついに、働かずしてすべてを極めた者『無職』への道が開けたな。転職所へ行きなされ」'],
    [()=>!(P.work&&P.work.cleared), ()=>{ const w=workState(); return `「冒険の『ハローワーク』で社会に挑むんじゃ。ここではダメージが縮む。転生、闘技場、神々の座、ギャンブルの大当たりで社会的信用を上げると、ぐっと楽になる」（第${w.floor+1}/${WORK.length}関門・信用×${trust().toFixed(2)}）`; }],
-  ];
+  ].concat(legendAll()?[[()=>!(P.final&&P.final.cleared), ()=>`「…伝説の品をすべてそろえたか。ならば最後の相手、桁の神のもとへ行くがいい。ただし輪廻の結界は、転生を${FINAL_REB}回重ねた者でなければ破れんぞ」（転生 ${P.reb}/${FINAL_REB}回）`]]:[]);
 }
 // メイン画面に出す短い目標（guideSteps と同じ順番）
 function guideGoals(){ const J=JOBS[P.job]; return [
@@ -1225,7 +1236,7 @@ function guideGoals(){ const J=JOBS[P.job]; return [
   `神々の座で勝つか、100回挑む（勝利${P.godWins||0}・挑戦${P.godTries||0}）`,
   '転職所で無職になる',
   ()=>{ const w=workState(); return `ハローワークで社会に挑む（第${w.floor+1}/${WORK.length}関門）`; },
-]; }
+].concat(legendAll()?[()=>`桁の神を倒す（転生 ${P.reb}/${FINAL_REB}回・残り${fmt(finalState().hp)}桁）`]:[]); }
 const guideIndex=()=>guideSteps().findIndex(([c])=>c());
 function goalHTML(){
   if(!P) return '';
@@ -1267,12 +1278,53 @@ function barHTML(){
   if(barMsg) h+=`<div style="margin-top:8px">${barMsg}</div>`;
   return h;
 }
+// ============ 最後のエンドコンテンツ：桁の神 ============
+// 伝説の品（オーバーフロー・アンダーフロー・伝説装飾品4種・辞表・リクルートスーツ）をすべてそろえると現れる。
+// 「輪廻の結界」は転生 FINAL_REB 回以上でないと破れない。ダメージは桁数（log10）で入り、HPは持ち越し。
+const FINAL_REB=50, FINAL_HP=1000000, FINAL_TURNS=15;
+const FINAL_NAME='桁の神 グーゴルプレックス';
+const legendList=()=>[['桁あふれの剣 オーバーフロー',legW()],['桁あふれの鎧 アンダーフロー',legA()]].concat(LACC.map(a=>[a[1],!!(P.lacc&&P.lacc[a[0]])])).concat([[NEET_W,!!P.neetW],[NEET_A,!!P.neetA]]);
+const legendAll=()=>legendList().every(x=>x[1]);
+const finalOpen=()=>legendAll()||!!(P.final&&(P.final.seen||P.final.cleared));
+function finalState(){ if(!P.final) P.final={hp:FINAL_HP,cleared:false,seen:false,dmg:0}; return P.final; }
+const FINAL_LINES=['桁の神「数えきれぬものを、数えようとするか」','桁の神「お前の積み上げた桁など、我の前ではひと粒の砂」','空間の桁が、ひとつ、またひとつと崩れていく…','桁の神「無量大数の、その先を見たいか」','桁の神は∞を振りかざした！'];
+function makeFinal(){ const f=finalState(); return {name:FINAL_NAME,sp:'dragon',hue:(Date.now()/40)%360,hp:f.hp,atk:0,def:0,agi:40,gold:0,exp:0,final:true}; }
+function fightFinal(fast){ if(!finalOpen()||finalState().cleared) return; last={type:'final'}; runBattle(makeFinal(),-5,fast); }
+function simulateFinal(e,fast){
+  const f=finalState(); f.seen=true; const nm=esc(P.name), M=Math.max(1,P.reb/FINAL_REB);
+  const c={e,L:[],php:maxhp(),mhp:maxhp(),ehp:f.hp,gold:0,buff:1,stun:false,forceMiracle:false,kaji:false,final:true,M,dealt:0};
+  const L=c.L; c.buff*=battleBuffs(L);
+  L.push(`<b class="mir">${FINAL_NAME}</b>（残り ${fmt(f.hp)} / ${fmt(FINAL_HP)} 桁）`);
+  const barrier=P.reb<FINAL_REB;
+  if(barrier) L.push(`<span class="o">輪廻の結界が神を包んでいる… 転生を重ねた者でなければ破れない（転生 ${P.reb}/${FINAL_REB}回）</span>`);
+  else L.push(`<span class="c">輪廻の結界が砕けた！ ダメージは「桁数」で神に届く（転生ボーナス ×${M.toFixed(2)}）</span>`);
+  for(let turn=1;turn<=FINAL_TURNS&&c.ehp>0;turn++){
+    L.push(`<span class="hpl">― ターン${turn} ―</span>`);
+    if(barrier){ L.push(`${nm}の攻撃！ …輪廻の結界に阻まれた。`); }
+    else playerHit(c);
+    if(c.ehp>0&&chance(.5)) L.push(FINAL_LINES[Math.floor(Math.random()*FINAL_LINES.length)]);
+  }
+  P.battles++; drinkTick(L);
+  f.hp=Math.max(0,c.ehp); f.dmg=(f.dmg||0)+c.dealt;
+  let sum= barrier?`<span class="o">結界に阻まれた…（転生 ${P.reb}/${FINAL_REB}回）</span>`:`<span class="c">与えた桁ダメージ ${fmt(c.dealt)}</span> / 残り ${fmt(f.hp)}`;
+  if(f.hp<=0&&!f.cleared){ f.cleared=true; c.trainMile=true;
+    ['<span class="mir">★★★★★★★★★★</span>',`<span class="mir">${FINAL_NAME}が、静かに崩れていく。</span>`,
+     '<span class="y">桁の神「…見事だ。数えきれぬものを、お前は数えきった」</span>',
+     '<span class="y">はじまりの草原の1Gから、ここまで。すべての桁は、お前が積み上げたものだ。</span>',
+     `<span class="mir">${nm}は「インフレの果てを見た者」となった。</span>`,
+     '<span class="small">― THE END ―　インフレアドベンチャー</span>'].forEach(x=>L.push(x));
+    sum='<span class="mir">★ 桁の神を倒した！ インフレの果てへ ★</span>'; }
+  const head=`${FINAL_NAME}（${JOBS[P.job].n} 転生${P.reb}）`;
+  LOGS.unshift({head,sum,lines:L}); if(LOGS.length>20) LOGS.length=20;
+  save(); if(!fast) saveLogs();
+  return {L,sum,trainMile:c.trainMile};
+}
 // ============ 戦闘 ============
 let last=null;
 function fightArea(t,f){ if(takashiLock()) return;last={type:'area',t}; runBattle(makeEnemy(t),t,f)}
 function fightChamp(f){ if(takashiLock()||P.champ>=CHAMP_MAX) return;last={type:'champ'}; runBattle(makeChamp(P.champ),-1,f)}
 function fightSecret(f){ if(takashiLock()) return;last={type:'secret'}; runBattle(makeSecret(),-2,f)}
-function again(f){ if(!last) return; if(last.type==='area') fightArea(last.t,f); else if(last.type==='champ') fightChamp(f); else if(last.type==='work') fightWork(f); else if(last.type==='train') fightTrain(f); else fightSecret(f); }
+function again(f){ if(!last) return; if(last.type==='area') fightArea(last.t,f); else if(last.type==='champ') fightChamp(f); else if(last.type==='work') fightWork(f); else if(last.type==='final') fightFinal(f); else if(last.type==='train') fightTrain(f); else fightSecret(f); }
 // 長押し連戦
 let holdT=null, holdI=null, holdN=0, holdW=0;
 function holdStart(ev){ ev.preventDefault(); if(holdT||holdI||!$('#modal').classList.contains('hide')) return;
@@ -1318,6 +1370,8 @@ function playerHit(c){
   else if(!sure&&chance(.04+luk/(luk+300)*.25+ps('crit',0))){mult*=(legW()||neetW())?30:3; L.push(neetW()?`<span class="crit">会心の一撃！ 辞表が叩きつけられた！</span>`:legW()?`<span class="crit">会心の一撃！ オーバーフローが桁をあふれさせる！</span>`:`<span class="crit">会心の一撃！</span>`);}
   const a=atk()*c.buff*rnd(1.3,1.7)*mult+flat;
   const d=Math.floor(pierce?Math.max(a,1):Math.max(a-e.def*.5,a*.08,1));
+  if(c.final){ const cd=Math.floor(Math.log10(d+1)*c.M); c.ehp-=cd; c.dealt+=cd; if(d>P.maxDmg) P.maxDmg=d;
+    L.push(`${nm}の攻撃！ <span class="small">${fmt(d)}</span> → <span class="dmg">${fmt(cd)}</span>桁のダメージ！`); return; }
   if(c.work){ const cd=compress(d,c.M); c.ehp-=cd; c.dealt+=cd; if(d>P.maxDmg) P.maxDmg=d;
     L.push(`${nm}の攻撃！ <span class="small">${fmt(d)}</span> → 圧縮されて <span class="dmg">${fmt(cd)}</span> のダメージ！`);
     if(drain){const h=Math.min(c.mhp-c.php,Math.floor(c.mhp*.05)); if(h>0) c.php+=h;} return; }
@@ -1414,8 +1468,8 @@ function gainExp(e,L){
 function againLabel(){return last&&last.type==='champ'?'もう一戦':'もう一戦（長押しで連戦）'}
 // 場所ごとの戦闘数（今回入ってから／累計）
 let locKey=null, locRun=0;
-function locOf(e,t){ return e.work?'work':e.secret?'god':e.champ?'champ':e.train?'train_'+P.job:'a'+t; }
-function locName(k){ return k==='work'?'ハローワーク':k==='god'?'神々の座':k==='champ'?'闘技場':k.startsWith('train_')?`${JOBS[k.slice(6)].n}の修練場`:areaName(+k.slice(1)); }
+function locOf(e,t){ return e.final?'final':e.work?'work':e.secret?'god':e.champ?'champ':e.train?'train_'+P.job:'a'+t; }
+function locName(k){ return k==='final'?'桁の神':k==='work'?'ハローワーク':k==='god'?'神々の座':k==='champ'?'闘技場':k.startsWith('train_')?`${JOBS[k.slice(6)].n}の修練場`:areaName(+k.slice(1)); }
 const locTotal=k=>(P.locB&&P.locB[k])||0;
 function runBattle(e,t,fast){
   if(!fast) closeModal();
@@ -1424,11 +1478,12 @@ function runBattle(e,t,fast){
   drawSprite($('#cvE'),e.sp,e.hue,true); $('#nmE').textContent=e.name;
   const lk=locOf(e,t); if(lk!==locKey){locKey=lk; locRun=0;}
   let R;
-  try{ R=e.work?simulateWork(e,fast):simulate(e,t,fast); }
+  try{ R=e.final?simulateFinal(e,fast):e.work?simulateWork(e,fast):simulate(e,t,fast); }
   catch(err){ holdEnd(); $('#result').innerHTML=`<span class="r">エラーが起きました：${esc(err&&err.message||err)}</span><div class="small">「戻る」で戻れます。この文面を教えてもらえれば直します。</div>`; $('#log').innerHTML=''; return; }
   const {L,sum,newArea,trainMile}=R;
   locRun++; P.locB=P.locB||{}; P.locB[lk]=(P.locB[lk]||0)+1;
   $('#result').dataset.win=(sum.includes('勝利')||sum.includes('突破'))?'1':'0';
+  if(e.final){ $('#nmE').textContent=finalState().cleared?'（静寂）':FINAL_NAME; }
   if(e.work){ const w=workState(); $('#nmE').textContent=w.cleared?'内定':WORK[w.floor].n; drawSprite($('#cvE'),WORK[w.floor].sp,WORK[w.floor].hue,true); }
   $('#nmP').textContent=`${P.name} Lv${P.lv}`;
   $('#result').innerHTML=sum+`<div class="small">所持金 ${fmt(P.gold)}G　<span class="c">${locName(lk)}：今回${fmt(locRun)}戦目（累計${fmt(P.locB[lk])}戦）</span></div><div class="small">${JOBS[P.job].n}での戦闘 ${fmt((P.jobB||{})[P.job]||0)}回　総戦闘${fmt(P.battles)}回</div>`;

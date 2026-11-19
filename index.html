@@ -911,11 +911,11 @@ function diceRoll(odd){
 // 長押しなし。面接は「質問に答える」形式で、印象ポイント（圧縮ダメージ）を積み上げる。
 const HW_STAGES=['出発','ハロワ','登録','面談','面接','内定'];
 const ROUTES={
- sales:  {n:'営業',   key:'luk', who:'営業部長', ending:'笑顔と根性で、今日も契約をもぎ取る。気づけば支店のトップ営業になっていた。'},
- metal:  {n:'金属業', key:'vit', who:'工場長',   ending:'火花の散る現場で、黙々と鉄を打つ。手に職がつき、親方と呼ばれる日も近い。'},
- account:{n:'経理',   key:'int', who:'経理課長', ending:'1円のズレも見逃さない。会社の数字は、すべてこの手の中にある。'},
- it:     {n:'IT',     key:'agi', who:'CTO',      ending:'キーボードを叩く速さは社内一。障害対応で徹夜した夜も、今ではいい思い出だ。'},
- estate: {n:'不動産', key:'str', who:'社長',     ending:'押しの強さで物件を売りさばく。駅前のビルの最上階に、自分の名前の看板が掲げられた。'},
+ sales:  {n:'営業',   key:'luk', who:'営業部長', ending:'笑顔と根性で、今日も契約をもぎ取る。気づけば支店のトップ営業になっていた。', twist:'…が、3日目の朝。上司の机に、そっと辞表を叩きつけた。ノルマより、自由のほうが性に合っていた。'},
+ metal:  {n:'金属業', key:'vit', who:'工場長',   ending:'火花の散る現場で、黙々と鉄を打つ。手に職がつき、親方と呼ばれる日も近い。', twist:'…が、ある朝。親方に辞表を手渡した。鉄は熱いうちに打てと言うが、自分はもう冷めていた。'},
+ account:{n:'経理',   key:'int', who:'経理課長', ending:'1円のズレも見逃さない。会社の数字は、すべてこの手の中にある。', twist:'…が、決算期の夜。机に辞表を置いて会社を出た。帳簿の帳尻は合ったが、人生の帳尻は合わなかった。'},
+ it:     {n:'IT',     key:'agi', who:'CTO',      ending:'キーボードを叩く速さは社内一。障害対応で徹夜した夜も、今ではいい思い出だ。', twist:'…が、本番障害の夜。チャットに「辞めます」とだけ残して、ログアウトした。'},
+ estate: {n:'不動産', key:'str', who:'社長',     ending:'押しの強さで物件を売りさばく。駅前のビルの最上階に、自分の名前の看板が掲げられた。', twist:'…が、看板が掲げられた翌日。辞表を出した。手に入れたビルより、ハロワの椅子のほうが落ち着いた。'},
 };
 const APPROACH=[['str','熱意で押す'],['int','理詰めで話す'],['luk','愛想よく話す'],['vit','誠実に話す'],['agi','機転を利かせる']];
 const ANSWERS=[['appeal','アピールする'],['honest','しっかり答える'],['ask','逆質問する']];
@@ -985,8 +985,9 @@ function hwNaitei(w){ const R=ROUTES[w.route]; w.stage=5; const first=!w.cleared
   const g=Math.floor(enemyStats(Math.max(P.maxArea,20)).gold*300), ex=Math.floor(need(P.lv)*10); P.gold+=g; P.earned=(P.earned||0)+g; gainExp(ex,[]);
   hwLog(w,`<span class="rw">内定祝い：${fmt(g)}G と経験値</span>`);
   const L=[]; grantNeetGear(L); L.forEach(x=>hwLog(w,x));
+  showPopup({title:`<span class="mir">★ ${R.n}ルート 内定 ★</span>`,body:`<div class="y">${esc(P.name)}は${R.n}の会社に就職した。</div><div style="margin-top:8px">${R.ending}</div><div class="o" style="margin-top:10px">${R.twist}</div><div class="mir" style="margin-top:8px">― こうして${esc(P.name)}は、また無職に戻った ―</div><div class="small" style="margin-top:10px">集めたエンディング ${Object.keys(w.endings).length} / ${Object.keys(ROUTES).length}</div>`,buttons:[{label:'閉じる'}]});
+
   save(); renderStatus(); panel('area','work');
-  showPopup({title:`<span class="mir">★ ${R.n}ルート 内定 ★</span>`,body:`<div class="y">${esc(P.name)}は${R.n}の会社に就職した。</div><div style="margin-top:8px">${R.ending}</div><div class="small" style="margin-top:10px">集めたエンディング ${Object.keys(w.endings).length} / ${Object.keys(ROUTES).length}</div>`,buttons:[{label:'閉じる'}]});
 }
 function hwRestart(){ const w=workState(); if(w.stage!==5) return; Object.assign(w,{stage:0,route:null,round:0,hp:ROUND_HP[0],strikes:0,flags:{},q:null,tries:0}); hwLog(w,'――もう一度、就活を始めよう。'); save(); panel('area','work'); }
 function hwHTML(){
@@ -1002,7 +1003,7 @@ function hwHTML(){
     h+=`<div><b>${ROUND_N[w.round]}</b>（面接官：${R.who}）</div><div class="small">印象 ${fmt(max-w.hp)} / ${fmt(max)}　不安 ${'●'.repeat(w.strikes)}${'○'.repeat(STRIKES-w.strikes)}</div><div class="bar"><i style="width:${(1-w.hp/max)*100}%;background:linear-gradient(90deg,#7de0ff,#fd5)"></i></div>`;
     h+=`<div class="c" style="margin:8px 0">${R.who}${w.q.q}</div><div class="grid">`+ANSWERS.map(([k,n])=>`<button onclick="hwAnswer('${k}')">${n}</button>`).join('')+`</div>`;
     h+=`<div class="small" style="margin-top:4px">質問に合った答え方で印象×2、失言は不安が1つたまる（3つでお祈り）。1回の答えで入る印象：約${fmt(hwPower()*(w.flags.resume||1))}</div>`; }
-  if(w.stage===5){ h+=`<div class="mir">★ ${R.n}ルートで内定！ ★</div><div class="small">${R.ending}</div><div class="small y" style="margin-top:4px">集めたエンディング ${Object.keys(w.endings).length} / ${Object.keys(ROUTES).length}</div><button class="y" style="width:100%;margin-top:6px" onclick="hwRestart()">別の業界でもう一度就活する</button>`; }
+  if(w.stage===5){ h+=`<div class="mir">★ ${R.n}ルートで内定！ ★</div><div class="small">${R.ending}</div><div class="small o" style="margin-top:4px">${R.twist}</div><div class="small mir">― そして、また無職に戻った ―</div><div class="small y" style="margin-top:4px">集めたエンディング ${Object.keys(w.endings).length} / ${Object.keys(ROUTES).length}</div><button class="y" style="width:100%;margin-top:6px" onclick="hwRestart()">別の業界でもう一度就活する</button>`; }
   h+=`<details style="margin-top:8px"><summary class="small">社会的信用 ×${trust().toFixed(2)}（面接の印象に効く・最大×${HW_TRUST_MAX}）</summary><div class="small">`+trustParts().map(([n,v,c])=>`${n} ${c}→×${v.toFixed(2)}`).join('<br>')+`</div></details>`;
   return h+hwLogHTML(w); }
 const hwLogHTML=w=>w.log&&w.log.length?`<div class="logbox" style="margin-top:8px;max-height:30vh">`+w.log.map(x=>`<p>${x}</p>`).join('')+`</div>`:'';

@@ -694,20 +694,31 @@ const SUITS=['♠','♥','♦','♣'], CN=['','A','2','3','4','5','6','7','8','9
 let hl={active:false,card:0,suit:0,bet:0,pot:0,streak:0,prev:null};
 const drawCard=()=>[1+Math.floor(Math.random()*13),Math.floor(Math.random()*4)];
 const cardHTML=(n,s)=>`<span class="card ${s===1||s===2?'red':''}">${SUITS[s]}${CN[n]}</span>`;
+// 連勝の節目でボーナス（到達した瞬間にもらえる。負けても取り消されない）。10連勝で打ち止め。
+const HL_MAX=10;
+const HL_BONUS={3:{lv:1,t:'Lv+1'},5:{lv:2,fruit:1,t:'Lv+2・全能力の実'},7:{lv:3,t:'Lv+3'},10:{lv:5,x2:true,t:'Lv+5・賞金さらに×2'}};
 function hlHTML(){
-  let h=`<div class="small">次のカードが今より上か下かを当てる。当たるたびに賞金2倍。同じ数字は引き分け。</div>`+betUI(hl.active);
+  let h=`<div class="small">次のカードが今より上か下かを当てる。当たるたびに賞金2倍。同じ数字は引き分け。最大${HL_MAX}連勝。</div>`+betUI(hl.active);
   h+=`<div class="big">${hl.prev?cardHTML(...hl.prev)+' → ':''}${hl.active?cardHTML(hl.card,hl.suit):'<span class="card back">?</span>'}</div>`;
   if(hl.active){
-    h+=`<div class="small" style="text-align:center">賞金 <span class="y">${fmt(hl.pot)}G</span>（${hl.streak}連勝中）</div>`;
+    h+=`<div class="small" style="text-align:center">賞金 <span class="y">${fmt(hl.pot)}G</span>（${hl.streak}/${HL_MAX}連勝）</div>`;
     h+=`<div class="grid" style="margin-top:6px"><button onclick="hlGuess(1)">ハイ ▲</button><button onclick="hlGuess(0)">ロー ▼</button><button ${hl.streak?'':'disabled'} onclick="hlCollect()">降りる</button></div>`;
   } else h+=`<button style="width:100%;margin-top:6px" onclick="hlStart()">カードを引く</button>`;
+  h+=`<div class="small" style="margin-top:6px">連勝ボーナス：`+Object.entries(HL_BONUS).map(([n,b])=>`<span class="${hl.active&&hl.streak>=+n?'g':''}">${n}連勝 ${b.t}</span>`).join('　')+`</div>`;
   return h;
 }
 function hlStart(){ const b=takeBet(); if(!b){panel('casino');return;} const [n,s]=drawCard(); hl={active:true,card:n,suit:s,bet:b,pot:b,streak:0,prev:null}; casMsg=''; save(); renderStatus(); panel('casino'); }
+function hlReward(n){ const B=HL_BONUS[n]; if(!B) return ''; const lv0=P.lv, L=[];
+  for(let i=0;i<B.lv;i++) gainExp(Math.max(0,need(P.lv)-P.exp),L);
+  let t=`<div class="lv">${n}連勝ボーナス！ Lv${lv0}→${P.lv}`;
+  if(B.fruit){ const v=Math.max(1,Math.floor(rnd(1,4)*(P.maxArea+1))); KEYS.forEach(k=>P.base[k]+=v); t+=`、全能力+${v}`; }
+  if(B.x2){ hl.pot*=2; t+=`、賞金さらに×2`; }
+  save(); renderStatus(); return t+'</div>'; }
 function hlGuess(hi){
   const [n,s]=drawCard(); hl.prev=[hl.card,hl.suit];
   if(n===hl.card){ casMsg='同じ数字！ 引き分け、続行。'; }
-  else if(hi?n>hl.card:n<hl.card){ hl.pot*=2; hl.streak++; P.hlBest=Math.max(P.hlBest||0,hl.streak); casMsg=`<span class="g">当たり！ 賞金 ${fmt(hl.pot)}G</span>`; }
+  else if(hi?n>hl.card:n<hl.card){ hl.pot*=2; hl.streak++; P.hlBest=Math.max(P.hlBest||0,hl.streak); casMsg=`<span class="g">当たり！ 賞金 ${fmt(hl.pot)}G</span>`+hlReward(hl.streak);
+    if(hl.streak>=HL_MAX){ hl.card=n; hl.suit=s; const bonus=casMsg; hl.active=false; settle(hl.bet,hl.pot/hl.bet,`<span class="mir">★ ${HL_MAX}連勝パーフェクト！ ★</span>`); casMsg=bonus+casMsg; hl.prev=null; panel('casino'); return; } }
   else { hl.card=n; hl.suit=s; hl.active=false; settle(hl.bet,0,`ハズレ…（${hl.streak}連勝で終了）`); panel('casino'); return; }
   hl.card=n; hl.suit=s; panel('casino');
 }

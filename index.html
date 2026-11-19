@@ -471,22 +471,27 @@ function danger(e){
 // ============ 画面 ============
 function show(id){['sTitle','sMain','sBattle'].forEach(s=>$('#'+s).classList.toggle('hide',s!==id)); window.scrollTo(0,0)}
 let pickedJob='warrior', slimeTaps=[];
-function nameHint(){ const v=$('#inName').value.trim(); if(TAKASHI.includes(v)) $('#jobDesc').innerHTML='<span class="o">たかしは、ギャンブラーとして生きる運命にある…</span>'; else $('#jobDesc').textContent=JOBS[pickedJob].d; }
+function nameHint(){ renderJobs(); }
 const UNLOCK_KEY='inflation_adventure_unlock';
 function titleUnlocked(){try{return localStorage.getItem(UNLOCK_KEY)==='1'}catch(e){return false}}
 function tapSlime(cv){
   const now=Date.now(); slimeTaps=slimeTaps.filter(t=>now-t<2500); slimeTaps.push(now);
   if(slimeTaps.length>=5 && !titleUnlocked()){
-    try{localStorage.setItem(UNLOCK_KEY,'1')}catch(e){} window.__unlock=true; pickedJob='apprentice'; renderTitle();
+    try{localStorage.setItem(UNLOCK_KEY,'1')}catch(e){} window.__unlock=true; pickedJob='apprentice'; renderJobs();
     $('#jobDesc').innerHTML='<span class="mir">どこからか 見習い？ が現れた…！</span><br>'+JOBS.apprentice.d;
   }
 }
-function renderTitle(){
+// 職業ボタンと説明。名前が「たかし」の間はギャンブラー固定で、メッセージを出し続ける
+function renderJobs(){
+  const tk=TAKASHI.includes(($('#inName').value||'').trim());
   const jp=$('#jobPick'); jp.innerHTML='';
   Object.entries(JOBS).forEach(([k,j])=>{ if(j.rank>0) return; if(j.hidden&&!(titleUnlocked()||window.__unlock)) return;
-    const b=document.createElement('button'); b.textContent=j.n; if(k===pickedJob) b.classList.add('sel');
-    b.onclick=()=>{pickedJob=k; renderTitle()}; jp.appendChild(b);});
-  $('#jobDesc').textContent=JOBS[pickedJob].d;
+    const b=document.createElement('button'); b.textContent=j.n; if(tk?k==='gambler':k===pickedJob) b.classList.add('sel');
+    b.onclick=()=>{pickedJob=k; renderJobs()}; jp.appendChild(b);});
+  $('#jobDesc').innerHTML= tk ? '<span class="o">たかしは、ギャンブラーとして生きる運命にある…</span><br>'+esc(JOBS.gambler.d) : esc(JOBS[pickedJob].d);
+}
+function renderTitle(){
+  renderJobs();
   const ts=$('#titleSpr'); ts.innerHTML='';
   const ANIM={slime:'a-jump',bat:'a-flap',knight:'a-spin',skull:'a-shake',dragon:'a-roar'};
   [['slime',100],['bat',280],['knight',210],['skull',40],['dragon',0]].forEach(([s,h],i)=>{const c=document.createElement('canvas'); drawSprite(c,s,h,i<2);

@@ -100,8 +100,7 @@ canvas{image-rendering:pixelated;width:84px;height:84px}
     <div class="win hide" id="newBox">
       <h2>キャラクター作成</h2>
       <div class="small">名前</div>
-      <input id="inName" maxlength="10" value="" placeholder="主人公の名前（10文字まで）" autocomplete="off">
-      <div id="nameMsg" class="small r hide" style="margin-top:2px">名前を入力してください</div>
+      <input id="inName" maxlength="10" value="" placeholder="主人公の名前（空欄ならランダム）" autocomplete="off">
       <div class="small" style="margin-top:8px">職業</div>
       <div class="grid2" id="jobPick"></div>
       <div class="small" id="jobDesc" style="margin:8px 0;min-height:2.5em"></div>
@@ -494,9 +493,9 @@ function renderTitle(){
 let newArm=false;
 function openNew(){ $('#newBox').classList.remove('hide'); $('#newBox').scrollIntoView({behavior:'smooth'}); setTimeout(()=>$('#inName').focus(),300); }
 function startNew(){
-  const nm0=$('#inName').value.trim();
-  if(!nm0){ $('#nameMsg').classList.remove('hide'); $('#inName').focus(); return; }
-  $('#nameMsg').classList.add('hide');
+  // 空欄なら珍しい苗字からランダム
+  const RARE=['小鳥遊','月見里','四月一日','九十九','栗花落','薬袋','鴨脚','勘解由小路','東西南北','一'];
+  const nm0=$('#inName').value.trim()||RARE[Math.floor(Math.random()*RARE.length)];
   if(P&&!newArm){ newArm=true; $('#btnStart').textContent='本当に消してはじめる？（もう一度押す）'; $('#btnStart').classList.add('sel'); return; }
   newArm=false; $('#btnStart').textContent='冒険をはじめる'; $('#btnStart').classList.remove('sel');
   const name=nm0.slice(0,10);

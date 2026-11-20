@@ -322,6 +322,57 @@ function jobBattle(n,L,c){ P.jobB=P.jobB||{}; const k=P.job, n0=jobBN(k), n1=P.j
     L.push(`<span class="mir">★ ${J.n}で${KIWAMI_N}戦！「${J.n}の極意」を会得した！ ★</span>`);
     L.push(`<span class="mir">${(J.main==='best'||J.hidden)?'全能力×1.5':KN[J.main]+'×2'}（永続・全職業に有効）</span>`); } }
 const kiwamiLeft=k=>(P.kiwami&&P.kiwami[k])?0:Math.max(0,KIWAMI_N-jobBN(k));
+// ============ 更新ログ（#42）：プレイヤーに見える。隠し要素の名前は書かない ============
+// 配布版に出すときに、いちばん上に1版足す（新しい順）
+const CHANGELOG=[
+  {v:'1.4',d:'2026/11/20',items:[
+    '冒険者ギルドを開設。依頼をこなしてギルドランクを上げよう',
+    '敵が素材を落とすように。節目の層には、珍しい素材が出る巣がある',
+    '鍛冶屋の合成：ショップの先の武器・防具は、素材で鍛えて強くする',
+    '進み方の見直し：序盤はサクサク、中盤はちょっと頑張る、終盤はじっくり',
+    'はじまりの手ほどき：最初に町をひととおり案内してもらえるように',
+    'はじめの所持金を2000Gに',
+    'お金の稼ぎ方の見直し：ふつうの戦闘は控えめ、番人や王者を倒すとまとめて入る',
+    '実績の画面をカテゴリのタブで見やすく',
+    '更新ログを追加',
+    '不具合の修正',
+  ]},
+  {v:'1.3',d:'2026/11/20',items:[
+    '修練場をなくし、職業ごとの戦闘回数で極意を覚えるように。戦闘回数の実績を追加',
+    'ハローワークの見直し（条件と難しさ）',
+    'エンドコンテンツの強化',
+    'MP・状態異常に関わるお酒を追加',
+    '熟練度の上がり方を調整',
+  ]},
+  {v:'1.2',d:'2026/11/20',items:[
+    '属性と相性、物理と魔法、武器の種類を追加。武器・防具の属性と種類の付け直し',
+    'MPと技、状態異常（麻痺・遅延・即死）を追加',
+    '装飾品を追加し、装備できる数を増やした',
+    '転生の倍率を見直し、武器・防具にも効くように',
+    'TIPSと攻略のヒント、ヘルプ・TIPS集',
+    '転職所とショップの画面を見やすく',
+    'お酒の値段が高くなりすぎないように',
+  ]},
+  {v:'1.1',d:'2026/11/19',items:[
+    '酒場の拡充（お酒の種類・はしご酒・熟成）',
+    '転生まわりの調整と、倍率の説明を追加',
+    'キャラクターの絵を一新',
+    'ハローワークをリニューアル',
+    '実績の追加、バランス調整、不具合の修正',
+  ]},
+  {v:'1.0',d:'2026/11/19',items:['公開']},
+];
+const VERSION=CHANGELOG[0].v;
+const SEEN_VER_KEY='ia_seenVer';
+function changelogHTML(){
+  return `<h2>更新ログ</h2>`+CHANGELOG.map((c,i)=>`<details${i===0?' open':''} style="margin-bottom:6px"><summary><b class="y">v${c.v}</b> <span class="small">${c.d}</span></summary><ul class="small" style="margin:4px 0 0 1.2em;padding:0;line-height:1.7">`+c.items.map(x=>`<li>${x}</li>`).join('')+`</ul></details>`).join('');
+}
+// 新しい版を初めて開いたときに1回だけお知らせ（見た版はブラウザに覚える。セーブとは別）
+function changelogPopup(){ let seen=null; try{ seen=localStorage.getItem(SEEN_VER_KEY); }catch(e){}
+  if(seen===VERSION) return; try{ localStorage.setItem(SEEN_VER_KEY,VERSION); }catch(e){}
+  if(seen===null&&typeof P!=='undefined'&&!P) return;  // はじめて遊ぶ人には出さない
+  const c=CHANGELOG[0];
+  showPopup({title:`<span class="y">更新のお知らせ（v${c.v}）</span>`,body:`<ul class="small" style="margin:0 0 0 1.2em;padding:0;line-height:1.7;text-align:left">`+c.items.map(x=>`<li>${x}</li>`).join('')+`</ul><div class="small" style="margin-top:6px;color:#9ab">「記録・ヘルプ → 更新ログ」でいつでも見られます</div>`}); }
 // ============ ユーティリティ ============
 const $=s=>document.querySelector(s);
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -1064,7 +1115,8 @@ function panel(p,arg){
     h=achHTML();
   } else if(p==='rec'){
     if(arg) recTab=arg;
-    h=`<div class="grid2" style="margin-bottom:8px"><button class="${recTab==='rec'?'sel':''}" onclick="panel('rec','rec')">記録</button><button class="${recTab==='help'?'sel':''}" onclick="panel('rec','help')">ヘルプ・TIPS集</button></div>`;
+    h=`<div class="grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px"><button class="${recTab==='rec'?'sel':''}" onclick="panel('rec','rec')">記録</button><button class="${recTab==='help'?'sel':''}" onclick="panel('rec','help')">ヘルプ・TIPS集</button><button class="${recTab==='log'?'sel':''}" onclick="panel('rec','log')">更新ログ</button></div>`;
+    if(recTab==='log'){ h+=changelogHTML(); el.innerHTML=h; return; }
     if(recTab==='help'){ h+=`<h2>ヘルプ</h2>`+helpHTML(); el.innerHTML=h; return; }
     h+=`<h2>記録</h2>`;
     [['プレイ時間',fmtTime(P.playMs||0)],['最大ダメージ',fmt(P.maxDmg)],['倒した敵',fmt(P.kills)],['戦闘回数',fmt(P.battles)],['撃破した王者',P.champ+'人'],['神々の座 撃破',(P.godWins||0)+'回'],['神々の座 挑戦',(P.godTries||0)+'回'],['会得した極意',Object.keys(P.kiwami||{}).length+'個'],['ギャンブル大当たり',(P.jackpots||0)+'回'],[P.unlocked.neet?'ハローワーク':'？？？',P.unlocked.neet?(P.work?(P.work.cleared?`内定（${Object.keys(P.work.endings||{}).filter(k=>ROUTES[k]).length}/${Object.keys(ROUTES).length}ルート）`:(HW_STAGES[P.work.stage||0]+(P.work.stage===4?`（${ROUND_N[P.work.round||0]}）`:''))):'―'):'？？？'],['転生回数',P.reb+'回'],['到達エリア',areaName(P.maxArea)]].forEach(([a,b])=>h+=`<div class="row"><span>${a}</span><span class="y">${b}</span></div>`);
@@ -2988,6 +3040,8 @@ artSwapStage();
 // ============ 起動 ============
 setInterval(()=>{ if(P&&document.visibilityState!=='hidden') P.playMs=(P.playMs||0)+5000; },5000);
 load(); renderTitle(); show('sTitle'); $('#inName').addEventListener('input',nameHint);
+{ const v=document.createElement('div'); v.className='small'; v.style.cssText='text-align:right;color:#678;margin-top:4px'; v.textContent='v'+VERSION; $('#sTitle').appendChild(v); }
+changelogPopup();
 </script>
 </body>
 </html>

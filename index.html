@@ -360,6 +360,12 @@ function takashiCatchup(L){ if(P.tkCatch) return; P.tkCatch=true; const C=TK_CAT
 // ============ 更新ログ（#42）：プレイヤーに見える。隠し要素の名前は書かない ============
 // 配布版に出すときに、いちばん上に1版足す（新しい順）
 const CHANGELOG=[
+  {v:'1.13',d:'2026/11/20',items:[
+    'はじめてのピンチで必ず「奇跡」が起き、どんなものかを知らせるように',
+    '転生の祭壇に、まだ知らない「奇跡の加護」の注意書きが出ないように',
+    'ハイ&ローで負けたとき、前のカードと出たカードを見せるように',
+    '酒場でお酒を飲んだときの文が、ずっと残ってしまう不具合を直した',
+  ]},
   {v:'1.12',d:'2026/11/20',items:[
     'ヘルプ・TIPS・お知らせ・噂話などの説明を、今の仕組みに合わせて見直した（素材と合成・能力の実の説明を追加）',
   ]},
@@ -521,7 +527,7 @@ function sanitizeSave(o){
    'jackpots','j777','jpin','jrou','setHits','oinori','hlBest','allInWins','kajiN','miracles','deathN','hwCd','hwBreaks','coins','coinsAll','casWinRun','casBestRun','bigWins','casRing','accSlotsSeen'].forEach(k=>r[k]=num(o[k],0));
   r.lv=Math.max(1,int(o.lv,1)); r.wpn=Math.min(GEAR_MAX,int(o.wpn)); r.arm=Math.min(GEAR_MAX,int(o.arm)); r.reb=int(o.reb); r.pts=int(o.pts);
   r.maxArea=Math.min(AREA_MAX,int(o.maxArea)); r.areaWins=int(o.areaWins); r.champ=int(o.champ);
-  r.rebMul=Math.max(1,num(o.rebMul,1)); r.rebMul=Math.min(r.rebMul,Math.pow(12,r.reb||0)); /* #11：1回×12までの式に合わせて、古いセーブの倍率を丸める */ r.oneG=bool(o.oneG); r.casAccSlot=bool(o.casAccSlot); r.ketaCoin=bool(o.ketaCoin); r.prizeN=numMap(o.prizeN,k=>PRIZES.some(p=>p.id===k)||/^s5_[a-z]+$/.test(k)); r.frAuto=bool(o.frAuto); r.frTrades=num(o.frTrades,0); r.fr={}; KEYS.forEach(k=>{ const f=o.fr&&o.fr[k]; if(f) r.fr[k]={n:Math.max(0,int(f.n)),v:Math.max(0,num(f.v,0))}; }); r.tkCatch=bool(o.tkCatch); r.ptsUsed=bool(o.ptsUsed); r.casPlayed=bool(o.casPlayed); r.tutDone=bool(o.tutDone)||(num(o.maxArea,0)>0); r.jobOpen=o.jobOpen===false?false:true; r.drunk=boolMap(o.drunk,k=>DRINKS.some(D=>D.id===k)); if(o.accSlotsSeen===undefined||o.accSlotsSeen===null) r.accSlotsSeen=null; { const AK=new Set(ACC.map(x=>x[0])); r.amu=(Array.isArray(o.amu)?o.amu:[]).slice(0,40).map(a=>a&&Array.isArray(a.parts)?{parts:a.parts.filter(k=>AK.has(k)).slice(0,30)}:null).map(a=>a&&a.parts.length>=2?a:null); r.amuN=int(o.amuN); } r.shobu=['good','hidden'].includes(o.shobu)?o.shobu:null; { const TT=PRIZES.filter(p=>p.title).map(p=>p.title).concat(['ギルドの英雄']); r.titles={}; if(o.titles&&typeof o.titles==='object') TT.forEach(k=>{ if(o.titles[k]===true) r.titles[k]=true; }); /* 称号は日本語のキーなので boolMap を通さない */ r.title=TT.includes(o.title)&&r.titles[o.title]?o.title:''; } r.tutWarn=bool(o.tutWarn); r.areaDone=bool(o.areaDone); if(o.guideHeard!==undefined&&o.guideHeard!==null) r.guideHeard=Math.floor(num(o.guideHeard,-1)); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA); r.jsec=boolMap(o.jsec,isJob); r.lastFruit=bool(o.lastFruit); r.endingSeen=bool(o.endingSeen); r.everTakashi=bool(o.everTakashi);
+  r.rebMul=Math.max(1,num(o.rebMul,1)); r.rebMul=Math.min(r.rebMul,Math.pow(12,r.reb||0)); /* #11：1回×12までの式に合わせて、古いセーブの倍率を丸める */ r.oneG=bool(o.oneG); r.mirIntro=o.mirIntro===1||o.mirIntro===2?o.mirIntro:((o.miracles||0)>0?2:0); r.casAccSlot=bool(o.casAccSlot); r.ketaCoin=bool(o.ketaCoin); r.prizeN=numMap(o.prizeN,k=>PRIZES.some(p=>p.id===k)||/^s5_[a-z]+$/.test(k)); r.frAuto=bool(o.frAuto); r.frTrades=num(o.frTrades,0); r.fr={}; KEYS.forEach(k=>{ const f=o.fr&&o.fr[k]; if(f) r.fr[k]={n:Math.max(0,int(f.n)),v:Math.max(0,num(f.v,0))}; }); r.tkCatch=bool(o.tkCatch); r.ptsUsed=bool(o.ptsUsed); r.casPlayed=bool(o.casPlayed); r.tutDone=bool(o.tutDone)||(num(o.maxArea,0)>0); r.jobOpen=o.jobOpen===false?false:true; r.drunk=boolMap(o.drunk,k=>DRINKS.some(D=>D.id===k)); if(o.accSlotsSeen===undefined||o.accSlotsSeen===null) r.accSlotsSeen=null; { const AK=new Set(ACC.map(x=>x[0])); r.amu=(Array.isArray(o.amu)?o.amu:[]).slice(0,40).map(a=>a&&Array.isArray(a.parts)?{parts:a.parts.filter(k=>AK.has(k)).slice(0,30)}:null).map(a=>a&&a.parts.length>=2?a:null); r.amuN=int(o.amuN); } r.shobu=['good','hidden'].includes(o.shobu)?o.shobu:null; { const TT=PRIZES.filter(p=>p.title).map(p=>p.title).concat(['ギルドの英雄']); r.titles={}; if(o.titles&&typeof o.titles==='object') TT.forEach(k=>{ if(o.titles[k]===true) r.titles[k]=true; }); /* 称号は日本語のキーなので boolMap を通さない */ r.title=TT.includes(o.title)&&r.titles[o.title]?o.title:''; } r.tutWarn=bool(o.tutWarn); r.areaDone=bool(o.areaDone); if(o.guideHeard!==undefined&&o.guideHeard!==null) r.guideHeard=Math.floor(num(o.guideHeard,-1)); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA); r.jsec=boolMap(o.jsec,isJob); r.lastFruit=bool(o.lastFruit); r.endingSeen=bool(o.endingSeen); r.everTakashi=bool(o.everTakashi);
   r.playMs=int(o.playMs); r.startedAt=int(o.startedAt); if(o.pops&&typeof o.pops==='object') r.pops=boolMap(o.pops);
   if(o.final&&typeof o.final==='object') r.final={hp:Math.min(finalHP(FINAL_FORMS),Math.max(0,num(o.final.hp,FINAL_HP))),cleared:bool(o.final.cleared),seen:bool(o.final.seen),dmg:num(o.final.dmg),form:Math.min(FINAL_FORMS,Math.max(1,int(o.final.form,1))),best:Math.min(FINAL_FORMS,int(o.final.best))};
   r.base={}; KEYS.forEach(k=>r.base[k]=Math.max(0,num(o.base&&o.base[k],1)));
@@ -1365,7 +1371,7 @@ function panel(p,arg){
         <details><summary class="small" style="color:#9ab">くわしく</summary><div class="small">戦闘${fmt((P.jobB||{})[k]||0)}回${kiwamiLeft(k)?`（極意まで あと${fmt(kiwamiLeft(k))}戦）`:'　<span class="mir">極意</span>'}<br>${jobDetail(k,j)}</div></details></div><button ${k===P.job?'disabled':''} onclick="changeJob('${k}')">転職</button></div>`; });
   } else if(p==='reb'){
     const mul=rebStep();
-    h=`<h2>転生の祭壇</h2><div class="small">Lv${rebReq()}以上で転生できます（転生するたびに必要Lvが+10。最大Lv${REB_LV_MAX}）。レベルは1に戻りますが、全ステータスに<b class="y">×${mul.toFixed(2)}</b>の永続倍率がかかります（現在の倍率 ×${fmtMul(P.rebMul)}）。装備・お金・エリアは引き継ぎ。</div>${P.rebMul>=Number.MAX_VALUE*.9999?`<div class="small" style="margin-top:4px"><span class="maxv">転生倍率は上限に届いています。</span>これ以上は増えませんが、転生はでき、転生回数（桁の神の条件など）は進みます。</div>`:''}<div class="small o" style="margin-top:4px">※転生すると「奇跡の加護」は失われ、神々の座の神はさらに強大な姿に変わる。</div>`
+    h=`<h2>転生の祭壇</h2><div class="small">Lv${rebReq()}以上で転生できます（転生するたびに必要Lvが+10。最大Lv${REB_LV_MAX}）。レベルは1に戻りますが、全ステータスに<b class="y">×${mul.toFixed(2)}</b>の永続倍率がかかります（現在の倍率 ×${fmtMul(P.rebMul)}）。装備・お金・エリアは引き継ぎ。</div>${P.rebMul>=Number.MAX_VALUE*.9999?`<div class="small" style="margin-top:4px"><span class="maxv">転生倍率は上限に届いています。</span>これ以上は増えませんが、転生はでき、転生回数（桁の神の条件など）は進みます。</div>`:''}${(P.pops&&P.pops.god)||Object.keys(P.blessed||{}).length?'<div class="small o" style="margin-top:4px">※転生すると「奇跡の加護」は失われ、神々の座の神はさらに強大な姿に変わる。</div>':''}`
       +`<details style="margin-top:6px"><summary class="small y">倍率のしくみ</summary><div class="small" style="line-height:1.7">
       ・1回の転生で掛かる倍率は <b>×(1＋転生したときのLv÷20)</b>、ただし最大<b>×${REB_STEP_MAX}</b>（Lv${(REB_STEP_MAX-1)*20}で上限）。Lv100なら×6、Lv220以上は×12。<br>
       ・この倍率は、転生のたびに<b>掛け算で重なる</b>（×6で3回転生すると6×6×6＝×216）。今は ×${fmtMul(P.rebMul)}、次の転生で ×${fmtMul(P.rebMul*mul)} になる。<br>
@@ -1637,7 +1643,7 @@ function hlGuess(hi){
     if(hl.streak>=HL_MAX){ const bonus=casMsg; hl.active=false; settle(hl.bet,hl.pot/hl.bet,`<span class="mir">★ ${HL_MAX}連勝パーフェクト！ ★</span>`); casMsg=bonus+casMsg; hl.prev=null; } panel('casino'); return; }
   if(hi===2){ let [n,s]=hl.next||drawCard(); hl.next=null; hl.prev=[hl.card,hl.suit]; hl.card=n; hl.suit=s;
     if(n===hl.prev[0]){ hl.pot*=10; hl.streak++; casMsg=`<span class="mir">同じ数字！ 賞金×10（${fmt(hl.pot)}G）</span>`+hlReward(hl.streak); hl.ghost=drunkNow()&&chance(.4)?drawCard():null; casDrunkGo=false; panel('casino'); return; }
-    hl.active=false; settle(hl.bet,0,`ちがう数字…（${hl.streak}連勝で終了）`); panel('casino'); return; }
+    hl.active=false; settle(hl.bet,0,`${cardHTML(hl.prev[0],hl.prev[1])} → ${cardHTML(n,s)}　ちがう数字…（${hl.streak}連勝で終了）`); panel('casino'); return; }
   const tieWin=persona('gamble')||isT('spellblade'), win=n=>n===hl.card?tieWin:(hi?n>hl.card:n<hl.card);
   let [n,s]=hl.next||drawCard(); hl.next=null; hl.prev=[hl.card,hl.suit];
   if(!win(n)&&(n!==hl.card||casSure())){ if(casSure()){ for(let i=0;i<60&&!win(n);i++) [n,s]=drawCard(); casCtx.notes.push('<span class="c">【急所】必ず勝つ！</span>'); } else if(casRetry()) [n,s]=drawCard(); }
@@ -1647,7 +1653,7 @@ function hlGuess(hi){
   if(n===hl.card&&!tieWin){ casMsg='同じ数字！ 引き分け、続行。'; }
   else if(win(n)){ hl.pot*=isT('kenou')?2.5:2; hl.streak++; P.hlBest=Math.max(P.hlBest||0,hl.streak); casMsg=`<span class="g">当たり！ 賞金 ${fmt(hl.pot)}G</span>`+hlReward(hl.streak);
     if(hl.streak>=HL_MAX){ hl.card=n; hl.suit=s; const bonus=casMsg; hl.active=false; settle(hl.bet,hl.pot/hl.bet,`<span class="mir">★ ${HL_MAX}連勝パーフェクト！ ★</span>`); casMsg=bonus+casMsg; hl.prev=null; panel('casino'); return; } }
-  else { hl.card=n; hl.suit=s; hl.active=false; settle(hl.bet,0,`ハズレ…（${hl.streak}連勝で終了）`); panel('casino'); return; }
+  else { hl.card=n; hl.suit=s; hl.active=false; settle(hl.bet,0,`${cardHTML(hl.prev[0],hl.prev[1])} → ${cardHTML(n,s)}　${hi?'ハイ':'ロー'}を選んだが、ハズレ…（${hl.streak}連勝で終了）`); panel('casino'); return; }
   hl.card=n; hl.suit=s; hl.ghost=drunkNow()&&chance(.4)?drawCard():null; panel('casino');
 }
 function hlCollect(){ hl.active=false; settle(hl.bet,hl.pot/hl.bet,`${hl.streak}連勝で降りた！`); hl.prev=null; panel('casino'); }
@@ -2504,7 +2510,7 @@ function barHTML(){
       const r=tolerance()/rivalTol(R); const tag=r>1.25?'<span class="g">余裕</span>':r>.95?'<span class="c">互角</span>':r>.7?'<span class="o">手強い</span>':'<span class="r">無謀</span>';
       h+=`<div class="row"><div>${R.n}${w?` <span class="small y">${w}勝</span>`:''}<div class="small">参加費 ${fmt(fee)}G　酒の強さ：${tag}</div></div><button ${P.gold<fee?'disabled':''} onclick="contest(${i})">勝負</button></div>`; });
   }
-  if(barMsg) h+=`<div style="margin-top:8px">${barMsg}</div>`;
+  if(barMsg){ h+=`<div style="margin-top:8px">${barMsg}</div>`; barMsg=''; } // 一度出したら消す（ずっと残らないように）
   return h;
 }
 // ============ TIPS・ヘルプ・バッカスの攻略のヒント（#32） ============
@@ -2515,6 +2521,7 @@ const TIPS=[
  {id:'elgood',n:'弱点を突いた',     t:'敵の弱点の属性で攻めると×5。火→風→土→水→火、光⇄闇。'},
  {id:'pref', n:'得意な武器',       t:'職業には得意な武器がある。持ち替えると×1.5（魔法職は杖で魔法×1.5）。武器屋で武器の種類を変えられる。'},
  {id:'armbad',n:'守りが不利',       t:'防具の属性が敵に弱いと、受けるダメージ×5。防具屋で付け直そう。'},
+ {id:'mir',  n:'奇跡',             t:'奇跡が起きると、その攻撃のダメージ×100・HPとMPが全快。運が高いほど起きやすく、奇跡のロザリオや神酒でも上がる。'},
  {id:'bacchus',n:'酒神の助言',     t:'困ったら酒場の「攻略」で、酒神バッカスに今の場所の攻め方を聞ける（無料）。'},
 ];
 const tipN=id=>(P.tips&&P.tips[id])||0;
@@ -2889,7 +2896,9 @@ function playerHit(c){
   }
   if(s0&&!s0.heal&&mpRage()){ mult*=mpRage(); L.push(`<span class="small o">魔力暴走！ 技の威力×${mpRage().toFixed(1)}</span>`); }
   const mirP=.004+luk/(luk+5000)*.02+(P.blessed[P.job]?.12:0)+accMir()+drinkMul('mir');
-  if(chance(mirP)){mult*=100; P.miracles=(P.miracles||0)+1; c.php=c.mhp; c.mp=c.mmp; L.push(`<span class="mir">★☆ 奇跡が起きた！ ☆★ HPとMPが全快した！</span>`);}
+  // はじめての奇跡（#82）：まだ一度も起きていなければ、HPが3割を切ったとき（200戦しても起きなければ次の戦闘で）必ず起こす
+  const mirFirst=!P.miracles&&!c.final&&(c.php<c.mhp*.3||(P.battles||0)>=200);
+  if(mirFirst||chance(mirP)){mult*=100; if(!P.miracles) P.mirIntro=1; P.miracles=(P.miracles||0)+1; c.php=c.mhp; c.mp=c.mmp; L.push(`<span class="mir">★☆ 奇跡が起きた！ ☆★ HPとMPが全快した！</span>`);}
   else if(!sure&&(c.secCrit||chance(.04+luk/(luk+300)*.25+ps('crit',0)))){mult*=neetW()?neetWCrit():legW()?30:3; L.push(neetW()?`<span class="crit">会心の一撃！ 辞表が叩きつけられた！</span>`:legW()?`<span class="crit">会心の一撃！ オーバーフローが桁をあふれさせる！</span>`:`<span class="crit">会心の一撃！</span>`);}
   const pl=c.plan||{at:'斬',base:atk(),edef:e.def,aff:1}, aff=(c.work)?1:pl.aff;
   const a=(pl.base*c.buff*rnd(1.3,1.7)*mult+flat)*aff*(c.ails&&c.ails.silence&&(isMagicJob(P.job)||P.job==='spellblade')?.5:1);
@@ -3026,6 +3035,7 @@ function runBattle(e,t,fast){
   try{ R=e.final?simulateFinal(e,fast):simulate(e,t,fast); }
   catch(err){ holdEnd(); $('#result').innerHTML=`<span class="r">エラーが起きました：${esc(err&&err.message||err)}</span><div class="small">「戻る」で戻れます。この文面を教えてもらえれば直します。</div>`; $('#log').innerHTML=''; return; }
   const {L,sum,newArea,trainMile}=R;
+  if(P.mirIntro===1){ P.mirIntro=2; holdEnd(); setTimeout(mirIntroPopup,0); }
   locRun++; P.locB=P.locB||{}; P.locB[lk]=(P.locB[lk]||0)+1;
   const won=sum.includes('勝利')||sum.includes('突破')||sum.includes('倒した'); $('#result').dataset.win=won?'1':'0';
   // 連戦の集計用：勝ち／負け／決着つかず（桁の神を削っただけ・逃走など）
@@ -3087,6 +3097,11 @@ function showEnding(){
       `<div style="margin-top:10px">― ここまで遊んでくれて、ありがとう ―</div><div class="o" style="margin-top:10px">…でも、この世界にはまだ何かあるかも？</div>`,
     buttons:[BTN_GUIDE,{label:'閉じる'}]}); }
 
+
+// はじめての奇跡のお知らせ（#82）
+function mirIntroPopup(){ P.tips=P.tips||{}; P.tips.mir=TIP_MAX; save(); showPopup({title:'<span class="mir">★☆ 奇跡が起きた！ ☆★</span>',body:`<div class="small">ピンチのとき、ふしぎな力が${esc(P.name)}を救った。<br><br>
+  <b>奇跡が起きると</b>：その攻撃のダメージ×100、HPとMPが全快する。<br>
+  <b>起きやすくなるもの</b>：運が高いほど起きやすい。装飾品「奇跡のロザリオ」、お酒「神酒」でも上がる。<br><br>ふだんはめったに起きない（はじめは0.4%くらい）。</div>`}); }
 // ============ キャラ絵（#6 SVGの絵・#7 素材のドット絵） ============
 // 配布版にも入る。絵の切り替え（素材のドット絵／SVGの絵／旧ドット絵）は開発版のメニューから
 // SVG のパーツを、名前から作った乱数で組み合わせる。深い層ほど目・触手が増え、輪郭がゆがむ。

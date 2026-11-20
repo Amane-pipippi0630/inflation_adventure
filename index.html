@@ -349,6 +349,11 @@ const kiwamiLeft=k=>(P.kiwami&&P.kiwami[k])?0:Math.max(0,KIWAMI_N-jobBN(k));
 // ============ 更新ログ（#42）：プレイヤーに見える。隠し要素の名前は書かない ============
 // 配布版に出すときに、いちばん上に1版足す（新しい順）
 const CHANGELOG=[
+  {v:'1.8',d:'2026/11/20',items:[
+    '物理・魔法の「効きにくい」をなくした。どの職業でも、すべての敵に普通に通る',
+    '攻撃の属性は武器だけで決まるように（職業の属性はなくした）',
+    '素材が出やすくなった。しばらく出ないと、次で必ず出るように',
+  ]},
   {v:'1.7',d:'2026/11/20',items:[
     '状態異常を9種類に（麻痺・遅延・毒・暗闇・沈黙・呪い・魅了・石化・即死）。層ごとに使ってくるものが決まり、エリア一覧に表示',
     '状態異常を使う敵は、戦闘の最初に先手で仕掛けてくる。状態異常で負けたら連戦を止めて案内',
@@ -501,7 +506,7 @@ function sanitizeSave(o){
   r.locB=numMap(o.locB,k=>/^(a\d+|god|champ|work|train_\w+)$/.test(k));
   r.ach=boolMap(o.ach);
   // 図鑑・番人・固有品（#8）
-  { const gk=new Set(gmKeys()); r.gm=numMap(o.gm,k=>gk.has(k)); r.gmF=numMap(o.gmF,k=>gk.has(k)); r.gmG=boolMap(o.gmG,k=>/^\d{2,3}$/.test(k)); r.synthN=num(o.synthN,0);
+  { const gk=new Set(gmKeys()); r.gm=numMap(o.gm,k=>gk.has(k)); r.gmF=numMap(o.gmF,k=>gk.has(k)); r.gmPity=numMap(o.gmPity,k=>gk.has(k)); r.gmG=boolMap(o.gmG,k=>/^\d{2,3}$/.test(k)); r.synthN=num(o.synthN,0);
     if(o.guild&&typeof o.guild==='object'){ const G=o.guild, okQ=q=>q&&typeof q==='object'&&G_TYPES.includes(q.ty), cq=q=>okQ(q)?{ty:q.ty,n:Math.max(0,num(q.n,0)),goal:Math.max(1,num(q.goal,1)),rk:Math.min(6,Math.max(0,int(q.rk))),sp:bool(q.sp),up:bool(q.up),ntf:bool(q.ntf),k:typeof q.k==='string'?q.k.slice(0,20):undefined}:null;
       r.guild={pts:Math.max(0,int(G.pts)),done:Math.max(0,int(G.done)),streak:int(G.streak),cd:(Array.isArray(G.cd)?G.cd:[]).slice(0,5).map(x=>Math.max(0,int(x))),
         board:(Array.isArray(G.board)?G.board:[]).slice(0,5).map(cq).filter(Boolean),offers:(Array.isArray(G.offers)?G.offers:[]).slice(0,G_OFFERS).map(cq).filter(Boolean)}; } }
@@ -668,16 +673,14 @@ const JOB_WT={adventurer:'剣',apprentice:'剣',warrior:'剣',thief:'小剣',gam
   berserker:'斧',ninja:'小剣',shark:'小剣',kenou:'体術',sniper:'弓',paladin:'大剣',maiden:'小剣',tycoon:'棍棒',
   hero:'剣',spellblade:'剣',assassin:'小剣',swordsaint:'大剣',dragoon:'槍',phantom:'小剣',luckking:'斧',overlord:'体術',neet:'体術',
   mage:'杖',priest:'杖',bard:'杖',alchemist:'杖',archmage:'杖',bishop:'杖',maestro:'杖',grandalch:'杖',sage:'杖',tennyo:'杖',chrono:'杖',saint:'杖'};
-// 職業の属性（武器が無属性のとき、攻撃にこの属性が乗る）
-const JOB_EL={mage:'火',priest:'光',bard:'風',alchemist:'土',archmage:'火',bishop:'光',maestro:'風',grandalch:'土',ninja:'闇',assassin:'闇',
-  dancer:'風',maiden:'水',tennyo:'水',sage:'光',chrono:'闇',saint:'光',paladin:'光',dragoon:'風',hunter:'風',sniper:'風'};
+// 職業の属性はなくした（#74）。攻撃の属性は武器だけで決まる
 const isMagicJob=k=>JOBS[k]&&JOBS[k].main==='int';
 // 武器・防具の名前どおりの属性（1段目から。21段目以降は最後の名前と同じ＝無）
 const WPN_EL=['無','無','無','無','無','無','火','水','風','土','光','闇','光','風','水','闇','土','闇','光','無'];
 const ARM_EL=['無','無','無','無','無','無','無','火','水','土','光','闇','光','風','水','闇','土','闇','光','無'];
 const gearDefEl=(isW,i)=>i<=0||i>=GEAR_MAX?'無':(isW?WPN_EL:ARM_EL)[Math.min(i,20)-1];
 const myWType=()=>neetW()?'体術':(P.wType||JOB_WT[P.job]||(P.wpn===1?'棍棒':'剣'));
-const myAtkEl=()=>{ if(neetW()) return '無'; const w=P.wEl||gearDefEl(true,P.wpn); return w!=='無'?w:(JOB_EL[P.job]||'無'); };
+const myAtkEl=()=>{ if(neetW()) return '無'; const w=P.wEl||gearDefEl(true,P.wpn); return w; };
 const myArmEl=()=>P.aEl||gearDefEl(false,P.arm);
 // 得意な武器：物理職はその武器の種類、魔法職は杖（魔法剣士は剣でも杖でも）
 const prefMul=()=>{ const w=myWType(); if(P.job==='spellblade'&&(w==='剣'||w==='杖')) return 1.5; return JOB_WT[P.job]&&JOB_WT[P.job]===w?1.5:1; };
@@ -687,15 +690,15 @@ const prefMul=()=>{ const w=myWType(); if(P.job==='spellblade'&&(w==='剣'||w===
 const SP_RES={};
 const SP_MDEF={slime:.8,bat:.6,eye:1.5,skull:.3,dragon:1.5,knight:1};
 // 効かない敵：物理が効かない（魔法でしか倒せない）／魔法が効かない（物理でしか倒せない）
-const IMMUNE={'坑道の亡霊':'phys','船幽霊':'phys','鉱石スライム':'魔'};
-const magicAttacker=e=>e.sp==='eye'||resKind(e)==='phys';
+// 通常のダンジョン（最初の12エリア・次元の彼方）では使わない（#74）。エンドコンテンツ（#63）で敵に e.res='phys'／'魔' を付けると効く
+const IMMUNE={};
+const magicAttacker=e=>e.sp==='eye'||e.base==='坑道の亡霊'||e.base==='船幽霊'||resKind(e)==='phys';
 // 敵に属性・魔法防御などを付ける（makeEnemy などから呼ぶ）。flat：最後の敵（相性はすべて等倍）
 function elemize(e,el,flat){ e.el=el; e.flat=!!flat; if(e.mdef===undefined) e.mdef=(e.def||0)*(SP_MDEF[e.sp]||1); return e; }
 // 物理に強い／魔法に強い（#62 #69）：効かない（×0）はなくし、効きにくい（×0.5）だけ
 // 最初の12エリアは敵ごと（坑道の亡霊・船幽霊は物理に強い、鉱石スライムは魔法に強い）、次元の彼方は層ごとに決まる
 const RES_MUL=.5;
-const layerTend=t=>t<AREAS.length?null:['phys',null,'魔'][layerOf(t)%3];
-function resKind(e){ if(e.flat) return null; const t=e.t!==undefined?e.t:e.gt; if(t!==undefined&&t>=AREAS.length) return layerTend(t); return IMMUNE[e.base]||null; }
+function resKind(e){ if(e.flat) return null; return e.res||IMMUNE[e.base]||null; }
 const tendName=k=>k==='phys'?'物理に強い':k==='魔'?'魔法に強い':'';
 function typeMul(at,e){ const k=resKind(e); if(!k) return 1; return (k==='魔')===(at==='魔')?RES_MUL:1; }
 
@@ -731,7 +734,7 @@ const elemOpen=()=>!!(P.pops&&P.pops.elem)||P.maxArea>=1;
 function forgeHTML(isW){ if(!elemOpen()) return '';
   const cur=isW?P.wpn:P.arm; if(!cur) return '';
   const pr=forgePrice(isW), el=isW?(neetW()?'無':(P.wEl||gearDefEl(true,P.wpn))):myArmEl();
-  let h=`<div class="win" style="margin:6px 0;padding:6px 8px"><div class="small y">属性の付け直し（${P.forgeFree?'<span class="g">次の1回は無料（精霊の酒）</span>':fmt(pr)+'G＝今の'+(isW?'武器':'防具')+'の値段の1割'}）</div><div class="small">今の属性：${elTag(el)}${isW&&!neetW()&&el==='無'&&JOB_EL[P.job]?`（無属性なので、職業の属性 ${elTag(JOB_EL[P.job])} が乗る）`:''}</div>`;
+  let h=`<div class="win" style="margin:6px 0;padding:6px 8px"><div class="small y">属性の付け直し（${P.forgeFree?'<span class="g">次の1回は無料（精霊の酒）</span>':fmt(pr)+'G＝今の'+(isW?'武器':'防具')+'の値段の1割'}）</div><div class="small">今の属性：</div>`;
   if(isW&&neetW()) h+=`<div class="small o">${NEET_W}は無属性から変えられない。</div>`;
   else h+=`<div class="grid" style="grid-template-columns:repeat(7,1fr);margin-top:4px">`+ELS.map(x=>`<button style="font-size:12px;padding:5px 0;color:${EL_COLOR[x]}" ${x===el||P.gold<pr?'disabled':''} onclick="forgeEl(${isW},'${x}')">${x}</button>`).join('')+`</div>`;
   if(isW){ h+=`<div class="small y" style="margin-top:6px">武器の種類（${fmt(pr)}G）：今は ${myWType()}（${atName(WTYPES[myWType()])}）${prefMul()>1?' <span class="g">得意な武器×1.5</span>':JOB_WT[P.job]?` <span class="small">（${JOBS[P.job].n}の得意は${JOB_WT[P.job]}）</span>`:''}</div>`;
@@ -877,7 +880,13 @@ const GM_SP=[
   {sp:'knight',n:'騎士',      nest:250, nm:['錆びた紋章','聖騎士の盾片','王家の剣']},
   {sp:'dragon',n:'竜',        nest:300, nm:['竜のうろこ','竜の逆鱗','竜王の心臓']},
 ];
-const GM_P={n:.08,r:.008}, GM_STAR=[4096,8192,16384,32768,65536], GM_MUL_MAX=4;
+const GM_P={n:.15,r:.02}, GM_STAR=[1024,2048,4096,8192,16384], GM_MUL_MAX=4;
+// 天井（#74）：その素材が出ないまま、この数だけ倒すと次で必ず出る（★は節目の層で数える）
+const GM_PITY={n:20,r:150,s:1000};
+const gmPityMax=k=>GM_PITY[k.endsWith('_n')?'n':k.endsWith('_r')?'r':'s'];
+// 確率で出るか、天井に届いたら出す。出たら数え直し
+function gmRoll(k,p,L){ P.gmPity=P.gmPity||{}; const c=(P.gmPity[k]||0)+1;
+  if(chance(p)||c>=gmPityMax(k)){ P.gmPity[k]=0; gmAdd(k,1,L); } else P.gmPity[k]=c; }
 const gmSp=sp=>GM_SP.find(x=>x.sp===sp);
 // 素材のキー：slime_n（ふつう）・slime_r（レア）・slime_s1〜s5（★）
 const gmKeys=()=>GM_SP.flatMap(g=>[g.sp+'_n',g.sp+'_r'].concat([1,2,3,4,5].map(s=>`${g.sp}_s${s}`)));
@@ -892,10 +901,10 @@ const gmMul=()=>{ const lk=st('luk'); return Math.min(GM_MUL_MAX,(1+lk/(lk+1000)
 const nestOf=t=>{ if(t<AREAS.length) return null; const n=layerOf(t); return n%50===0?GM_SP.find(g=>g.nest===n)||null:null; };
 const NEST_NM={slime:'巣くうスライム',bat:'群れなすコウモリ',eye:'ひしめく目玉',skull:'眠らぬ骸骨',knight:'亡国の騎士',dragon:'巣を守る竜'};
 function gmDrop(e,t,L){ if(!e.sp||e.flat&&!e.guard) return; const g=gmSp(e.sp); if(!g) return; const m=gmMul();
-  if(chance(GM_P.n*m)) gmAdd(g.sp+'_n',1,L);
-  if(chance(GM_P.r*m)) gmAdd(g.sp+'_r',1,L);
+  gmRoll(g.sp+'_n',GM_P.n*m,L);
+  gmRoll(g.sp+'_r',GM_P.r*m,L);
   const ne=t>=0?nestOf(t):null;
-  if(ne&&ne.sp===e.sp) GM_STAR.forEach((d,i)=>{ if(chance(m/d)) gmAdd(`${g.sp}_s${i+1}`,1,L); }); }
+  if(ne&&ne.sp===e.sp) GM_STAR.forEach((d,i)=>gmRoll(`${g.sp}_s${i+1}`,m/d,L)); }
 // 節目の層の番人を初めて倒すと★1が1個
 function gmGuardBonus(e,L){ const ne=nestOf(e.gt); if(ne&&!(P.gmG&&P.gmG[ne.nest])){ P.gmG=P.gmG||{}; P.gmG[ne.nest]=true; gmAdd(ne.sp+'_s1',1,L); } }
 
@@ -1257,7 +1266,7 @@ function panel(p,arg){
     if(takashiLock()){ h=`<h2>転職所</h2><div class="o">「たかし、お前はギャンブラーだ。ギャンブラーを極めるまでは、ほかの道はない」</div><div class="small" style="margin-top:6px">ギャンブラーをマスターすると転職できるようになる。（現在 JLv${jl('gambler').lv}/${JMAX}）</div>`; el.innerHTML=h; return; }
     h=`<h2>転職所</h2><div class="small">ステータスはそのままで、条件を満たした職業ならいつでも転職できます（無料）。中位職は対応する下位職のマスター、上位職は2つの職業のマスターが条件。ジョブレベルは勝つたびに上がり、JLv${JMAX}でマスター。マスターするたびに全能力×1.05（永続）。</div><div class="small">マスター数：${masterCount()}</div><div class="small" style="margin-top:4px">${atkKindTag('warrior')} 武器で攻撃（力などで威力が決まる）。魔法に強い敵には半分　${atkKindTag('mage')} 魔法で攻撃（知力で威力が決まる）。物理に強い敵には半分　${atkKindTag('spellblade')} 両方</div>`;
     // 格ごとのタブ（#30）。開いたときは今の職業の格。行は短くして、詳しい中身は折りたたむ
-    const jobDetail=(k,j)=>`${j.d}${jobModText(k)?`<br><span class="c">補正：${jobModText(k)}</span>`:''}<br>攻撃：${isMagicJob(k)?'魔法':k==='spellblade'?'物理＋魔法':'物理'}${JOB_WT[k]?'・得意な武器 '+JOB_WT[k]:''}${JOB_EL[k]?'・属性 '+elTag(JOB_EL[k]):''}${JOB_SECRETS[k]&&JOB_SECRETS[k].hint?`<br><span class="o">…${JOB_SECRETS[k].hint}</span>`:''}${jobSecretFound(k)?` <span class="mir">【秘密：${JOB_SECRETS[k].n}】</span>`:''}<br>メイン：${j.main==='best'?'一番高い能力':KN[j.main]}／技：${j.skill.n}<br><span class="y">マスター報酬：${j.main==='best'?'全能力×1.1':KN[j.main]+'×1.2'}</span>　<span class="c">${P.kiwami&&P.kiwami[k]?'極意':`極意まで あと${fmt(kiwamiLeft(k))}戦`}</span>${j.rank>0&&j.rank<3?`<br><span class="o">攻撃・防御・HP ×${RMUL[j.rank]}</span>`:''}`;
+    const jobDetail=(k,j)=>`${j.d}${jobModText(k)?`<br><span class="c">補正：${jobModText(k)}</span>`:''}<br>攻撃：${isMagicJob(k)?'魔法':k==='spellblade'?'物理＋魔法':'物理'}${JOB_WT[k]?'・得意な武器 '+JOB_WT[k]:''}${JOB_SECRETS[k]&&JOB_SECRETS[k].hint?`<br><span class="o">…${JOB_SECRETS[k].hint}</span>`:''}${jobSecretFound(k)?` <span class="mir">【秘密：${JOB_SECRETS[k].n}】</span>`:''}<br>メイン：${j.main==='best'?'一番高い能力':KN[j.main]}／技：${j.skill.n}<br><span class="y">マスター報酬：${j.main==='best'?'全能力×1.1':KN[j.main]+'×1.2'}</span>　<span class="c">${P.kiwami&&P.kiwami[k]?'極意':`極意まで あと${fmt(kiwamiLeft(k))}戦`}</span>${j.rank>0&&j.rank<3?`<br><span class="o">攻撃・防御・HP ×${RMUL[j.rank]}</span>`:''}`;
     const jlvTag=k=>isMaster(k)?'<span class="mir">MASTER</span>':'JLv'+jl(k).lv;
     { const J=JOBS[P.job]; h+=`<div class="win" style="margin:6px 0;padding:6px 8px"><div><span class="y">いまの職業：${J.n}</span> <span class="small">${jlvTag(P.job)}　戦闘${fmt((P.jobB||{})[P.job]||0)}回</span>${P.blessed[P.job]?' <span class="mir">★</span>':''}</div><div class="small">${jobDetail(P.job,J)}</div></div>`; }
     const listOf=r=>Object.entries(JOBS).filter(([k,j])=>j.rank===r&&(!j.hidden||P.unlocked[k]));
@@ -2418,7 +2427,7 @@ function helpHTML(){
   let h=`<div class="y">属性と相性</div><div class="small" style="line-height:1.8">
     ${elTag('火')} → ${elTag('風')} → ${elTag('土')} → ${elTag('水')} → ${elTag('火')}　（矢印の先に強い）<br>${elTag('光')} ⇄ ${elTag('闇')}　（お互いに弱点）　${elTag('無')}は相性なし</div>`;
   h+=row('弱点を突く','<span class="g">×5</span>')+row('相手に有利をとられている','<span class="o">×0.2</span>')+row('同じ属性','×0.5')+row('どちらかが無属性','×1');
-  h+=`<div class="small" style="margin:4px 0 8px">攻撃の属性は武器の属性（武器が無属性なら職業の属性）。守りの属性は防具の属性で、敵の攻撃にも同じ相性が掛かる。武器屋・防具屋で、値段の1割で付け直せる${P.neetW?`（${NEET_W}は無属性のまま）`:''}。</div>`;
+  h+=`<div class="small" style="margin:4px 0 8px">攻撃の属性は武器の属性（どの職業でも同じ）。守りの属性は防具の属性で、敵の攻撃にも同じ相性が掛かる。武器屋・防具屋で、値段の1割で付け直せる${P.neetW?`（${NEET_W}は無属性のまま）`:''}。</div>`;
   h+=`<div class="y">能力と強さの計算</div><div class="small" style="line-height:1.8;margin-bottom:8px">
     ・能力 ＝ 基礎値 × 転生倍率 × マスターの数 × 装飾品 × 職業・極意 × 固有品 × お酒（ステータスの「（+○）」は、基礎値に上乗せされている分）<br>
     ・攻撃力 ＝（得意な能力 ＋ 武器 × 転生倍率）× 最高Lvの補正 × 熟練度 × 職業の格 × 固有品<br>

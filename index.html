@@ -169,6 +169,8 @@ const RANKS=['下位職','中位職','上位職','？？？'];
 // pass: crit(会心率+), eva(回避率+), taken(被ダメ倍率), gold, exp, drop(倍率)
 const JOBS={
   apprentice:{rank:0,hidden:true,n:'見習い？',hue:30,main:'str',g:{str:1,int:1,agi:1,vit:1,luk:1},skill:{n:'がむしゃら',p:.15,m:2},pass:{exp:1.5},d:'何もかも普通…に見える。経験値が1.5倍。'},
+  // はじめの職業（#58）：得意も苦手もない。ギルドの最初の依頼で転職所を知る
+  adventurer:{rank:0,n:'冒険者',hue:35,main:'best',g:{str:1.1,int:1.1,agi:1.1,vit:1.1,luk:1.1},skill:{n:'冒険の一撃',p:.15,m:2.5},d:'得意も苦手もない、冒険の基本の職業。ギルドで経験を積み、転職所で道を選ぼう。'},
   warrior:{rank:0,n:'戦士',hue:210,main:'str',g:{str:1.5,int:.5,agi:.9,vit:1.4,luk:.8},skill:{n:'渾身斬り',p:.18,m:3},d:'力と体力がよく伸びる。攻撃は力依存。'},
   mage:{rank:0,n:'魔導士',hue:280,main:'int',g:{str:.4,int:1.7,agi:.9,vit:.8,luk:1},skill:{n:'メテオストライク',p:.15,m:5},d:'知力で攻撃。たまに出る大魔法が強烈。'},
   thief:{rank:0,n:'盗賊',hue:120,main:'agi',g:{str:.9,int:.7,agi:1.7,vit:.8,luk:1.3},skill:{n:'盗む',p:.22,steal:true},d:'素早さで攻撃。連続攻撃しやすく、お金を盗む。'},
@@ -325,6 +327,30 @@ const kiwamiLeft=k=>(P.kiwami&&P.kiwami[k])?0:Math.max(0,KIWAMI_N-jobBN(k));
 // ============ 更新ログ（#42）：プレイヤーに見える。隠し要素の名前は書かない ============
 // 配布版に出すときに、いちばん上に1版足す（新しい順）
 const CHANGELOG=[
+  {v:'1.5',d:'2026/11/20',items:[
+    '転職所で、物理職・魔法職・両方の職業が分かるように',
+    'はじめの職業は「冒険者」に。ギルドの最初の依頼で転職所が開く',
+    'ギルドの依頼は、候補から選んで受ける形に。カテゴリ分けと、進み具合に合った依頼',
+    '物理・魔法が「効かない」敵をなくし「効きにくい（半分）」に。斬・突・射・打の相性はなくした',
+    '次元の彼方は、層ごとに「物理に強い」「魔法に強い」が決まる（エリア一覧に表示）',
+    '属性の付け直しは、次元の彼方に入るまで無料',
+    '受けている依頼に向かえるエリアを、冒険の画面のいちばん上とギルドに表示（「向かう」ですぐ戦える）',
+    '依頼の素材がそろうとお知らせ。冒険の画面に、そのエリアの素材と持っている数',
+    'ステータス欄をすっきり。くわしいステータスは押すと開くように',
+    '能力を「基礎値（+上乗せ）」で表示。計算のしくみは「記録・ヘルプ → ヘルプ・TIPS集」に',
+    '装飾品屋と状態異常は、4つ目のエリアから登場',
+    '属性の付け直しは、属性の敵が出てくるまで表示しない',
+    '転職所：まだなれない職業の名前は「？？？」に',
+    '飲み比べの相手は、勝ち進むごとに一人ずつ登場',
+    '酒場のマスターの話し方を変更、噂話と助言を追加',
+    '名前を空欄にしたときの名前を変更',
+    '番人が現れたら、警告のお知らせを出すように',
+    'アイテム図鑑を追加（図鑑 → アイテム）。素材・固有品・装飾品・お酒の説明と使い道',
+    '武器屋で買い切ったら、鍛冶屋の合成を案内するお知らせ。ギルドが開いたとき・巣に着いたときもお知らせ',
+    '長押しの連戦中も、依頼の素材の集まり具合が見えるように。集まったら連戦を止めて、報告をうながす',
+    'はじまりの手ほどきは、全部終えたその場で次のエリアが開くように。ご褒美も追加',
+    'ヘルプ・図鑑などで、まだ見つけていない要素の名前を出さないように',
+  ]},
   {v:'1.4',d:'2026/11/20',items:[
     '冒険者ギルドを開設。依頼をこなしてギルドランクを上げよう',
     '敵が素材を落とすように。節目の層には、珍しい素材が出る巣がある',
@@ -339,7 +365,7 @@ const CHANGELOG=[
   ]},
   {v:'1.3',d:'2026/11/20',items:[
     '修練場をなくし、職業ごとの戦闘回数で極意を覚えるように。戦闘回数の実績を追加',
-    'ハローワークの見直し（条件と難しさ）',
+    'ある施設の見直し（条件と難しさ）',
     'エンドコンテンツの強化',
     'MP・状態異常に関わるお酒を追加',
     '熟練度の上がり方を調整',
@@ -357,7 +383,7 @@ const CHANGELOG=[
     '酒場の拡充（お酒の種類・はしご酒・熟成）',
     '転生まわりの調整と、倍率の説明を追加',
     'キャラクターの絵を一新',
-    'ハローワークをリニューアル',
+    'ある施設をリニューアル',
     '実績の追加、バランス調整、不具合の修正',
   ]},
   {v:'1.0',d:'2026/11/19',items:['公開']},
@@ -422,7 +448,7 @@ function sanitizeSave(o){
    'jackpots','j777','jpin','jrou','setHits','oinori','hlBest','allInWins','kajiN','miracles','deathN','hwCd','hwBreaks'].forEach(k=>r[k]=num(o[k],0));
   r.lv=Math.max(1,int(o.lv,1)); r.wpn=Math.min(GEAR_MAX,int(o.wpn)); r.arm=Math.min(GEAR_MAX,int(o.arm)); r.reb=int(o.reb); r.pts=int(o.pts);
   r.maxArea=Math.min(AREA_MAX,int(o.maxArea)); r.areaWins=int(o.areaWins); r.champ=int(o.champ);
-  r.rebMul=Math.max(1,num(o.rebMul,1)); r.rebMul=Math.min(r.rebMul,Math.pow(12,r.reb||0)); /* #11：1回×12までの式に合わせて、古いセーブの倍率を丸める */ r.oneG=bool(o.oneG); r.ptsUsed=bool(o.ptsUsed); r.casPlayed=bool(o.casPlayed); r.tutDone=bool(o.tutDone)||(num(o.maxArea,0)>0); r.tutWarn=bool(o.tutWarn); r.areaDone=bool(o.areaDone); if(o.guideHeard!==undefined&&o.guideHeard!==null) r.guideHeard=Math.floor(num(o.guideHeard,-1)); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA); r.jsec=boolMap(o.jsec,isJob); r.lastFruit=bool(o.lastFruit); r.endingSeen=bool(o.endingSeen); r.everTakashi=bool(o.everTakashi);
+  r.rebMul=Math.max(1,num(o.rebMul,1)); r.rebMul=Math.min(r.rebMul,Math.pow(12,r.reb||0)); /* #11：1回×12までの式に合わせて、古いセーブの倍率を丸める */ r.oneG=bool(o.oneG); r.ptsUsed=bool(o.ptsUsed); r.casPlayed=bool(o.casPlayed); r.tutDone=bool(o.tutDone)||(num(o.maxArea,0)>0); r.jobOpen=o.jobOpen===false?false:true; r.drunk=boolMap(o.drunk,k=>DRINKS.some(D=>D.id===k)); r.tutWarn=bool(o.tutWarn); r.areaDone=bool(o.areaDone); if(o.guideHeard!==undefined&&o.guideHeard!==null) r.guideHeard=Math.floor(num(o.guideHeard,-1)); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA); r.jsec=boolMap(o.jsec,isJob); r.lastFruit=bool(o.lastFruit); r.endingSeen=bool(o.endingSeen); r.everTakashi=bool(o.everTakashi);
   r.playMs=int(o.playMs); r.startedAt=int(o.startedAt); if(o.pops&&typeof o.pops==='object') r.pops=boolMap(o.pops);
   if(o.final&&typeof o.final==='object') r.final={hp:Math.min(finalHP(FINAL_FORMS),Math.max(0,num(o.final.hp,FINAL_HP))),cleared:bool(o.final.cleared),seen:bool(o.final.seen),dmg:num(o.final.dmg),form:Math.min(FINAL_FORMS,Math.max(1,int(o.final.form,1))),best:Math.min(FINAL_FORMS,int(o.final.best))};
   r.base={}; KEYS.forEach(k=>r.base[k]=Math.max(0,num(o.base&&o.base[k],1)));
@@ -431,14 +457,14 @@ function sanitizeSave(o){
   const eq=Array.isArray(o.accEq)?o.accEq:(o.accEq?[o.accEq]:[]); r.accEq=eq.filter(k=>ACC.some(a=>a[0]===k)).slice(0,ACC.length);
   r.lacc=boolMap(o.lacc,k=>LACC.some(a=>a[0]===k));
   r.secret=numMap(o.secret,isJob); r.jobB=numMap(o.jobB,isJob); r.train=numMap(o.train,isJob);
-  r.blessed=boolMap(o.blessed,isJob); r.unlocked=boolMap(o.unlocked,isJob); r.kiwami=boolMap(o.kiwami,isJob); r.been=boolMap(o.been,isJob);
+  r.blessed=boolMap(o.blessed,isJob); r.unlocked=boolMap(o.unlocked,isJob); r.kiwami=boolMap(o.kiwami,isJob); r.been=boolMap(o.been,isJob); r.jobSeen=boolMap(o.jobSeen,isJob);
   r.locB=numMap(o.locB,k=>/^(a\d+|god|champ|work|train_\w+)$/.test(k));
   r.ach=boolMap(o.ach);
   // 図鑑・番人・固有品（#8）
   { const gk=new Set(gmKeys()); r.gm=numMap(o.gm,k=>gk.has(k)); r.gmF=numMap(o.gmF,k=>gk.has(k)); r.gmG=boolMap(o.gmG,k=>/^\d{2,3}$/.test(k)); r.synthN=num(o.synthN,0);
-    if(o.guild&&typeof o.guild==='object'){ const G=o.guild, okQ=q=>q&&typeof q==='object'&&G_TYPES.includes(q.ty);
+    if(o.guild&&typeof o.guild==='object'){ const G=o.guild, okQ=q=>q&&typeof q==='object'&&G_TYPES.includes(q.ty), cq=q=>okQ(q)?{ty:q.ty,n:Math.max(0,num(q.n,0)),goal:Math.max(1,num(q.goal,1)),rk:Math.min(6,Math.max(0,int(q.rk))),sp:bool(q.sp),up:bool(q.up),ntf:bool(q.ntf),k:typeof q.k==='string'?q.k.slice(0,20):undefined}:null;
       r.guild={pts:Math.max(0,int(G.pts)),done:Math.max(0,int(G.done)),streak:int(G.streak),cd:(Array.isArray(G.cd)?G.cd:[]).slice(0,5).map(x=>Math.max(0,int(x))),
-        board:(Array.isArray(G.board)?G.board:[]).slice(0,5).map(q=>okQ(q)?{ty:q.ty,n:Math.max(0,num(q.n,0)),goal:Math.max(1,num(q.goal,1)),rk:Math.min(6,Math.max(0,int(q.rk))),sp:bool(q.sp),k:typeof q.k==='string'?q.k.slice(0,20):undefined}:null)}; } }
+        board:(Array.isArray(G.board)?G.board:[]).slice(0,5).map(cq).filter(Boolean),offers:(Array.isArray(G.offers)?G.offers:[]).slice(0,G_OFFERS).map(cq).filter(Boolean)}; } }
   r.bk=numMap(o.bk,k=>/^\d{1,2}_[0-2]$/.test(k)); Object.keys(r.bk).forEach(k=>r.bk[k]=int(r.bk[k]));
   r.bkT=numMap(o.bkT,k=>/^\d{1,2}_[0-2]$/.test(k)); Object.keys(r.bkT).forEach(k=>r.bkT[k]=Math.min(AREA_MAX,int(r.bkT[k])));
   r.guard=boolMap(o.guard,k=>/^\d{2,3}$/.test(k)&&+k%10===0&&+k<=300);
@@ -577,7 +603,7 @@ function makeEnemy(t){
   const a=AREAS[t%AREAS.length]; const i=Math.floor(Math.random()*3); let [nm,sp]=a[1][i];
   const ne=nestOf(t); if(ne){ nm=NEST_NM[ne.sp]; sp=ne.sp; }  // 節目の層は「○○の巣」（#39）
   const name=t<AREAS.length?nm:t>=AREA_MAX?`次元の果ての${nm}`:`第${t-AREAS.length+1}次元の${nm}`;
-  return elemize(Object.assign(enemyStats(t+i*0.15),{name,sp,base:nm,hue:(t*47+i*30)%360,bk:ne?null:bkKey(t%AREAS.length,i),nest:!!ne}),areaEl(t),false);
+  return elemize(Object.assign(enemyStats(t+i*0.15),{name,sp,base:nm,hue:(t*47+i*30)%360,bk:ne?null:bkKey(t%AREAS.length,i),nest:!!ne,t}),areaEl(t),false);
 }
 // ============ 属性と相性・物理と魔法（#26〜#28） ============
 // 属性：火→風→土→水→火（矢印の先に強い）、光⇄闇（お互いに弱点）、無（等倍）
@@ -598,7 +624,7 @@ function areaEl(t){ const th=t%AREAS.length; if(t>=AREAS.length&&th===0) return 
 const WTYPES={剣:'斬',大剣:'斬',斧:'斬',小剣:'突',槍:'突',弓:'射',棍棒:'打',体術:'打',杖:'打'};
 const WTYPE_LIST=Object.keys(WTYPES);
 // 職業の得意な武器（合っていると物理ダメージ×1.5）。魔法職は魔法で戦うので得意な武器なし
-const JOB_WT={apprentice:'剣',warrior:'剣',thief:'小剣',gambler:'小剣',fighter:'体術',hunter:'弓',knight:'剣',dancer:'小剣',merchant:'棍棒',
+const JOB_WT={adventurer:'剣',apprentice:'剣',warrior:'剣',thief:'小剣',gambler:'小剣',fighter:'体術',hunter:'弓',knight:'剣',dancer:'小剣',merchant:'棍棒',
   berserker:'斧',ninja:'小剣',shark:'小剣',kenou:'体術',sniper:'弓',paladin:'大剣',maiden:'小剣',tycoon:'棍棒',
   hero:'剣',spellblade:'剣',assassin:'小剣',swordsaint:'大剣',dragoon:'槍',phantom:'小剣',luckking:'斧',overlord:'体術',neet:'体術',
   mage:'杖',priest:'杖',bard:'杖',alchemist:'杖',archmage:'杖',bishop:'杖',maestro:'杖',grandalch:'杖',sage:'杖',tennyo:'杖',chrono:'杖',saint:'杖'};
@@ -617,16 +643,21 @@ const myArmEl=()=>P.aEl||gearDefEl(false,P.arm);
 const prefMul=()=>{ const w=myWType(); if(P.job==='spellblade'&&(w==='剣'||w==='杖')) return 1.5; return JOB_WT[P.job]&&JOB_WT[P.job]===w?1.5:1; };
 
 // 敵の系統ごとの効きやすさ（書いていない種類は×1）
-const SP_RES={slime:{斬:2,打:.3},bat:{突:2,射:3,打:.5},eye:{射:2,突:2,魔:.5},skull:{打:3,斬:.3,突:.3,射:.3,魔:1.5},dragon:{突:2,斬:.5,打:.5,魔:.5},knight:{打:2,斬:.5,射:.5,魔:1.5}};
+// 斬・突・射・打の相性はなくした（#62）。武器の種類は、得意武器の補正と合成の素材だけに使う
+const SP_RES={};
 const SP_MDEF={slime:.8,bat:.6,eye:1.5,skull:.3,dragon:1.5,knight:1};
 // 効かない敵：物理が効かない（魔法でしか倒せない）／魔法が効かない（物理でしか倒せない）
 const IMMUNE={'坑道の亡霊':'phys','船幽霊':'phys','鉱石スライム':'魔'};
-const magicAttacker=e=>e.sp==='eye'||IMMUNE[e.base]==='phys';
+const magicAttacker=e=>e.sp==='eye'||resKind(e)==='phys';
 // 敵に属性・魔法防御などを付ける（makeEnemy などから呼ぶ）。flat：最後の敵（相性はすべて等倍）
 function elemize(e,el,flat){ e.el=el; e.flat=!!flat; if(e.mdef===undefined) e.mdef=(e.def||0)*(SP_MDEF[e.sp]||1); return e; }
-function typeMul(at,e){ if(e.flat) return 1; const im=IMMUNE[e.base];
-  if(im==='phys'&&at!=='魔') return 0; if(im==='魔'&&at==='魔') return 0;
-  const r=SP_RES[e.sp]; return r&&r[at]!==undefined?r[at]:1; }
+// 物理に強い／魔法に強い（#62 #69）：効かない（×0）はなくし、効きにくい（×0.5）だけ
+// 最初の12エリアは敵ごと（坑道の亡霊・船幽霊は物理に強い、鉱石スライムは魔法に強い）、次元の彼方は層ごとに決まる
+const RES_MUL=.5;
+const layerTend=t=>t<AREAS.length?null:['phys',null,'魔'][layerOf(t)%3];
+function resKind(e){ if(e.flat) return null; const t=e.t!==undefined?e.t:e.gt; if(t!==undefined&&t>=AREAS.length) return layerTend(t); return IMMUNE[e.base]||null; }
+const tendName=k=>k==='phys'?'物理に強い':k==='魔'?'魔法に強い':'';
+function typeMul(at,e){ const k=resKind(e); if(!k) return 1; return (k==='魔')===(at==='魔')?RES_MUL:1; }
 
 // 魔法攻撃・魔法防御（#27）
 function matk(){ return capN((st('int')+wpnPow(P.wpn)*.5*P.rebMul)*(1+lvB()*0.08)*(1+0.05*(jl(P.job).lv-1))*rmul()*neetWAtk()*matMul('atk')); }
@@ -650,11 +681,14 @@ function jobModText(k0){ const J=JOBS[k0]; if(!J||J.hidden||J.main==='best') ret
   const t=KEYS.map(k=>{ const m=jobMod(k); const p=Math.round((m-1)*100); return p?`${KN[k]}${p>0?'+':''}${p}%`:''; }).filter(Boolean).join('・'); P.job=save; return t; }
 
 // 属性・武器の種類の付け直し（武器屋・防具屋）：今の装備の値段の1割。無職の武器（辞表）は無属性から変えられない
-const forgePrice=isW=>P.forgeFree?0:Math.floor((isW?wpnPrice(P.wpn):armPrice(P.arm))*.1);
+// 付け直しの値段（#60）：次元の彼方に入るまでは無料、そのあとは最深エリアの敵のお金×5戦分
+const forgePrice=isW=>P.forgeFree||P.maxArea<AREAS.length?0:Math.floor(goldBase()*5);
 function forgeEl(isW,el){ if(!ELS.includes(el)) return; if(isW&&neetW()) return; if(isW?!P.wpn:!P.arm) return; const pr=forgePrice(isW); if(P.gold<pr) return;
   P.gold-=pr; P.forgeFree=false; if(isW) P.wEl=el; else P.aEl=el; save(); renderStatus(); panel(isW?'wpn':'arm'); }
 function forgeType(t){ if(!WTYPES[t]||neetW()||!P.wpn) return; const pr=forgePrice(true); if(P.gold<pr) return; P.gold-=pr; P.forgeFree=false; P.wType=t; save(); renderStatus(); panel('wpn'); }
-function forgeHTML(isW){
+// 属性のお知らせ（森）を見るまでは、付け直しも属性の表示も出さない（#47）
+const elemOpen=()=>!!(P.pops&&P.pops.elem)||P.maxArea>=1;
+function forgeHTML(isW){ if(!elemOpen()) return '';
   const cur=isW?P.wpn:P.arm; if(!cur) return '';
   const pr=forgePrice(isW), el=isW?(neetW()?'無':(P.wEl||gearDefEl(true,P.wpn))):myArmEl();
   let h=`<div class="win" style="margin:6px 0;padding:6px 8px"><div class="small y">属性の付け直し（${P.forgeFree?'<span class="g">次の1回は無料（精霊の酒）</span>':fmt(pr)+'G＝今の'+(isW?'武器':'防具')+'の値段の1割'}）</div><div class="small">今の属性：${elTag(el)}${isW&&!neetW()&&el==='無'&&JOB_EL[P.job]?`（無属性なので、職業の属性 ${elTag(JOB_EL[P.job])} が乗る）`:''}</div>`;
@@ -668,11 +702,11 @@ function forgeHTML(isW){
 
 // エリアの一覧の相性表示（#28）
 function areaMatch(t){ const el=areaEl(t), sp=AREAS[t%AREAS.length][1];
-  const fake=sp.map(([nm,s])=>elemize({def:1,sp:s,base:nm},el,false));
+  const fake=sp.map(([nm,s])=>elemize({def:1,sp:s,base:nm,t},el,false));
   const plans=fake.map(attackPlan);
   const emul=elMul(myAtkEl(),el), dm=elMul(el,myArmEl());
   const mark=emul>=5?'<span class="g">◎ 有利（×5）</span>':emul<1?`<span class="o">△ 不利（×${emul}）</span>`:'<span class="small">○ 普通</span>';
-  const imm=plans.some(p=>p.aff===0)?' <span class="r">⚠ 今の攻撃が効かない敵がいる</span>':'';
+  const tk=fake.map(resKind).find(Boolean), imm=tk?` <span class="o">${t>=AREAS.length?'この層は':'効きにくい敵：'}${tendName(tk)}</span>`:'';
   const def=dm>=5?' <span class="r">守り△（受けるダメージ×5）</span>':dm<1?` <span class="g">守り◎（×${dm}）</span>`:'';
   return {el,html:`属性 ${elTag(el)}　${mark}${def}${imm}`}; }
 
@@ -738,10 +772,8 @@ function guardWin(e,L,c){ const t=e.gt, n=layerOf(t); P.guard=P.guard||{}; P.gua
   c.trainMile=true; }
 // 図鑑：その敵を10回倒すと、弱点・耐性が見える（番人は1回）
 function weakHTML(nm,sp,show){ if(!show) return '<span style="color:#789">弱点：あと少し戦えばわかりそう（10回倒すと見える）</span>';
-  const im=IMMUNE[nm], r=SP_RES[sp]||{}, ts=['斬','打','突','射','魔'];
-  const good=ts.filter(t=>(im==='phys'&&t!=='魔')||(im==='魔'&&t==='魔')?false:(r[t]||1)>1).map(t=>`${atName(t)}×${r[t]}`), bad=ts.filter(t=>((im==='phys'&&t!=='魔')||(im==='魔'&&t==='魔'))||(r[t]||1)<1).map(t=>((im==='phys'&&t!=='魔')||(im==='魔'&&t==='魔'))?`${atName(t)}×0`:`${atName(t)}×${r[t]}`);
-  const ail=Object.values(AILMENTS).find(x=>x.sp===sp);
-  return `<span class="g">弱い：${good.join('・')||'なし'}</span>　<span class="o">強い：${bad.join('・')||'なし'}</span>${ail?`　<span class="r">使ってくる：${ail.n}</span>`:''}`; }
+  const im=IMMUNE[nm], ail=Object.values(AILMENTS).find(x=>x.sp===sp);
+  return `${im?`<span class="o">${tendName(im)}（×${RES_MUL}）</span>`:'<span class="g">物理・魔法とも普通</span>'}${ail?`　<span class="r">使ってくる：${ail.n}</span>`:''}`; }
 // 図鑑の画面
 function bookHTML(){
   const pic=(a,i,seen)=>{ const src=typeof PIX!=='undefined'&&PIX.z&&typeof PIX_AREA!=='undefined'?PIX.z[PIX_AREA[a][i]]:''; return src?`<img src="${src}" style="width:36px;height:36px;image-rendering:pixelated;${seen?'':'filter:brightness(0) opacity(.5)'}">`:''; };
@@ -756,7 +788,7 @@ function bookHTML(){
       h+=`<div class="row" style="padding:2px 0"><div style="display:flex;gap:6px;align-items:center">${pic(a,i,n>0)}<div>${n?nm:'？？？'}<div class="small">${n?`倒した数 ${fmt(n)}　最深 ${dt<AREAS.length?A[0]:'第'+layerOf(dt)+'層'}`:'まだ出会っていない'}</div>${n?`<div class="small">${weakHTML(nm,A[1][i][1],n>=10)}</div>`:''}</div></div></div>`; });
     h+=`</details>`; });
   h+=`<div class="y" style="margin-top:8px">番人（次元の彼方の10層ごと）</div>`;
-  GUARD_T.forEach(t=>{ const n=layerOf(t), b=guardBeaten(t), reach=t<=P.maxArea;
+  GUARD_T.forEach(t=>{ const n=layerOf(t), b=guardBeaten(t), reach=t<=P.maxArea; if(!reach&&t>P.maxArea+10) return;  // 先の番人は次の1体だけ（#55）
     h+=`<div class="row"><div>${reach?makeGuard(t).name:`第${n}層の番人 ？？？`}<div class="small">${b?`<span class="g">討伐済み</span>　${t>=AREA_MAX?'無属性（等倍）':elTag(areaEl(t))+'・'+weakHTML(makeGuard(t).base,makeGuard(t).sp,true)}`:reach?'<span class="o">未討伐</span>':'まだたどり着いていない'}</div></div>${canGuard(t)?`<button onclick="fightGuard(${t})">挑む</button>`:''}</div>`; });
   return h; }
 
@@ -799,6 +831,7 @@ const gmKeys=()=>GM_SP.flatMap(g=>[g.sp+'_n',g.sp+'_r'].concat([1,2,3,4,5].map(s
 function gmName(k){ const [sp,t]=k.split('_'), g=gmSp(sp); if(!g) return k; if(t==='n') return g.nm[0]; if(t==='r') return g.nm[1]; return `${g.nm[2]}★${t.slice(1)}`; }
 const gmN=k=>(P.gm&&P.gm[k])||0;
 function gmAdd(k,n,L){ P.gm=P.gm||{}; P.gmF=P.gmF||{}; const first=!P.gmF[k]; P.gm[k]=gmN(k)+n; P.gmF[k]=(P.gmF[k]||0)+n;
+  gCollectCheck(L);
   const star=k.includes('_s'); if(L) L.push(`<span class="${star?'mir':k.endsWith('_r')?'c':'g'}">${star?'★ ':''}素材「${gmName(k)}」を手に入れた！${first?'（初めて）':''}</span>`); }
 // 出やすさ：運・実りの首飾り・果実酒・職業（盗賊系など）・固有品。最大×4
 const gmMul=()=>{ const lk=st('luk'); return Math.min(GM_MUL_MAX,(1+lk/(lk+1000))*ps('drop',1)*matMul('drop')*drinkMul('drop')); };
@@ -841,49 +874,64 @@ function synthHTML(isW){ const cur=isW?P.wpn:P.arm, i=cur+1; if(cur<SHOP_MAX||i>
 
 // ---- ギルド（#21） ----
 const G_RANKS=['F','E','D','C','B','A','S'], G_NEED=[0,10,30,70,150,300,600];
-const gState=()=>{ if(!P.guild) P.guild={pts:0,done:0,board:[],cd:[],streak:0}; const g=P.guild; g.board=g.board||[]; g.cd=g.cd||[]; return g; };
+const gState=()=>{ if(!P.guild) P.guild={pts:0,done:0,board:[],offers:[],cd:[],streak:0}; const g=P.guild; g.board=(g.board||[]).filter(Boolean); g.offers=g.offers||[]; g.cd=g.cd||[]; return g; };
+// 無職になったら（無職が解放されたら）転職所はいつでも開く。ギルドに入れない無職が詰まないように
+const jobOpen=()=>P.jobOpen!==false||P.job==='neet'||!!(P.unlocked&&P.unlocked.neet);
+const G_OFFERS=5;
 const gRank=()=>{ const p=gState().pts; let r=0; G_NEED.forEach((n,i)=>{ if(p>=n) r=i; }); return r; };
 const gSlots=()=>3+(gRank()>=2?1:0)+(gRank()>=5?1:0);
 const gDisc=()=>P&&P.guild&&gRank()>=4?.9:1;  // ランクB：酒場・ショップ1割引き
-const G_TYPES=['kill','weak','job','nohalf','boss','drink','casino','deliver','appraise'];
+const G_TYPES=['kill','weak','job','nohalf','boss','drink','casino','deliver','appraise','firstjob'];
+// 依頼のカテゴリ（#61）
+const G_CAT={kill:'討伐',weak:'討伐',job:'職業',firstjob:'職業',nohalf:'腕試し',boss:'腕試し',deliver:'収集',appraise:'収集',drink:'寄り道',casino:'寄り道'};
+// 戦闘に効かないお酒は、お酒の依頼に使わない（ギャンブルの酒はギャンブルの依頼で使う）
+const G_DRINK_NG=['cas','forge','nohang'];
+// 職業の依頼は「次に目指す職業」から（#68）：まだ極めていない、なれる職業のうち一番下の格
+function gNextJobs(){ const ok=Object.keys(JOBS).filter(k=>k!=='neet'&&k!=='apprentice'&&canJob(k)&&!isMaster(k)); if(!ok.length) return Object.keys(JOBS).filter(k=>k!=='neet'&&canJob(k)); const r=Math.min(...ok.map(k=>JOBS[k].rank)); return ok.filter(k=>JOBS[k].rank===r); }
+const areaSps=()=>AREAS[P.maxArea%AREAS.length][1].map(x=>x[1]);
 const maxLayer=()=>Math.max(0,layerOf(P.maxArea));
 function gNew(){ const r=gRank(), types=G_TYPES.filter(t=>t!=='appraise'||r>=3&&GM_SP.some(g=>g.nest<=maxLayer())).filter(t=>t!=='deliver'||r>=1);
   const ty=types[Math.floor(Math.random()*types.length)], s=1+r*.5, pick=a=>a[Math.floor(Math.random()*a.length)];
   const q={ty,n:0,rk:r,sp:r>=6&&chance(.3)};
-  const sps=GM_SP.filter(g=>r>=3||!['eye','bat','skull'].includes(g.sp));
-  if(ty==='kill'){ q.k=pick(sps).sp; q.goal=Math.round(20*s); }
+  const near=areaSps().filter(sp=>gmSp(sp)&&(r>=3||P.maxArea>=AIL_START||!['eye','bat','skull'].includes(sp)));
+  if(ty==='kill'){ q.k=pick(near.length?near:['slime']); q.goal=Math.round(20*s); }
   if(ty==='weak'){ q.goal=Math.round(15*s); }
-  if(ty==='job'){ const js=Object.keys(JOBS).filter(k=>k!=='neet'&&k!=='apprentice'&&canJob(k)); q.k=pick(js.length?js:['warrior']); q.goal=Math.round(30*s); }
+  if(ty==='job'){ const js=gNextJobs(); q.k=pick(js.length?js:['warrior']); q.up=JOBS[q.k].rank>JOBS[P.job].rank; q.goal=Math.round(30*s); }
   if(ty==='nohalf'){ q.goal=Math.round(5+r*2); }
   if(ty==='boss'){ q.k=P.champ<CHAMP_MAX?'champ':'god'; q.goal=1; }
-  if(ty==='drink'){ const ds=DRINKS.filter(D=>D.left>0&&(!D.when||D.when())&&D.id!=='keta'); q.k=pick(ds).id; q.goal=10; }
-  if(ty==='casino'){ q.goal=3+r; }
+  if(ty==='drink'){ const ds=DRINKS.filter(D=>D.left>0&&(!D.when||D.when())&&D.id!=='keta'&&!G_DRINK_NG.includes(D.k)); q.k=pick(ds.length?ds:DRINKS).id; q.goal=10; }
+  if(ty==='casino'){ q.goal=3+r; const bk=DRINKS.find(D=>D.id==='bakuto'); if(bk&&(!bk.when||bk.when())&&chance(.4)) q.k='bakuto'; }
   if(ty==='deliver'){ const fs=GM_SP.filter(g=>gmFoundAny(g.sp)), g=pick(fs.length?fs:GM_SP); q.k=(r>=3&&chance(.4)?g.sp+'_r':g.sp+'_n'); q.goal=q.k.endsWith('_r')?1+Math.floor(r/3):3+r; }
   if(ty==='appraise'){ const g=pick(GM_SP.filter(g=>g.nest<=maxLayer())); q.k=`${g.sp}_s${Math.max(1,Math.min(5,r-2))}`; q.goal=1; }
   return q; }
 const gmFoundAny=sp=>Object.keys(P.gmF||{}).some(k=>k.startsWith(sp+'_'));
-function gFill(){ const g=gState(); while(g.board.length<gSlots()) g.board.push(null); g.board.forEach((q,i)=>{ if(!q&&!(g.cd[i]>0)) g.board[i]=gNew(); }); }
+// 候補を5件並べ、そこから選んで受ける（#68）。最初の依頼は「転職所で転職しよう」だけ（#58）
+function gFill(){ const g=gState();
+  if(!jobOpen()){ if(!g.board.some(q=>q.ty==='firstjob')&&!g.offers.some(q=>q.ty==='firstjob')) g.offers=[{ty:'firstjob',n:0,goal:1,rk:0}]; return; }
+  g.offers=g.offers.filter(q=>q&&q.ty!=='firstjob'); while(g.offers.length<G_OFFERS) g.offers.push(gNew()); }
+function gAccept(i){ const g=gState(), q=g.offers[i]; if(!q||g.board.length>=gSlots()) return; g.offers.splice(i,1); g.board.push(q);
+  if(q.ty==='firstjob'){ q.k=P.job; P.jobOpen=true; showPopup({title:'<span class="y">転職所が開いた！</span>',body:'<div class="small">受付嬢「転職所では、今の職業から別の職業に変えられます。職業ごとに得意な能力や技がちがうんですよ。好きな職業を選んで、転職してみてくださいね」<br><br>メニューの「転職所」から転職できる。</div>'}); }
+  gFill(); save(); panel('area','guild'); }
 function gText(q){ const N=q.goal;
-  return q.ty==='kill'?`${gmSp(q.k).n}系の敵を${N}体倒す`:q.ty==='weak'?`弱点の属性で${N}体倒す`:q.ty==='job'?`${JOBS[q.k].n}で${N}勝する`:
+  return q.ty==='firstjob'?'転職所で、好きな職業に転職する':q.ty==='kill'?`${gmSp(q.k).n}系の敵を${N}体倒す`:q.ty==='weak'?`弱点の属性で${N}体倒す`:q.ty==='job'?`${q.up?'昇格：':''}${JOBS[q.k].n}${q.up?'に転職して':'で'}${N}勝する`:
     q.ty==='nohalf'?`HPが半分を切らずに${N}連勝する`:q.ty==='boss'?(q.k==='champ'?'闘技場の王者を1人倒す':'神々の座で1勝する'):
-    q.ty==='drink'?`${(DRINKS.find(D=>D.id===q.k)||{n:'お酒'}).n}を飲んだまま${N}勝する`:q.ty==='casino'?`ギャンブル場で${N}回勝つ`:
+    q.ty==='drink'?`${(DRINKS.find(D=>D.id===q.k)||{n:'お酒'}).n}を飲んだまま${N}勝する`:q.ty==='casino'?`${q.k==='bakuto'?'博徒の酒を飲んだまま、':''}ギャンブル場で${N}回勝つ`:
     q.ty==='deliver'?`素材「${gmName(q.k)}」を${N}個納める`:`★素材「${gmName(q.k)}」を鑑定してもらう`; }
-const gProg=q=>q.ty==='deliver'?Math.min(q.goal,gmN(q.k)):q.ty==='appraise'?Math.min(1,gmN(q.k)):q.n;
+const gProg=q=>q.ty==='firstjob'?((P.job!==q.k||takashiLock())?1:0):q.ty==='deliver'?Math.min(q.goal,gmN(q.k)):q.ty==='appraise'?Math.min(1,gmN(q.k)):q.n;
 const gDoneQ=q=>gProg(q)>=q.goal;
 // 報酬：お金（最深エリアの敵の数十戦分）・熟練度・能力の実・ギルドポイント。★の鑑定は10倍、特別依頼（S）は2倍
-function gReward(q){ const m=(q.ty==='appraise'?10:q.ty==='deliver'&&q.k.endsWith('_r')?3:1)*(q.sp?2:1)*(1+q.rk*.5);
+function gReward(q){ const m=(q.ty==='firstjob'?3:q.ty==='appraise'?10:q.ty==='deliver'&&q.k.endsWith('_r')?3:1)*(q.sp?2:1)*(1+q.rk*.5);
   return {gold:Math.floor(enemyStats(P.maxArea).gold*20*m), jexp:Math.floor(50*m), fruit:Math.max(1,Math.floor(rnd(1,4)*(P.maxArea+1)*m)), pts:Math.round((1+q.rk)*(q.ty==='appraise'?3:1)*(q.sp?2:1))}; }
 function gReport(i){ const g=gState(), q=g.board[i]; if(!q||!gDoneQ(q)||P.job==='neet') return; const R=gReward(q), L=[];
   if(q.ty==='deliver') P.gm[q.k]-=q.goal;
   const r0=gRank(); P.gold+=R.gold; P.earned=(P.earned||0)+R.gold; gainJob(R.jexp,L); const k=KEYS[Math.floor(Math.random()*5)]; P.base[k]+=R.fruit; g.pts+=R.pts; g.done=(g.done||0)+1;
-  g.board[i]=null; gFill();
+  g.board.splice(i,1); gFill();
   gMsg=`<div class="g">依頼を達成した！ ${fmt(R.gold)}G・熟練度+${fmt(R.jexp)}・${KN[k]}+${fmt(R.fruit)}・ギルドポイント+${R.pts}</div>`+(gRank()>r0?`<div class="mir">★ ギルドランクが${G_RANKS[gRank()]}に上がった！ ★</div>`:'')+L.join('');
   save(); renderStatus(); panel('area','guild'); }
-function gDrop(i){ const g=gState(); if(!g.board[i]) return; g.board[i]=null; g.cd[i]=10; gMsg='<div class="small o">依頼を取り下げた。この枠には10戦したら新しい依頼が来る。</div>'; save(); panel('area','guild'); }
+function gDrop(i){ const g=gState(); const q=g.board[i]; if(!q||q.ty==='firstjob') return; g.board.splice(i,1); gMsg='<div class="small o">依頼を取り下げた。</div>'; save(); panel('area','guild'); }
 let gMsg='';
 // 戦闘のあとに呼ぶ：依頼の進み具合
 function guildAfter(res,e,t,c){ if(!P.guild||P.job==='neet') return; const g=gState();
-  if(t>=0) g.cd=g.cd.map(x=>Math.max(0,(x||0)-1));
   if(res!=='win'){ g.streak=0; g.board.forEach(q=>{ if(q&&q.ty==='nohalf') q.n=0; }); gFill(); return; }
   const half=(c.minR??1)>=.5; g.streak=half?(g.streak||0)+1:0;
   g.board.forEach(q=>{ if(!q||gDoneQ(q)) return;
@@ -894,7 +942,7 @@ function guildAfter(res,e,t,c){ if(!P.guild||P.job==='neet') return; const g=gSt
     if(q.ty==='boss'&&((q.k==='champ'&&e.champ)||(q.k==='god'&&e.secret))) q.n++;
     if(q.ty==='drink'&&activeDrinks().some(x=>x.D.id===q.k)) q.n++; });
   gFill(); }
-function guildCasinoWin(){ if(!P||!P.guild||P.job==='neet') return; gState().board.forEach(q=>{ if(q&&q.ty==='casino'&&!gDoneQ(q)) q.n++; }); }
+function guildCasinoWin(){ if(!P||!P.guild||P.job==='neet') return; gState().board.forEach(q=>{ if(q&&q.ty==='casino'&&!gDoneQ(q)&&(!q.k||activeDrinks().some(x=>x.D.id===q.k))) q.n++; }); }
 function guildHTML(){ let h=`<h3 style="margin:0 0 4px">冒険者ギルド</h3>`;
   if(P.job==='neet') return h+`<div class="o">受付嬢「すみません、ギルドは職業についている方のための場所なんです。お仕事なら、ハローワークへどうぞ」</div>`;
   const g=gState(); gFill(); const r=gRank();
@@ -904,17 +952,81 @@ function guildHTML(){ let h=`<h3 style="margin:0 0 4px">冒険者ギルド</h3>`
   h+=`<div class="small">ギルドランク <b class="y">${G_RANKS[r]}</b>（${g.pts}pt${r<6?` / 次の${G_RANKS[r+1]}まで ${G_NEED[r+1]-g.pts}pt`:''}）　達成 ${g.done||0}件</div>`;
   h+=`<div class="small" style="color:#9ab">特典：D 依頼枠4件／B 酒場とショップ1割引き／A 依頼枠5件／S 報酬2倍の特別依頼</div>`;
   if(gMsg){ h+=gMsg; gMsg=''; }
-  g.board.forEach((q,i)=>{ if(!q){ h+=`<div class="row small"><div style="color:#678">（次の依頼を待っている… あと${g.cd[i]||0}戦）</div></div>`; return; }
-    const R=gReward(q), d=gDoneQ(q);
-    h+=`<div class="row"><div style="flex:1;min-width:0">${q.sp?'<span class="mir">【特別】</span>':''}${gText(q)}<div class="small">${fmt(gProg(q))}/${fmt(q.goal)}　報酬 ${fmt(R.gold)}G・熟練度・能力の実・${R.pts}pt</div></div>`+
-      (d?`<button class="y" onclick="gReport(${i})">報告</button>`:`<button style="font-size:11px" onclick="gDrop(${i})">取り下げ</button>`)+`</div>`; });
-  h+=`<details style="margin-top:8px"><summary class="small y">素材図鑑（${gmKeys().filter(k=>P.gmF&&P.gmF[k]).length}/${gmKeys().length}）</summary><div class="small" style="line-height:1.7">`+
-    GM_SP.map(G=>`<b>${G.n}</b>（巣：第${G.nest}層）<br>`+[G.sp+'_n',G.sp+'_r'].concat([1,2,3,4,5].map(s=>`${G.sp}_s${s}`)).map(k=>P.gmF&&P.gmF[k]?`${gmName(k)} ×${gmN(k)}`:'？？？').join('・')).join('<br>')+
-    `<br><span style="color:#9ab">ふつう・レアはどこでも出る。★は節目の層（巣）でだけ出る。運・実りの首飾り・果実酒で出やすくなる（最大×${GM_MUL_MAX}）</span></div></details>`;
+  const qrow=(q,btn)=>{ const R=gReward(q); return `<div class="row"><div style="flex:1;min-width:0"><span class="small c">【${G_CAT[q.ty]}】</span>${q.sp?'<span class="mir">【特別】</span>':''}${gText(q)}<div class="small">${fmt(gProg(q))}/${fmt(q.goal)}　報酬 ${fmt(R.gold)}G・熟練度・能力の実・${R.pts}pt</div></div>${btn}</div>`; };
+  h+=`<div class="y" style="margin-top:6px">受けている依頼（${g.board.length}/${gSlots()}）</div>`;
+  if(!g.board.length) h+=`<div class="small" style="color:#9ab">（まだ受けていない。下の候補から選ぼう）</div>`;
+  g.board.forEach((q,i)=>{ const ta=gDoneQ(q)?null:questAreaOf(q);
+    h+=qrow(q,gDoneQ(q)?`<button class="y" onclick="gReport(${i})">報告</button>`:q.ty==='firstjob'?'':`<div style="display:flex;flex-direction:column;gap:3px">${ta!==null?`<button class="y" style="font-size:11px" onclick="fightArea(${ta})">向かう</button>`:''}<button style="font-size:11px" onclick="gDrop(${i})">取り下げ</button></div>`)
+      +(ta!==null?`<div class="small" style="color:#9ab;margin:-2px 0 4px">行き先：${areaName(ta)}（冒険の画面のいちばん上にも出る）</div>`:''); });
+  h+=`<div class="y" style="margin-top:8px">依頼の候補</div>`;
+  g.offers.forEach((q,i)=>{ h+=qrow(q,`<button ${g.board.length>=gSlots()?'disabled':''} onclick="gAccept(${i})">受ける</button>`); });
+  h+=`<div class="small" style="margin-top:8px;color:#9ab">素材の一覧と説明は、冒険の「図鑑 → アイテム」で見られる。</div>`;
   return h; }
+
+// 収集の依頼がそろったら知らせる（#57）
+let gPop=null;
+function gCollectCheck(L){ if(!P.guild) return; P.guild.board.forEach(q=>{ if((q.ty==='deliver'||q.ty==='appraise')&&!q.ntf&&gDoneQ(q)){ q.ntf=true; gPop=gText(q); if(L) L.push(`<span class="mir">★ ギルドの依頼「${gPop}」の素材がそろった！ 報告に行こう</span>`); } }); }
+function gPopShow(){ if(!gPop) return; const t=gPop; gPop=null; holdEnd(); showPopup({title:'<span class="y">素材がそろった！</span>',body:`<div class="small">ギルドの依頼「${t}」に必要な素材がそろった。冒険の画面の「ギルド」で報告しよう。</div>`}); }
+// 冒険の画面：今いちばん奥のエリアで出る素材と、持っている数（#57）
+function areaGmHTML(){ const sps=[...new Set(areaSps())].filter(gmSp); if(!sps.length||!tutDone()) return '';
+  return `<div class="small" style="margin:4px 0;color:#9ab">${areaName(P.maxArea)}で出る素材：`+sps.map(sp=>`${gmName(sp+'_n')}×${gmN(sp+'_n')}・${P.gmF&&P.gmF[sp+'_r']?gmName(sp+'_r'):'？？？'}×${gmN(sp+'_r')}`).join('　')+`</div>`; }
+
+// 受けている依頼に向かえるエリア（冒険の画面のいちばん上に出す）
+function questAreaOf(q){ const sp=q.ty==='kill'?q.k:q.ty==='deliver'?q.k.split('_')[0]:null;
+  if(q.ty==='appraise'){ const g=gmSp(q.k.split('_')[0]); const t=g?g.nest+AREAS.length-1:-1; return t>=0&&t<=P.maxArea?t:null; }
+  if(!sp) return null;
+  for(let t=P.maxArea;t>=0;t--){ const ne=nestOf(t); if(ne?ne.sp===sp:AREAS[t%AREAS.length][1].some(x=>x[1]===sp)) return t; }
+  return null; }
+function questAreaHTML(){ if(!P.guild||P.job==='neet') return ''; const rows=gState().board.filter(q=>!gDoneQ(q)).map(q=>[q,questAreaOf(q)]).filter(([q,t])=>t!==null);
+  if(!rows.length) return '';
+  return `<div class="win" style="margin:6px 0;padding:6px 8px"><div class="y">依頼に向かう</div>`+rows.map(([q,t])=>`<div class="row"><div style="flex:1;min-width:0"><span class="small">${gText(q)}（${fmt(gProg(q))}/${fmt(q.goal)}）</span><div class="small" style="color:#9ab">${areaName(t)}</div></div><button onclick="fightArea(${t})">戦う</button></div>`).join('')+`</div>`; }
+// ============ アイテム図鑑（#70）・合成の導線（#64）・お知らせ（#67） ============
+// 素材の説明書き（系統ごとに ふつう・レア・★）
+const GM_DESC={
+  slime:['ぷるぷるのゼリー。乾かすと意外に硬く、鍛冶の繋ぎに使われる','光を当てると七色に揺らめくゼリー。魔力をよく通す','王冠をかぶった巨大スライムの核。脈打つたびに桁がひとつ増える気がする'],
+  bat:['薄く丈夫な翼膜。音をよく吸うので、防具の裏地に重宝される','夜明けの光を浴びても溶けない牙。夜の王の名残','月を喰らったと伝わる翼。広げると、あたりが一瞬だけ夜になる'],
+  eye:['白く濁った水晶体。磨けば、それなりに遠くが見える','千里を見通す瞳。のぞき込むと、自分の背中が見える','神の言葉を映す眼。見てはいけない未来まで見えてしまう'],
+  skull:['ただの古い骨。けれど、なぜか温かい','呪いのこもった髑髏。持ち主の運を、ほんの少しだけ吸う','冥府の王がはめていた指輪。死の宣告を、跳ね返すという'],
+  knight:['錆びついた騎士団の紋章。かつての誇りが刻まれている','聖騎士の盾のかけら。いまだに守りの祈りが残っている','亡国の王家に伝わる剣。主を選び、選ばれた者には桁外れの力を与える'],
+  dragon:['硬く、熱を帯びたうろこ。剣の刃に混ぜると切れ味が増す','竜の喉元に1枚だけ逆さに生えた鱗。触れた者は焼き尽くされるという','竜王の心臓。止まることなく脈打ち、炎と桁を生み続ける'],
+};
+const gmUse=k=>{ const [sp,t]=k.split('_'), ws=Object.keys(W_SP).filter(w=>W_SP[w]===sp), as=Object.keys(A_SP).filter(a=>A_SP[a]===sp);
+  const who=[ws.length?ws.join('・'):'',as.length?'防具（'+as.join('・')+'）':''].filter(Boolean).join('、')||'—';
+  const rng=t==='n'?'＋1〜＋60':t==='r'?'＋31〜＋98':`★${t.slice(1)}の段${t==='s5'?'・伝説':''}`;
+  return `合成：${who}（${rng}）／ギルドへの${t.startsWith('s')?'鑑定':'納品'}`; };
+const gmDesc=k=>{ const [sp,t]=k.split('_'); const d=GM_DESC[sp]; return d?d[t==='n'?0:t==='r'?1:2]+(t.startsWith('s')?`（★${t.slice(1)}：${['かすかに','ほのかに','はっきりと','まばゆく','目もくらむほど'][+t.slice(1)-1]}輝いている）`:''):''; };
+const gmHint=k=>{ const [sp,t]=k.split('_'), g=gmSp(sp); return t.startsWith('s')?`${g.n}の巣（50層ごとの節目の層）で見つかるらしい`:`${g.n}系の敵が${t==='r'?'まれに':''}落とすらしい`; };
+const MAT_DESC=['四つ葉のクローバー。拾うたびに、少しずつ運が向いてくる','森のどんぐり。かじると、なぜか経験がにじみ出す','古代の鉱石。武器に混ぜると攻撃が鋭くなる','砂漠の砂時計。落ちる砂がゆっくりになり、身のこなしが軽くなる','溶けない氷。身にまとえば守りが固くなる','火竜のうろこ。握ると力がみなぎる','幽霊船の羅針盤。なぜか金目のものの方角を指す','天使の羽根。そばにあるだけで体が丈夫になる','魔界の角。知恵が冴えわたる','混沌のかけら。能力の実が、よく実るようになる','虚無の砂。体の芯が強くなる','時の歯車。修行の時間が、少しだけ長くなる'];
+let itemTab='mat', bookTab='mon';
+function itemRow(found,name,count,desc,use,hint){ return found?`<div class="row"><div style="flex:1;min-width:0">${name}${count!==''?` <span class="small y">${count}</span>`:''}<div class="small">${desc}</div>${use?`<div class="small c">${use}</div>`:''}</div></div>`
+  :`<div class="row"><div style="opacity:.55">？？？<div class="small">${hint||'まだ見つけていない'}</div></div></div>`; }
+function itemBookHTML(){
+  const cats=[['mat','素材'],['uniq','固有品'],['acc','装飾品'],['drink','お酒']];
+  const data={
+    mat:()=>gmKeys().map(k=>({f:!!(P.gmF&&P.gmF[k]),h:itemRow(!!(P.gmF&&P.gmF[k]),gmName(k),'×'+fmt(gmN(k)),gmDesc(k),gmUse(k),gmHint(k))})),
+    uniq:()=>MATS.map((m,i)=>({f:matN(i)>0,h:itemRow(matN(i)>0,m.n,'×'+matN(i)+'/'+MAT_MAX,MAT_DESC[i]||'',`効果：${m.t}×1.01（1個ごと）`,`${AREAS[i][0]}の敵がまれに落とすらしい`)})),
+    acc:()=>ACC.map(([k,n,t])=>{ const lv=(P.acc&&P.acc[k])||0; return {f:lv>0,h:itemRow(lv>0,n,'+'+lv,'装飾品屋で手に入る装飾品',`効果：${accDesc(t,Math.max(1,lv))}`,accOpen()?'装飾品屋で買える':'まだ装飾品屋が開いていない')}; }),
+    drink:()=>DRINKS.map(D=>{ const f=!!(P.drunk&&P.drunk[D.id])||((P.drinks||0)>0&&D.id==='ale'); return {f,h:itemRow(f,D.n,'',D.d,`続く：${D.left}戦`,D.hint?D.hint+'品書きに並ぶらしい':'酒場で飲める')}; }),
+  };
+  let h=`<div class="grid" style="grid-template-columns:repeat(4,1fr);gap:4px;margin:6px 0">`+cats.map(([k,n])=>{ const l=data[k](); return `<button class="${itemTab===k?'sel':''}" style="font-size:12px;padding:5px 1px" onclick="itemTab='${k}';panel('area','book')">${n}<br><span class="small">${l.filter(x=>x.f).length}/${l.length}</span></button>`; }).join('')+`</div>`;
+  return h+data[itemTab]().map(x=>x.h).join('');
+}
+// 合成の導線（#64）：段20に届いたら、合成のお知らせ
+function synthIntro(){ if(P.pops&&P.pops.synth) return; P.pops=P.pops||{}; P.pops.synth=true;
+  const g=gmSp(synthSp(true));
+  showPopup({title:'<span class="y">ここから先は鍛冶屋の仕事</span>',body:`<div class="small">武器屋・防具屋で買えるのはここまで。この先は、<b>敵が落とす素材</b>とお金を使って、<b>鍛冶屋で合成</b>して1段ずつ鍛える。<br><br>今の${myWType()}には<b>${g.n}系</b>の素材がいる（武器の種類で変わる）。${g.n}系の敵を倒して「${gmName(g.sp+'_n')}」を集めよう。<br><br>合成は武器屋・防具屋の画面に出る。集まり具合は冒険の画面と、アイテム図鑑で見られる。</div>`}); }
+// 節目の層（巣）に初めて着いたら（#67）
+function nestIntro(t){ const ne=nestOf(t); if(!ne) return; P.pops=P.pops||{}; const k='nest'+ne.nest; if(P.pops[k]) return; P.pops[k]=true;
+  showPopup({title:`<span class="y">${ne.n}の巣</span>`,body:`<div class="small">この層には${ne.n}系の魔物しかいない。ここでしか拾えない<b>★の素材</b>（★1〜★5）が眠っている。<br><br>★の素材は合成の上の段で必要になる。運・実りの首飾り・果実酒で見つかりやすくなる。</div>`}); }
+// ギルドが開いたら（#67）
+function guildIntro(){ if(P.pops&&P.pops.guild) return; P.pops=P.pops||{}; P.pops.guild=true;
+  showPopup({title:'<span class="y">冒険者ギルドが開いた！</span>',body:'<div class="small">冒険の画面に「ギルド」ができた。依頼をこなすと、お金・熟練度・能力の実がもらえ、ランクが上がる。<br><br>まずは最初の依頼を受けてみよう。</div>'}); }
+// 長押し中でも見える：受けている収集の依頼の集まり具合（戦闘の結果の欄に1行）
+function gCollectLine(){ if(!P.guild) return ''; const l=gState().board.filter(q=>q.ty==='deliver'||q.ty==='appraise'); if(!l.length) return '';
+  return `<div class="small c">依頼の素材：`+l.map(q=>`${gmName(q.k)} ${fmt(Math.min(gmN(q.k),q.goal))}/${fmt(q.goal)}${gDoneQ(q)?' ✓':''}`).join('　')+`</div>`; }
 // ============ 画面 ============
 function show(id){['sTitle','sMain','sBattle'].forEach(s=>$('#'+s).classList.toggle('hide',s!==id)); window.scrollTo(0,0)}
-let pickedJob='warrior', slimeTaps=[];
+let pickedJob='adventurer', slimeTaps=[];
 function nameHint(){ renderJobs(); }
 const UNLOCK_KEY='inflation_adventure_unlock';
 function titleUnlocked(){try{return localStorage.getItem(UNLOCK_KEY)==='1'}catch(e){return false}}
@@ -926,13 +1038,13 @@ function tapSlime(cv){
   }
 }
 // 職業ボタンと説明。名前が「たかし」の間はギャンブラー固定で、メッセージを出し続ける
+// はじめの職業は冒険者で固定（#58）。たかしはギャンブラー、見習い？が出たときだけ選べる
 function renderJobs(){
-  const tk=TAKASHI.includes(($('#inName').value||'').trim());
+  const tk=TAKASHI.includes(($('#inName').value||'').trim()), ap=titleUnlocked()||window.__unlock;
+  if(!ap&&pickedJob==='apprentice') pickedJob='adventurer'; if(pickedJob!=='apprentice') pickedJob='adventurer';
   const jp=$('#jobPick'); jp.innerHTML='';
-  Object.entries(JOBS).forEach(([k,j])=>{ if(j.rank>0) return; if(j.hidden&&!(titleUnlocked()||window.__unlock)) return;
-    const b=document.createElement('button'); b.textContent=j.n; if(tk?k==='gambler':k===pickedJob) b.classList.add('sel');
-    b.onclick=()=>{pickedJob=k; renderJobs()}; jp.appendChild(b);});
-  $('#jobDesc').innerHTML= tk ? '<span class="o">たかしは、ギャンブラーとして生きる運命にある…</span><br>'+esc(JOBS.gambler.d) : esc(JOBS[pickedJob].d);
+  if(!tk&&ap) ['adventurer','apprentice'].forEach(k=>{ const b=document.createElement('button'); b.textContent=JOBS[k].n; if(k===pickedJob) b.classList.add('sel'); b.onclick=()=>{pickedJob=k; renderJobs()}; jp.appendChild(b); });
+  $('#jobDesc').innerHTML= tk ? '<span class="o">たかしは、ギャンブラーとして生きる運命にある…</span><br>'+esc(JOBS.gambler.d) : `<b>${JOBS[pickedJob].n}</b>：`+esc(JOBS[pickedJob].d);
 }
 function renderTitle(){
   renderJobs();
@@ -949,8 +1061,8 @@ function renderTitle(){
 let newArm=false;
 function openNew(){ $('#newBox').classList.remove('hide'); $('#newBox').scrollIntoView({behavior:'smooth'}); setTimeout(()=>$('#inName').focus(),300); }
 function startNew(){
-  // 空欄なら珍しい苗字からランダム
-  const RARE=[['小鳥遊','たかなし'],['月見里','やまなし'],['四月一日','わたぬき'],['九十九','つくも'],['栗花落','つゆり'],['薬袋','みない'],['鴨脚','いちょう'],['勘解由小路','かでのこうじ'],['東西南北','よもひろ'],['一','にのまえ']];
+  // 空欄なら、珍しい英語圏の名前（カタカナ）からランダム（#45）
+  const RARE=[['バーソロミュー',''],['ゼベダイ',''],['セプティマス',''],['ペレグリン',''],['オズワルド',''],['イグナシオ',''],['ラザルス',''],['アンブローズ',''],['コーネリアス',''],['エゼキエル',''],['フィニアス',''],['ギデオン',''],['ホレイショ',''],['イカボッド',''],['ジェスロ',''],['ラムジー',''],['モーティマー',''],['ネヘミア',''],['オバダイア',''],['パーシバル',''],['クインシー',''],['ルーファス',''],['サディアス',''],['アロイシャス',''],['ウルリック',''],['ヴァレンタイン',''],['ウォルデマー',''],['ザカリア',''],['ベネディクト',''],['クリスピン',''],['ダルトン',''],['エラスムス',''],['フィッツジェラルド',''],['ガラハッド',''],['ハーキュリーズ',''],['イシドア',''],['ジャスパー',''],['ケンドリック',''],['ランスロット',''],['マラカイ',''],['ナサニエル',''],['オーランド',''],['プロスペロ',''],['リアンダー',''],['ソロモン',''],['トビアス',''],['ユーリシーズ',''],['ヴィンセント',''],['ウィルバーフォース',''],['ゼノビア',''],['アラミンタ',''],['ベアトリクス',''],['セレスティン',''],['ドルシラ',''],['エグランタイン',''],['フィロメナ',''],['グウェンドリン',''],['ヒルデガード',''],['イモジェン',''],['ジョセフィーン',''],['キャスリーン',''],['ロレッタ',''],['メリセント',''],['ネリッサ',''],['オクテイヴィア',''],['ペトロネラ',''],['ロザムンド',''],['サフロニア',''],['テオドシア',''],['アーシュラ',''],['ヴァイオレッタ',''],['ウィルヘルミナ','']];
   const typed=$('#inName').value.trim(), pick=RARE[Math.floor(Math.random()*RARE.length)];
   const nm0=typed||pick[0], yomi0=typed?'':pick[1];
   if(P&&!newArm){ newArm=true; $('#btnStart').textContent='本当に消してはじめる？（もう一度押す）'; $('#btnStart').classList.add('sel'); return; }
@@ -958,12 +1070,15 @@ function startNew(){
   const name=nm0.slice(0,10);
   const tkStart=TAKASHI.includes(name); if(tkStart) pickedJob='gambler';
   const g=JOBS[pickedJob].g; const base={}; KEYS.forEach(k=>base[k]=Math.round(5+g[k]*4));
-  P={name,job:pickedJob,lv:1,exp:0,gold:tkStart?10000:2000,pts:0,base,wpn:0,arm:0,reb:0,rebMul:1,maxArea:0,areaWins:0,champ:0,kills:0,maxDmg:0,battles:0,startedAt:Date.now(),playMs:0,pops:{},yomi:yomi0,secret:{},blessed:{},unlocked:JOBS[pickedJob].hidden?{[pickedJob]:true}:{},jlv:{}};
+  P={name,job:pickedJob,lv:1,exp:0,gold:tkStart?10000:2000,jobOpen:false,pts:0,base,wpn:0,arm:0,reb:0,rebMul:1,maxArea:0,areaWins:0,champ:0,kills:0,maxDmg:0,battles:0,startedAt:Date.now(),playMs:0,pops:{},yomi:yomi0,secret:{},blessed:{},unlocked:JOBS[pickedJob].hidden?{[pickedJob]:true}:{},jlv:{}};
   LOGS=[]; saveLogs(); save(); goMain();
 }
 function goMain(){ closeModal(); holdEnd(); if(!P) return; show('sMain'); renderStatus(); panel(curPanel||'area'); }
 const nameHTML=()=>P.yomi?`<ruby>${esc(P.name)}<rt>${esc(P.yomi)}</rt></ruby>`:esc(P.name);
-let jobTab=null;
+let jobTab=null, stOpen=false;
+// 物理職・魔法職の区別（転職所に表示）
+const atkKind=k=>k==='spellblade'?'both':isMagicJob(k)?'magic':'phys';
+const atkKindTag=k=>({phys:'<span class="tag" style="background:#743">物理</span>',magic:'<span class="tag" style="background:#447">魔法</span>',both:'<span class="tag" style="background:#636">物理＋魔法</span>'})[atkKind(k)];
 function renderStatus(){
   const J=JOBS[P.job];
   let h=`<div class="row"><b class="y">${nameHTML()}</b><span>${J.n}<span class="tag">${RANKS[J.rank]}</span> Lv${P.lv}${P.reb?` <span class="c">転生${P.reb}</span>`:''}</span></div>`;
@@ -975,37 +1090,42 @@ function renderStatus(){
     h+=`</div>`; }
   h+=`<div class="grid2 small"><div>HP <span class="g">${fmt(maxhp())}</span>　MP <span class="c">${fmt(maxmp())}</span></div><div>所持金 <span class="y">${fmt(P.gold)}G</span></div>`;
   h+=`<div>攻撃 <span class="r">${fmt(atk())}</span></div><div>防御 <span class="c">${fmt(def())}</span></div></div>`;
-  h+=`<div class="grid small" style="margin-top:4px">`+KEYS.map(k=>`<div>${KN[k]} ${fmt(st(k))}</div>`).join('')+`</div>`;
   if(P.pts>0) h+=`<button class="y" style="width:100%;margin:4px 0;padding:5px" onclick="panel('stat')">能力を振る（残り ${fmt(P.pts)} pt）</button>`;
+  // くわしいステータスは、押すと開く（#46）。開いたかどうかは覚えておく
+  h+=`<details ${stOpen?'open':''} ontoggle="stOpen=this.open" style="margin-top:2px"><summary class="small" style="color:#9ab">くわしいステータス（能力・装備・装飾品）</summary>`;
+  // 能力は「基礎値（+上乗せ）」（#54）。計算式はヘルプに
+  h+=`<div class="grid small" style="margin-top:4px">`+KEYS.map(k=>{ const b=P.base[k], v=st(k); return `<div>${KN[k]} ${fmt(b)}<span class="g">（+${fmt(Math.max(0,v-b))}）</span></div>`; }).join('')+`</div>`;
   h+=`<div class="small">武器：${gearHTML(true)}　防具：${gearHTML(false)}</div>`;
-  h+=`<div class="small">攻撃 ${elTag(myAtkEl())}・${isMagicJob(P.job)?'魔法':P.job==='spellblade'?myWType()+'＋魔法':myWType()+'（'+WTYPES[myWType()]+'）'}${prefMul()>1?' <span class="g">得意×1.5</span>':''}　守り ${elTag(myArmEl())}　魔攻 ${fmt(matk())}　魔防 ${fmt(mdef())}</div>`;
+  if(elemOpen()) h+=`<div class="small">攻撃 ${elTag(myAtkEl())}・${isMagicJob(P.job)?'魔法':P.job==='spellblade'?myWType()+'＋魔法':myWType()+'（'+WTYPES[myWType()]+'）'}${prefMul()>1?' <span class="g">得意×1.5</span>':''}　守り ${elTag(myArmEl())}　魔攻 ${fmt(matk())}　魔防 ${fmt(mdef())}</div>`;
   { const l=accEqs(); let txt;
     if(l.length===ACC.length){ const lo=Math.min(...l.map(a=>a.lv)), hi=Math.max(...l.map(a=>a.lv));
       txt= lo===hi&&lo>=accCap() ? `<span class="mir">【全${ACC.length}種セット】+${lo} MAX</span>` : `<span class="y">【全${ACC.length}種セット】</span>${lo===hi?'+'+lo:`+${lo}〜+${hi}`}`; }
     else txt= l.length?l.map(a=>`${a.n}+${a.lv}`).join('、'):'なし';
-    h+=`<div class="small">装飾品（${l.length}/${accSlots()}枠）：${txt}</div>`;
+    if(accOpen()) h+=`<div class="small">装飾品（${l.length}/${accSlots()}枠）：${txt}</div>`;
     const lg=LACC.filter(a=>hasL(a[0])); if(lg.length) h+=`<div class="small mir">伝説：${lg.length===LACC.length?'【社会人の身だしなみ一式】（全'+LACC.length+'種）':lg.map(a=>a[1]).join('、')}</div>`; }
+  h+=`</details>`;
   if(P.blessed[P.job]) h+=`<div class="small mir">★ 奇跡の加護を受けている ★</div>`;
   if(persona()) h+=`<div class="small mir">🍶 ${PERSONA[P.persona.mode].n}：${PERSONA[P.persona.mode].d}（あと${P.persona.left}回）</div>`;
   else if(activeDrinks().length){ activeDrinks().forEach(({d,D})=>h+=`<div class="small o">🍺 ${D.n}：${D.d}（あと${d.left}戦）</div>`); activeCocktails().forEach(c=>h+=`<div class="small mir">🍸 ${c.n}</div>`); }
   if(P.hangover>0) h+=`<div class="small r">二日酔い：攻撃力半分（あと${P.hangover}戦）</div>`;
-  if(P.pts>0) h+=`<div class="small y">ステータスポイントが ${P.pts} 残っています</div>`;
   $('#status').innerHTML=h;
+  if(P.maxArea===0&&!P.tutDone) setTimeout(tutCheck,0);
   const gl=$('#goal'); if(gl){ const g=goalHTML(); gl.innerHTML=g; gl.classList.toggle('hide',!g); }
 }
 
 let curPanel='area', resetArm=false, areaTab='adv', areaPage=0;
 const AREA_PER_PAGE=6;
 let shopTab='wpn';
-const shopTabs=p=>{ shopTab=p; return `<div class="grid" style="margin-bottom:8px">`+[['wpn','武器'],['arm','防具'],['acc','装飾品']].map(([k,n])=>`<button class="${p===k?'sel':''}" onclick="panel('${k}')">${n}</button>`).join('')+`</div>`; };
+const shopTabs=p=>{ shopTab=p; return `<div class="grid" style="margin-bottom:8px">`+[['wpn','武器'],['arm','防具']].concat(accOpen()?[['acc','装飾品']]:[]).map(([k,n])=>`<button class="${p===k?'sel':''}" onclick="panel('${k}')">${n}</button>`).join('')+`</div>`; };
 function panel(p,arg){
   if(p==='shop') p=shopTab||'wpn';
+  if(p==='acc'&&!accOpen()) p='wpn';
   curPanel=p; const el=$('#panel'); let h='';
   const TK_MSG=`<h2>たかしの掟</h2><div class="o">「たかし、ギャンブラーを極めるまでは、外に出ることは許されん」</div><div class="small" style="margin-top:6px">ギャンブラーをマスターするまでは、ギャンブル場のスロットと酒場だけ。（現在 JLv${P?jl('gambler').lv:1}/${JMAX}）</div><button class="y" style="width:100%;margin-top:8px" onclick="panel('casino','slot')">ギャンブル場へ</button>`;
   if((p==='area'||p==='champ')&&takashiLock()){ el.innerHTML=TK_MSG; return; }
   if(p==='area'){
     if(arg) areaTab=arg;
-    const tabs=[['adv','冒険'],['guild','ギルド'],['god','神々の座'],['book','図鑑']].concat(hwOpen()?[['work','ハローワーク']]:[]).concat(finalOpen()?[['final','桁の神']]:[]);
+    const tabs=[['adv','冒険']].concat(tutDone()?[['guild','ギルド']]:[]).concat([['god','神々の座'],['book','図鑑']].concat(hwOpen()?[['work','ハローワーク']]:[]).concat(finalOpen()?[['final','桁の神']]:[]));
     if(!tabs.some(x=>x[0]===areaTab)) areaTab='adv';
     h=`<div class="grid" style="grid-template-columns:repeat(${tabs.length},1fr);margin-bottom:8px">`+tabs.map(([k,n])=>`<button class="${areaTab===k?'sel':''}" style="font-size:13px;padding:7px 2px" onclick="panel('area','${k}')">${n}</button>`).join('')+`</div>`;
     if(areaTab==='final'){ const f=finalState();
@@ -1017,7 +1137,8 @@ function panel(p,arg){
         `</div><button ${finalDone()?'disabled':''} onclick="fightFinal()">挑む</button></div>`;
       h+=`<div class="small" style="margin-top:6px">伝説の品：`+legendList().map(([n,ok])=>`${ok?'✓':'・'}${n}`).join('　')+`</div>`;
     } else if(areaTab==='book'){
-      h+=bookHTML();
+      h+=`<div class="grid2" style="margin:4px 0"><button class="${bookTab==='mon'?'sel':''}" onclick="bookTab='mon';panel('area','book')">魔物</button><button class="${bookTab==='item'?'sel':''}" onclick="bookTab='item';panel('area','book')">アイテム</button></div>`;
+      h+=bookTab==='item'?itemBookHTML():bookHTML();
     } else if(areaTab==='work'){
       h+=hwHTML();
     } else if(areaTab==='guild'){
@@ -1026,7 +1147,7 @@ function panel(p,arg){
     const sec=makeSecret();
     h+=`<div class="row"><div><span class="r">神々の座</span> <span class="small">目安Lv ？？？ / 危険度 <span class="r">無謀</span></span><div class="small">${P.reb?`転生のたびに神は姿を変え、より強大になる…（第${P.reb+1}形態）`:'人の身では到底たどり着けぬ領域…'}</div></div><button onclick="fightSecret()">挑む</button></div>`;
     } else {
-      h+=tutHTML();
+      h+=questAreaHTML()+tutHTML()+areaGmHTML();
       const total=P.maxArea+1, pages=Math.max(1,Math.ceil(total/AREA_PER_PAGE));
       if(areaPage>=pages) areaPage=pages-1; if(areaPage<0) areaPage=0;
       h+= P.areaDone ? `<div class="small mir" style="margin-bottom:4px">★ 次元の果てを踏破済み ★</div>` : `<div class="small" style="margin-bottom:4px">${P.maxArea>=AREA_MAX?'最終エリア！ ':''}最深エリアで${AREA_WINS}勝すると${P.maxArea>=AREA_MAX?'踏破':'次のエリアが解放'}（<span class="y">${P.areaWins}/${AREA_WINS}</span>）</div>`;
@@ -1064,9 +1185,11 @@ function panel(p,arg){
         if(pr===null){ h+=`<div class="row"><div>${own?n+' <span class="y">(所持)</span>':'<span style="opacity:.7">？？？</span>'}<div class="small">${own?d:hint}</div></div><button disabled>${own?'所持':'非売品'}</button></div>`; return; }
         h+=`<div class="row"><div>${n}${own?' <span class="y">(所持)</span>':''}<div class="small">${d}${own?'':'　'+fmt(pr)+'G'}</div></div><button ${own||P.job!=='neet'||P.gold<pr?'disabled':''} onclick="buyLacc('${k}')">${own?'所持':'買う'}</button></div>`; });
     }
+  } else if(p==='job'&&!jobOpen()){
+    h=`<h2>転職所</h2><div class="o">まだ転職所は開いていない。</div><div class="small" style="margin-top:6px">${tutDone()?'冒険の画面の「ギルド」で、最初の依頼を受けてみよう。':'まずは隠居じいさんの「はじまりの手ほどき」をこなそう。'}</div>`;
   } else if(p==='job'){
     if(takashiLock()){ h=`<h2>転職所</h2><div class="o">「たかし、お前はギャンブラーだ。ギャンブラーを極めるまでは、ほかの道はない」</div><div class="small" style="margin-top:6px">ギャンブラーをマスターすると転職できるようになる。（現在 JLv${jl('gambler').lv}/${JMAX}）</div>`; el.innerHTML=h; return; }
-    h=`<h2>転職所</h2><div class="small">ステータスはそのままで、条件を満たした職業ならいつでも転職できます（無料）。中位職は対応する下位職のマスター、上位職は2つの職業のマスターが条件。ジョブレベルは勝つたびに上がり、JLv${JMAX}でマスター。マスターするたびに全能力×1.05（永続）。</div><div class="small">マスター数：${masterCount()}</div>`;
+    h=`<h2>転職所</h2><div class="small">ステータスはそのままで、条件を満たした職業ならいつでも転職できます（無料）。中位職は対応する下位職のマスター、上位職は2つの職業のマスターが条件。ジョブレベルは勝つたびに上がり、JLv${JMAX}でマスター。マスターするたびに全能力×1.05（永続）。</div><div class="small">マスター数：${masterCount()}</div><div class="small" style="margin-top:4px">${atkKindTag('warrior')} 武器で攻撃（力などで威力が決まる）。魔法に強い敵には半分　${atkKindTag('mage')} 魔法で攻撃（知力で威力が決まる）。物理に強い敵には半分　${atkKindTag('spellblade')} 両方</div>`;
     // 格ごとのタブ（#30）。開いたときは今の職業の格。行は短くして、詳しい中身は折りたたむ
     const jobDetail=(k,j)=>`${j.d}${jobModText(k)?`<br><span class="c">補正：${jobModText(k)}</span>`:''}<br>攻撃：${isMagicJob(k)?'魔法':k==='spellblade'?'物理＋魔法':'物理'}${JOB_WT[k]?'・得意な武器 '+JOB_WT[k]:''}${JOB_EL[k]?'・属性 '+elTag(JOB_EL[k]):''}${JOB_SECRETS[k]&&JOB_SECRETS[k].hint?`<br><span class="o">…${JOB_SECRETS[k].hint}</span>`:''}${jobSecretFound(k)?` <span class="mir">【秘密：${JOB_SECRETS[k].n}】</span>`:''}<br>メイン：${j.main==='best'?'一番高い能力':KN[j.main]}／技：${j.skill.n}<br><span class="y">マスター報酬：${j.main==='best'?'全能力×1.1':KN[j.main]+'×1.2'}</span>　<span class="c">${P.kiwami&&P.kiwami[k]?'極意':`極意まで あと${fmt(kiwamiLeft(k))}戦`}</span>${j.rank>0&&j.rank<3?`<br><span class="o">攻撃・防御・HP ×${RMUL[j.rank]}</span>`:''}`;
     const jlvTag=k=>isMaster(k)?'<span class="mir">MASTER</span>':'JLv'+jl(k).lv;
@@ -1076,10 +1199,11 @@ function panel(p,arg){
     h+=`<div class="grid" style="grid-template-columns:repeat(4,1fr);margin:6px 0">`+RANKS.map((rn,r)=>{ const l=listOf(r), m=l.filter(([k])=>isMaster(k)).length;
       return `<button class="${jobTab===r?'sel':''}" ${l.length?'':'disabled'} onclick="jobTab=${r};panel('job')">${r===3&&!l.length?'？？？':rn.replace('職','')}<span class="small"> ${l.length?m+'/'+l.length:''}</span></button>`; }).join('')+`</div>`;
     listOf(jobTab).forEach(([k,j])=>{
-      const ok=canJob(k);
-      if(!ok){ const hint = j.rank===2 && !j.req.some(isMaster);
-        h+=`<div class="row"><div><span style="opacity:.6">${hint?'？？？':j.n}</span><div class="small">${hint?'条件：？？？ ＋ ？？？':reqText(j)}</div></div><button disabled>転職</button></div>`; return; }
-      h+=`<div class="row"><div style="flex:1;min-width:0"><div>${j.n} <span class="small">${jlvTag(k)}</span>${k===P.job?' <span class="y">(現在)</span>':''}${P.blessed[k]?' <span class="mir">★</span>':''}${jobSecretFound(k)?' <span class="mir">秘</span>':''}</div>
+      const ok=canJob(k); if(ok){ P.jobSeen=P.jobSeen||{}; P.jobSeen[k]=true; }
+      // 転職できるようになるまで名前は隠す（#49）。条件はそのまま見せる
+      if(!ok){ const hint = j.rank===2 && !j.req.some(isMaster), seen=(P.jobSeen&&P.jobSeen[k])||(P.been&&P.been[k]);
+        h+=`<div class="row"><div><span style="opacity:.6">${seen?j.n+' '+atkKindTag(k):'？？？'}</span><div class="small">${hint?'条件：？？？ ＋ ？？？':reqText(j)}</div></div><button disabled>転職</button></div>`; return; }
+      h+=`<div class="row"><div style="flex:1;min-width:0"><div>${j.n} ${atkKindTag(k)} <span class="small">${jlvTag(k)}</span>${k===P.job?' <span class="y">(現在)</span>':''}${P.blessed[k]?' <span class="mir">★</span>':''}${jobSecretFound(k)?' <span class="mir">秘</span>':''}</div>
         <details><summary class="small" style="color:#9ab">くわしく</summary><div class="small">戦闘${fmt((P.jobB||{})[k]||0)}回${kiwamiLeft(k)?`（極意まで あと${fmt(kiwamiLeft(k))}戦）`:'　<span class="mir">極意</span>'}<br>${jobDetail(k,j)}</div></details></div><button ${k===P.job?'disabled':''} onclick="changeJob('${k}')">転職</button></div>`; });
   } else if(p==='reb'){
     const mul=rebStep();
@@ -1140,7 +1264,8 @@ function panel(p,arg){
 function maxTier(isW){ const base=isW?100:80, cur=isW?P.wpn:P.arm; if(cur>=SHOP_MAX||P.gold<base*7) return cur; return Math.min(SHOP_MAX, Math.max(isW?P.wpn:P.arm, Math.floor(Math.log(P.gold/base)/Math.log(7)+1e-9))); }
 // +99（伝説装備）は【伝説】付きで表示
 function gearHTML(isW){ if(isW?neetW():neetA()) return `<span class="mir">【無職専用】${isW?NEET_W:NEET_A}</span>`; const i=isW?P.wpn:P.arm; return i>=GEAR_MAX?`<span class="mir">【伝説】${itemName(isW?WPN:ARM,i)}</span>`:itemName(isW?WPN:ARM,i); }
-function buy(p,i){ if(i>SHOP_MAX) return; const wasW=legW(), wasA=legA();const pr=p==='wpn'?wpnPrice(i):armPrice(i); if(P.gold<pr)return; P.gold-=pr; if(p==='wpn')P.wpn=i; else P.arm=i; save(); renderStatus(); panel(p);}
+function buy(p,i){ if(i>SHOP_MAX) return; const wasW=legW(), wasA=legA();const pr=p==='wpn'?wpnPrice(i):armPrice(i); if(P.gold<pr)return; P.gold-=pr; if(p==='wpn')P.wpn=i; else P.arm=i; if(i>=SHOP_MAX) synthIntro(); save(); renderStatus(); panel(p);}
+
 function buyAcc(k){const lv=accLv(k), pr=accPrice(lv); if(lv>=accCap()||P.gold<pr) return; P.gold-=pr; P.acc=P.acc||{}; accEqList(); P.acc[k]=lv+1; const l=accEqList(); if(!l.includes(k)&&l.length<accSlots()) l.push(k); save(); renderStatus(); panel('acc');}
 function eqAcc(k){ if(!accLv(k)) return; const l=accEqList(), i=l.indexOf(k); if(i>=0) l.splice(i,1); else if(l.length<accSlots()) l.push(k); save(); renderStatus(); panel('acc');}
 function changeJob(k){if(!canJob(k))return; if(P.job!==k) P.casBeg=null; P.job=k; trimAcc(); save(); renderStatus(); panel('job');}
@@ -1205,6 +1330,7 @@ const CAS_TRAITS={
   fighter:{n:'火事場',d:'所持金に対して大きく賭けるほど、負けをやり直しやすい（全額で30%）'},
   hunter:{n:'目押し',d:'スロットで777がそろいやすい（3倍）'},
   knight:{n:'堅守',d:'負けたときの損が3割減る'},
+  adventurer:{n:'場慣れ',d:'負けたときの損が1割減る'},
   dancer:{n:'ひらり',d:'賭け金が所持金の1割以上の負けを、1回だけなかったことにする',cd:50},
   bard:{n:'勝利の歌',d:'連勝するたびに、儲けが×1.5ずつ重なる（10連勝まで）'},
   merchant:{n:'仲介料',d:'勝ったときの儲けが2割増える'},
@@ -1279,6 +1405,7 @@ function casOnLoss(bet){ const x=casCtx||{bet,before:bet}; let back=0, t='';
   if(big&&isT('maiden')&&casReady('maiden')){ casUse('maiden'); return {back:bet,t:`【舞】負けをなかったことにした！（残り${casCharges()}回）`}; }
   if(isT('tycoon')&&casReady('tycoon')&&P.gold>=Math.floor(bet/2)){ casUse('tycoon'); return {back:bet-Math.floor(bet/2),t:`【札束】${fmt(Math.floor(bet/2))}G を払って負けを取り消した`}; }
   if(isT('knight')){ back=Math.floor(bet*.3); t='【堅守】損を3割減らした'; }
+  else if(isT('adventurer')){ back=Math.floor(bet*.1); t='【場慣れ】損を1割減らした'; }
   if(isT('thief')){ back=Math.floor(bet*.1); t='【くすね取り】1割を取り返した'; }
   if(isT('sage')){ back=Math.floor(bet*.2); t='【叡智】損を2割減らした'; }
   if(isT('paladin')){ back=Math.floor(bet*.5); t='【加護】損を半分にした'; }
@@ -1853,7 +1980,7 @@ function battleBuffs(L){ let m=drinkMul('atk'); const nm=esc(P.name);
   else if(drinkOn('atk')) L.push(`<span class="small o">${drinkOn('atk').n}が効いている…（あと${drinkLeft('atk')}戦）</span>`);
   if(P.hangover>0){ m*=.5; L.push(`<span class="small o">二日酔いで力が出ない…（あと${P.hangover}戦）</span>`); }
   return m; }
-function buyDrink(id){ const D=DRINKS.find(x=>x.id===id); if(!D||!drinkOpen(D)) return; const pr=drinkPrice(D); if(P.gold<pr) return;
+function buyDrink(id){ const D=DRINKS.find(x=>x.id===id); if(!D||!drinkOpen(D)) return; const pr=drinkPrice(D); if(P.gold<pr) return; P.drunk=P.drunk||{}; P.drunk[id]=true;
   P.gold-=pr; barMsg=applyDrink(D,1); save(); renderStatus(); panel('bar'); }
 function applyDrink(D,pow){ const id=D.id; P.drinks=(P.drinks||0)+1; let msg=''; const lv0=sakeLv(), ck0=activeCocktails().map(c=>c.id);
   if(isTakashi()&&['ale','wine','fire','miki'].includes(id)){ const mode=(id==='wine'||id==='miki')?'gamble':'battle'; msg=startPersona(mode,'bar') || `<div class="o">たかしは${D.n}を飲んだが、もう一人のたかしはすでに起きている…</div>`; }
@@ -1881,40 +2008,47 @@ function cellarTake(i){ P.cellar=P.cellar||[]; const c=P.cellar[i]; if(!c) retur
   const h=ageH(c); P.agedMax=Math.max(P.agedMax||0,h); barMsg=`<div class="small">${Math.floor(h)}時間${Math.floor((h%1)*60)}分寝かせた${D.n}を開けた。</div>`+applyDrink(D,agePow(c)); save(); renderStatus(); panel('bar'); }
 // 噂話：条件を満たすと聞ける。自力で見つけたものは出てこない
 const RUMORS=[
- {id:'kaji',t:'「格闘家ってのは、財布が空っぽになるほど強くなるらしい。1枚残すのがコツだとか」',when:()=>true,found:()=>(P.kajiN||0)>0},
- {id:'takashi',t:'「たかしって名前のやつは、どうも賭け事から逃げられないらしいぜ」',when:()=>true,found:()=>isTakashi()},
- {id:'setting',t:'「スロットの台にはクセがある。🍒の出方をよく見てりゃ、店の考えが読めるって話だ」',when:()=>true,found:()=>(P.setHits||0)>0},
- {id:'hl',t:'「ハイ&ローで10回続けて当てた奴には、カードの神様がご褒美をくれるんだと」',when:()=>true,found:()=>(P.hlBest||0)>=10},
- {id:'kiwami',t:'「ひとつの職業で三千回戦い抜くと、その道の“極意”ってのが身につくらしい」',when:()=>P.maxArea>=3,found:()=>Object.keys(P.kiwami||{}).length>0},
- {id:'legend',t:'「武器屋の剣を99まで鍛えると、桁があふれて別物になるって噂だ」',when:()=>P.maxArea>=30,found:()=>legW()||legA()},
- {id:'slime',t:'「はじまりの画面のスライム、つつかれると喜ぶらしいよ。何度もつつくと…いや、なんでもない」',when:()=>upperOpen(),found:()=>!!P.unlocked.apprentice},
+ {id:'kaji',t:'「格闘家って、財布が空っぽになるほど強くなるらしい。1枚残すのがコツだとか」',when:()=>true,found:()=>(P.kajiN||0)>0},
+ {id:'takashi',t:'「たかしって名前の人は、どうも賭け事から逃げられないらしいわ」',when:()=>true,found:()=>isTakashi()},
+ {id:'setting',t:'「スロットの台にはクセがある。🍒の出方をよく見ていれば、店の考えが読めるって話よ」',when:()=>true,found:()=>(P.setHits||0)>0},
+ {id:'hl',t:'「ハイ&ローで10回続けて当てた人には、カードの神様がご褒美をくれるんですって」',when:()=>true,found:()=>(P.hlBest||0)>=10},
+ {id:'kiwami',t:'「ひとつの職業で三千回戦い抜くと、その道の“極意”というものが身につくらしいわ」',when:()=>P.maxArea>=3,found:()=>Object.keys(P.kiwami||{}).length>0},
+ {id:'legend',t:'「武器屋の先は鍛冶屋の仕事よ。素材で鍛え続けて99を超えると、桁があふれて別物になるって噂よ」',when:()=>P.wpn>=SHOP_MAX,found:()=>legW()||legA()},
+ // #44：新しい要素の噂
+ {id:'guild',t:'「冒険者ギルドの依頼はこなしておくといいわ。ランクが上がると、酒もショップも安くなるらしいわ」',when:()=>P.maxArea>=12,found:()=>P.guild&&gRank()>=4},
+ {id:'nest',t:'「50層ごとに、同じ魔物ばかりが巣くう層があるらしいわ。そこでしか拾えない★の素材があるんですって」',when:()=>maxLayer()>=30,found:()=>Object.keys(P.gmF||{}).some(k=>k.includes('_s'))},
+ {id:'synth',t:'「鍛冶屋で使う素材は、武器の種類で決まる。杖ならスライム、剣なら竜…剣使いは苦労するわね」',when:()=>P.wpn>=SHOP_MAX,found:()=>(P.synthN||0)>=10},
+ {id:'ailment',t:'「目玉はしびれさせ、コウモリは足を鈍らせ、骸骨は…命を刈る。装飾品屋に、防ぐ品があるって話よ」',when:()=>P.maxArea>=4,found:()=>['rPara','rSlow','rDeath'].some(t=>accT(t)>0)},
+ {id:'mp',t:'「技にはMPがいる。節約の指輪や魔力の泉があれば、長い戦いでも技が尽きないらしいわ」',when:()=>P.maxArea>=6,found:()=>accT('mpsave')+accT('mpregen')>0},
+ {id:'forms',t:'「桁の神は、倒しても倒しても姿を変えてよみがえるらしい。十の姿をすべて越えた者がいるとか…」',when:()=>!!(P.final&&P.final.cleared),found:()=>finalDone()},
+ {id:'slime',t:'「はじまりの画面のスライム、つつかれると喜ぶらしいよ。何度もつつくと…いや、なんでもないわ」',when:()=>upperOpen(),found:()=>!!P.unlocked.apprentice},
  {id:'appr',t:'「すべての職を極めた者の前に、なんとも頼りない見習いが現れるそうだ。“？”付きのな」',when:()=>upperOpen(),found:()=>!!P.unlocked.apprentice},
- {id:'god100',t:'「神々の座に百回も通ったバカな見習いがいてな。百回目に何かが起きたらしい」',when:()=>!!P.unlocked.apprentice,found:()=>Object.keys(P.blessed||{}).length>0||(P.godWins||0)>0},
- {id:'neet',t:'「全部極めて、闘技場のてっぺんに立って、神様にも会った奴は…最後には働かなくなるらしい」',when:()=>upperOpen(),found:()=>!!P.unlocked.neet},
- {id:'hellowork',t:'「無職がハロワで履歴書を出したり面談を乗り越えたりすると、いい身なりの品を贈られるって話だ」',when:()=>!!P.unlocked.neet,found:()=>!!(P.lacc&&P.lacc.tie)},
- {id:'sake',t:'「酒ってのは、飲めば飲むほど強くなる。酒豪と呼ばれる連中は、同じ一杯でも効き目が段違いだ」',when:()=>P.maxArea>=3,found:()=>sakeLv()>=3},
- {id:'ladder',t:'「酒に強くなると、二杯、三杯とはしごできる。組み合わせ次第で“カクテル”になるらしい」',when:()=>sakeLv()>=3,found:()=>Object.keys(P.cocktails||{}).length>0},
- {id:'cellar',t:'「マスターの酒蔵に預けておくと、酒は寝かせた分だけうまくなる。二晩寝かせりゃ別物だ」',when:()=>P.maxArea>=12,found:()=>(P.agedMax||0)>=24},
+ {id:'god100',t:'「神々の座に百回も通った、おばかな見習いさんがいてね。百回目に何かが起きたらしいわ」',when:()=>!!P.unlocked.apprentice,found:()=>Object.keys(P.blessed||{}).length>0||(P.godWins||0)>0},
+ {id:'neet',t:'「全部極めて、闘技場のてっぺんに立って、神様にも会った人は…最後には働かなくなるらしいわ」',when:()=>upperOpen(),found:()=>!!P.unlocked.neet},
+ {id:'hellowork',t:'「無職がハロワで履歴書を出したり面談を乗り越えたりすると、いい身なりの品を贈られるって話よ」',when:()=>!!P.unlocked.neet,found:()=>!!(P.lacc&&P.lacc.tie)},
+ {id:'sake',t:'「お酒って、飲めば飲むほど強くなる。酒豪と呼ばれる人たちは、同じ一杯でも効き目が段違いなの」',when:()=>P.maxArea>=3,found:()=>sakeLv()>=3},
+ {id:'ladder',t:'「お酒に強くなると、二杯、三杯とはしごできる。組み合わせ次第で“カクテル”になるらしいわ」',when:()=>sakeLv()>=3,found:()=>Object.keys(P.cocktails||{}).length>0},
+ {id:'cellar',t:'「わたしの酒蔵に預けておくと、酒は寝かせた分だけうまくなる。二晩も寝かせれば別物よ」',when:()=>P.maxArea>=12,found:()=>(P.agedMax||0)>=24},
 ];
 const upperOpen=()=>Object.entries(JOBS).some(([k,j])=>j.rank===2&&canJob(k));
 const rumorPrice=()=>Math.max(100,Math.floor(enemyStats(P.maxArea).gold*goldRate(P.maxArea)*10));
 function buyRumor(){ const pr=rumorPrice(); P.rumors=P.rumors||{};
   const left=RUMORS.filter(r=>!P.rumors[r.id]);
   // 1) 全部聞き終えた（または知っていた）
-  if(!left.length){ barMsg='<div class="small">マスター「もうお前さんに話すことは何もないよ。あとは自分の目で確かめな」</div>'; panel('bar','rumor'); return; }
+  if(!left.length){ barMsg='<div class="small">マスター「もうあなたに話せることは何もないわ。あとは自分の目で確かめてらっしゃい」</div>'; panel('bar','rumor'); return; }
   // 2) 今すぐ役に立つ噂があれば、お金をもらって話す
   const fresh=left.filter(r=>r.when()&&!r.found());
-  if(fresh.length){ if(P.gold<pr){ barMsg='<div class="small">マスター「話してやってもいいが…お代が足りないねぇ」</div>'; panel('bar','rumor'); return; } P.gold-=pr; const r=fresh[Math.floor(Math.random()*fresh.length)]; P.rumors[r.id]=true;
+  if(fresh.length){ if(P.gold<pr){ barMsg='<div class="small">マスター「お話ししてもいいけれど…お代が足りないみたいね」</div>'; panel('bar','rumor'); return; } P.gold-=pr; const r=fresh[Math.floor(Math.random()*fresh.length)]; P.rumors[r.id]=true;
     const more=left.length-1;
-    barMsg=`<div class="c">マスターが小声で教えてくれた。<br>${r.t}</div>`+(more?'':'<div class="small">マスター「…これで、俺の知ってることは全部だ」</div>');
+    barMsg=`<div class="c">マスターが小声で教えてくれた。<br>${r.t}</div>`+(more?'':'<div class="small">マスター「…これで、わたしの知っていることは全部よ」</div>');
     save(); renderStatus(); panel('bar','rumor'); return; }
   // 3) 話そうとした噂を、もう自力で見つけていた（お金は取らない・聞いたことにする）
   const known=left.filter(r=>r.found());
   if(known.length){ const r=known[0]; P.rumors[r.id]=true;
-    barMsg=`<div class="small">マスター「${r.t.replace(/^「|」$/g,'')}…って、なんだ、もう知ってるのか。やるじゃないか」（お金は取られなかった）</div>`;
+    barMsg=`<div class="small">マスター「${r.t.replace(/^「|」$/g,'')}…あら、もう知っているのね。やるじゃない」（お金は取られなかった）</div>`;
     save(); panel('bar','rumor'); return; }
   // 4) まだ話せる段階じゃない
-  barMsg='<div class="small">マスター「話したいことはあるんだがね…今は、“まだ”ね…」（お金は取られなかった）</div>'; panel('bar','rumor'); }
+  barMsg='<div class="small">マスター「お話ししたいことはあるのだけれど…今は、“まだ”ね…」（お金は取られなかった）</div>'; panel('bar','rumor'); }
 // 飲み比べ：体力と運で勝負。勝つと賞金
 const RIVALS=[
  {id:'gen',n:'常連のゲン',t:2},{id:'oba',n:'酒豪のオババ',t:8},{id:'don',n:'樽男ドンゴ',t:20},{id:'uwa',n:'蟒蛇（うわばみ）の姐さん',t:45},{id:'bacchus',n:'酒神バッカス',t:90},
@@ -1922,7 +2056,10 @@ const RIVALS=[
 // 酒の強さ：冒険の進み具合＋体力と運（桁数）。相手の強さ t とほぼ同じ物差し
 const tolerance=()=>P.maxArea*.8+Math.log10(st('vit')+st('luk')+10)*1.5+P.lv/100;
 function rivalTol(R){ return R.t; }
-function contest(i){ const R=RIVALS[i]; if(!R) return; const fee=Math.max(50,Math.floor(enemyStats(Math.min(R.t,P.maxArea)).gold*goldRate(Math.min(R.t,P.maxArea))*5)); if(P.gold<fee) return;
+// 飲み比べの相手は順番に出る（#52）：前の相手に一度でも勝つと次が出る。一度勝った相手はずっと出る
+const rivalWins=i=>(P.contest&&RIVALS[i]&&P.contest[RIVALS[i].id])||0;
+const rivalOpen=i=>i===0||rivalWins(i)>0||rivalWins(i-1)>0;
+function contest(i){ const R=RIVALS[i]; if(!R||!rivalOpen(i)) return; const fee=Math.max(50,Math.floor(enemyStats(Math.min(R.t,P.maxArea)).gold*goldRate(Math.min(R.t,P.maxArea))*5)); if(P.gold<fee) return;
   P.gold-=fee; P.contestTries=(P.contestTries||0)+1;
   let me=tolerance(), you=rivalTol(R), cup=0, lines=[], res=null; const nm=esc(P.name);
   while(res===null&&cup<500){ cup++; me-=rnd(.4,1.6)*(1+cup*.05); you-=rnd(.4,1.6)*(1+cup*.05);
@@ -1963,7 +2100,9 @@ function guideSteps(){
    [()=>takashiLock(), `「たかし、まずはギャンブラーを極めるんじゃ。スロットで777を当てるたびに一皮むける。高い設定の台を探して、じっくり回しなされ」（JLv${jl('gambler').lv}/${JMAX}）`],
    [()=>P.wpn===0||P.arm===0, '「丸腰で外に出るでない。まずは武器屋と防具屋で装備をそろえるんじゃ」'],
    [()=>P.maxArea<3, `「冒険に出て、いちばん奥のエリアで10回勝つんじゃ。そうすれば次のエリアへ進める」（いま ${areaName(P.maxArea)}・${P.areaWins}/10勝）`],
-   [()=>P.champ<1, '「腕試しに闘技場へ行ってみなされ。王者を倒すと、どっと経験値が入るぞ」'],
+   [()=>P.champ<1, '「腕試しに闘技場へ行ってみなされ。王者を倒すと、どっと経験値と賞金が入るぞ」'],
+   [()=>P.maxArea>=12&&P.job!=='neet'&&!(P.guild&&P.guild.done), '「冒険の画面にギルドがあるじゃろう。依頼をこなせば、お金も熟練度も能力の実ももらえる。寄り道も大事じゃ」'],
+   [()=>P.wpn>=SHOP_MAX&&!(P.synthN>0), '「武器屋で買えるのはここまでじゃ。この先は、敵の落とす素材を鍛冶屋で合成して鍛えるんじゃ。武器屋の画面を見てみなされ」'],
    [()=>!hasRank(0), `「職業を極める時期じゃ。今の${J.n}のジョブレベルを10まで上げるんじゃ。熟練度は冒険で戦ってこそ上がるぞ」（JLv${jl(P.job).lv}/${JMAX}）`],
    [()=>!openRank(1)||!hasRank(1), '「下位職を極めたなら、転職所で中位職になれるはずじゃ。極めた職の上の職に就いて、また10まで鍛えなされ」'],
    [()=>P.reb<1, `「レベルが${rebReq()}を超えたら、転生の祭壇へ行くんじゃ。生まれ変わるたびに、能力に倍率がかかる」（いま Lv${P.lv}）`],
@@ -2033,7 +2172,7 @@ function barHTML(){
   let h=`<h2>酒場</h2><div class="grid" style="margin-bottom:6px;grid-template-columns:repeat(5,1fr)">`+tabs.map(([k,n])=>`<button style="font-size:12px;padding:7px 1px;white-space:nowrap" class="${barTab===k?'sel':''}" onclick="barMsg='';panel('bar','${k}')">${n}</button>`).join('')+`</div>`;
   if(barTab==='guide'){ h+=guideHTML(); }
   else if(barTab==='drink'){
-    h+=`<div class="small">${isTakashi()?'<span class="o">たかしが飲むと…もう一人のたかしが出てくる。エール・火酒は戦闘、ワイン・神酒は博打。</span>':'同時に効くお酒は酒豪Lvで1〜3杯（あふれたら、残りの少ないものから覚める）。冒険・修練場・闘技場・神々の座の戦闘で効く。'}</div>`;
+    h+=`<div class="small">${isTakashi()?'<span class="o">たかしが飲むと…もう一人のたかしが出てくる。エール・火酒は戦闘、ワイン・神酒は博打。</span>':'同時に効くお酒は酒豪Lvで1〜3杯（あふれたら、残りの少ないものから覚める）。冒険・闘技場・神々の座の戦闘で効く。'}</div>`;
     { const lv=sakeLv(), nx=SAKE_NEED[lv+1]; h+=`<div class="small" style="margin:4px 0"><span class="y">酒豪Lv${lv}「${SAKE_TITLE[lv]}」</span>　飲んだ杯数 ${fmt(P.drinks||0)}${nx?`（次のLvまで あと${nx-(P.drinks||0)}杯）`:'（最高）'}<br><span style="color:#9ab">酒豪Lvが上がるほど、効き目が強く（倍率が${lv?'^'+(1+lv*.1).toFixed(1):'上がる'}）・長く（×${(1+lv*.25).toFixed(2)}）なり、二日酔いや記憶が飛ぶことが減る。</span></div>`;
       const ad=activeDrinks(); h+=`<div class="small">同時に効くお酒：${ad.length}/${drinkSlots()}杯${drinkSlots()<3?`（酒豪Lv${drinkSlots()===1?5:10}で${drinkSlots()+1}杯まで）`:''}</div>`;
       ad.forEach(({d,D})=>h+=`<div class="small g">いま効いている：${D.n}（あと${d.left}戦${d.pow>1?`・熟成×${d.pow.toFixed(2)}`:''}）</div>`);
@@ -2054,7 +2193,7 @@ function barHTML(){
     const heard=RUMORS.filter(r=>P.rumors&&P.rumors[r.id]); if(heard.length) h+=`<div class="small y">これまでに聞いた噂</div>`+heard.map(r=>`<div class="small" style="margin:3px 0">${r.found()?'✓ ':'・'}${r.t}</div>`).join('');
   } else {
     h+=`<div class="small">体力と運で勝負。参加費を払って、先に潰れたほうの負け。</div>`;
-    RIVALS.forEach((R,i)=>{ const fee=Math.max(50,Math.floor(enemyStats(Math.min(R.t,P.maxArea)).gold*goldRate(Math.min(R.t,P.maxArea))*5)), w=(P.contest&&P.contest[R.id])||0;
+    RIVALS.forEach((R,i)=>{ if(!rivalOpen(i)) return; const fee=Math.max(50,Math.floor(enemyStats(Math.min(R.t,P.maxArea)).gold*goldRate(Math.min(R.t,P.maxArea))*5)), w=(P.contest&&P.contest[R.id])||0;
       const r=tolerance()/rivalTol(R); const tag=r>1.25?'<span class="g">余裕</span>':r>.95?'<span class="c">互角</span>':r>.7?'<span class="o">手強い</span>':'<span class="r">無謀</span>';
       h+=`<div class="row"><div>${R.n}${w?` <span class="small y">${w}勝</span>`:''}<div class="small">参加費 ${fmt(fee)}G　酒の強さ：${tag}</div></div><button ${P.gold<fee?'disabled':''} onclick="contest(${i})">勝負</button></div>`; });
   }
@@ -2065,19 +2204,19 @@ function barHTML(){
 // TIPS：種類ごとに最初の3回まで、戦闘の結果の下に出す。一度出たものは TIPS集（記録→ヘルプ）に残る
 const TIP_MAX=3;
 const TIPS=[
- {id:'imm',  n:'効かない敵',       t:'物理が効かない敵（亡霊・幽霊）は魔法職で、魔法が効かない敵（鉱石スライム）は物理職で挑もう。'},
+ {id:'imm',  n:'効きにくい敵',     t:'物理に強い敵（亡霊・幽霊）は魔法職で、魔法に強い敵（鉱石スライム）は物理職で挑むと楽。どちらでも半分は通る。'},
  {id:'elbad',n:'属性が不利',       t:'敵の属性に弱い属性で攻めると×0.2。武器屋で、敵の弱点の属性に付け直そう（値段の1割）。'},
  {id:'elgood',n:'弱点を突いた',     t:'敵の弱点の属性で攻めると×5。火→風→土→水→火、光⇄闇。'},
  {id:'pref', n:'得意な武器',       t:'職業には得意な武器がある。持ち替えると×1.5（魔法職は杖で魔法×1.5）。武器屋で武器の種類を変えられる。'},
  {id:'armbad',n:'守りが不利',       t:'防具の属性が敵に弱いと、受けるダメージ×5。防具屋で付け直そう。'},
- {id:'type', n:'攻撃の種類',       t:'敵の系統ごとに効く攻撃が違う。骸骨は打（棍棒・体術）、スライムは斬、コウモリは突・射が効く。図鑑で10回倒すと弱点が見える。'},
+ {id:'type', n:'物理と魔法',       t:'物理に強い敵・魔法に強い敵には、ダメージが半分になる。次元の彼方では層ごとに決まっていて、エリア一覧に出る。魔法職と物理職を使い分けると楽'},
  {id:'bacchus',n:'酒神の助言',     t:'困ったら酒場の「攻略」で、酒神バッカスに今の場所の攻め方を聞ける（無料）。'},
 ];
 const tipN=id=>(P.tips&&P.tips[id])||0;
 // この戦闘のあとに出す TIPS を1つ選ぶ（まだ3回出ていないものだけ）
 function pickTip(e,t,c){ if(!c||!c.plan||e.flat||!e.el) return null;
   const p=c.plan, em=elMul(p.el,e.el), cand=[];
-  if(p.aff===0) cand.push('imm');
+  if(typeMul(p.at,e)<1) cand.push('imm');
   if(em<1) cand.push('elbad'); else if(em>=5) cand.push('elgood');
   if(c.dplan&&c.dplan.mul>1) cand.push('armbad');
   if(JOB_WT[P.job]&&prefMul()===1) cand.push('pref');
@@ -2094,19 +2233,25 @@ function elementIntro(){ if(P.pops&&P.pops.elem) return; P.pops=P.pops||{}; P.po
 
 // ヘルプ（記録の中）
 let recTab='rec';
+// ネタバレ防止（#55）：見つけたものだけ名前を出す
+function lastFoes(){ const l=['神々の座'].concat(P.champ>=CHAMP_MAX-1?['闘技場の最後の王者']:[],P.maxArea>=AREA_MAX?['第300層の番人']:[],finalOpen()?['桁の神']:[]);
+  return `とても強い一部の敵（${l.join('・')}${l.length<4?'など':''}）は無属性で、相性はすべて等倍。`; }
 function helpHTML(){
   const row=(a,b)=>`<div class="row"><div>${a}</div><div class="small" style="text-align:right">${b}</div></div>`;
   let h=`<div class="y">属性と相性</div><div class="small" style="line-height:1.8">
     ${elTag('火')} → ${elTag('風')} → ${elTag('土')} → ${elTag('水')} → ${elTag('火')}　（矢印の先に強い）<br>${elTag('光')} ⇄ ${elTag('闇')}　（お互いに弱点）　${elTag('無')}は相性なし</div>`;
   h+=row('弱点を突く','<span class="g">×5</span>')+row('相手に有利をとられている','<span class="o">×0.2</span>')+row('同じ属性','×0.5')+row('どちらかが無属性','×1');
-  h+=`<div class="small" style="margin:4px 0 8px">攻撃の属性は武器の属性（武器が無属性なら職業の属性）。守りの属性は防具の属性で、敵の攻撃にも同じ相性が掛かる。武器屋・防具屋で、値段の1割で付け直せる（${NEET_W}は無属性のまま）。</div>`;
+  h+=`<div class="small" style="margin:4px 0 8px">攻撃の属性は武器の属性（武器が無属性なら職業の属性）。守りの属性は防具の属性で、敵の攻撃にも同じ相性が掛かる。武器屋・防具屋で、値段の1割で付け直せる${P.neetW?`（${NEET_W}は無属性のまま）`:''}。</div>`;
+  h+=`<div class="y">能力と強さの計算</div><div class="small" style="line-height:1.8;margin-bottom:8px">
+    ・能力 ＝ 基礎値 × 転生倍率 × マスターの数 × 装飾品 × 職業・極意 × 固有品 × お酒（ステータスの「（+○）」は、基礎値に上乗せされている分）<br>
+    ・攻撃力 ＝（得意な能力 ＋ 武器 × 転生倍率）× 最高Lvの補正 × 熟練度 × 職業の格 × 固有品<br>
+    ・魔法攻撃 ＝（知力 ＋ 武器の半分 × 転生倍率）× 同じ補正<br>
+    ・防御力 ＝（体力の半分 ＋ 防具 × 転生倍率）× 職業の格 × 固有品<br>
+    ・基礎値は、レベルアップ・能力の実・能力振りで上がり、転生しても減らない</div>`;
   h+=`<div class="y">攻撃の種類と得意な武器</div>`;
   h+=row('斬','剣・大剣・斧')+row('突','小剣・槍')+row('射','弓')+row('打','棍棒・体術・杖')+row('魔法','知力が得意な職業（杖を持つと×1.5）');
   h+=`<div class="small" style="margin:4px 0 8px">職業の得意な武器を持つと×1.5（転職所の「くわしく」に書いてある）。</div>`;
-  h+=`<div class="y">敵の系統ごとの効きやすさ</div>`;
-  const SPN={slime:'スライム',bat:'コウモリ',eye:'目玉',skull:'骸骨',dragon:'竜',knight:'騎士（闘技場）'};
-  Object.entries(SP_RES).forEach(([sp,r])=>h+=row(SPN[sp]||sp,Object.entries(r).map(([k,v])=>`<span class="${v>1?'g':'o'}">${atName(k)}×${v}</span>`).join(' ')));
-  h+=`<div class="small" style="margin:4px 0 8px"><span class="r">物理が効かない</span>：坑道の亡霊・船幽霊（魔法で）　<span class="r">魔法が効かない</span>：鉱石スライム（物理で）<br>最後の敵（桁の神・第300層の番人・神々の座・闘技場の300人目）は無属性で、相性はすべて等倍。図鑑で、その敵を10回倒すと弱点が見える。</div>`;
+  h+=`<div class="y">物理と魔法</div><div class="small" style="margin:4px 0 8px">物理に強い敵・魔法に強い敵には、ダメージが×${RES_MUL}になる（効かないことはない）。最初の12エリアでは坑道の亡霊・船幽霊が物理に強く、鉱石スライムが魔法に強い。次元の彼方では、層ごとに「物理に強い層」「魔法に強い層」が決まっている（エリア一覧に出る）。<br>${lastFoes()}図鑑で、その敵を10回倒すと耐性が見える。</div>`;
   h+=`<div class="y">TIPS集（${TIPS.filter(T=>tipN(T.id)>0).length}/${TIPS.length}）</div>`+TIPS.map(T=>tipN(T.id)>0?`<div class="small" style="margin:3px 0">💡 <b>${T.n}</b>：${T.t}</div>`:`<div class="small" style="margin:3px 0;color:#789">💡 ？？？（まだ出ていない）</div>`).join('');
   return h; }
 
@@ -2116,22 +2261,24 @@ function bacchusHint(){
   const enemies=sp.map(([nm,s])=>elemize(Object.assign({def:1},{name:nm,sp:s,base:nm}),el,false));
   const plans=enemies.map(attackPlan), nm=esc(P.name);
   // 1) 今の攻撃が効かない敵
-  const bi=plans.findIndex(p=>p.aff===0);
-  if(bi>=0){ const e=enemies[bi], im=IMMUNE[e.base];
-    return `「${areaName(t)}の${e.base}には、今の${atName(plans[bi].at)}が効かぬ。${im==='phys'?'魔法職（魔導士・僧侶など）で挑むがよい':'物理の職業で、武器で殴るがよい'}。」`; }
+  const bi=enemies.findIndex(e=>typeMul(attackPlan(e).at,e)<1);
+  if(bi>=0){ const k=resKind(enemies[bi]);
+    return `「${areaName(t)}${t>=AREAS.length?'は':'の'+enemies[bi].base+'は'}${tendName(k)}。${k==='phys'?'魔法職で挑むと楽じゃ':'物理の職業で、武器で殴ると楽じゃ'}（今のままでも半分は通る）。」`; }
   // 2) 属性が不利・弱点を突ける属性
   if(el!=='無'){ const em=elMul(myAtkEl(),el);
     if(em<5&&wk) return `「${areaName(t)}は${elTag(el)}の地。${elTag(wk)}の武器で攻めれば弱点を突ける（×5）。武器屋で付け直すがよい（${fmt(forgePrice(true))}G）。${em<1?`今の${elTag(myAtkEl())}では×${em}しか通らぬぞ。`:''}」`;
     const dm=elMul(el,myArmEl()); if(dm>1) return `「${elTag(el)}の攻撃に、今の${elTag(myArmEl())}の防具は弱い（受けるダメージ×${dm}）。防具の属性を変えるとよい。」`; }
   // 3) 得意な武器
   if(JOB_WT[P.job]&&prefMul()===1) return `「${JOBS[P.job].n}の得意は${JOB_WT[P.job]}じゃ。持ち替えれば×1.5。今の${myWType()}では本領が出ぬ。」`;
+  // 3b) 状態異常を使う敵がいるのに、防ぐ装飾品がない（#44）
+  { const ail=sp.map(([nm,s])=>Object.values(AILMENTS).find(a=>a.sp===s)).filter(Boolean).find(a=>!accT(a.acc));
+    if(ail) return `「${areaName(t)}には${ail.n}を使う敵がおる。装飾品屋の${ail.res}を付けておくがよい（気付けの酒でも防げる）。」`; }
+  // 3c) 合成の素材が足りない（#44）
+  if(P.wpn>=SHOP_MAX&&P.wpn<GEAR_MAX){ const need=synthNeed(true,P.wpn+1).find(([k,n])=>gmN(k)<n);
+    if(need){ const g=gmSp(need[0].split('_')[0]); return need[0].includes('_s')?`「次の合成には${gmName(need[0])}がいる。${g.n}の巣、第${g.nest}層でしか出ぬ。運を上げて通うがよい。」`:`「次の合成には${gmName(need[0])}が${need[1]}個いる（いま${gmN(need[0])}個）。${g.n}系の敵を倒して集めるのじゃ。」`; } }
   // 4) 番人
-  if(isGuardT(t)&&!guardBeaten(t)){ const g=makeGuard(t), r=SP_RES[g.sp]||{}, best=Object.entries(r).filter(([k,v])=>v>1).map(([k])=>atName(k));
+  if(isGuardT(t)&&!guardBeaten(t)){ const g=makeGuard(t), best=[];
     return `「この層には${g.name}が待っておる。${best.length?best.join('・')+'がよく効く。':''}${g.el!=='無'?`属性は${elTag(g.el)}、${elTag(EL_WEAK(g.el))}で攻めよ。`:'あやつは相性の通じぬ相手よ。'}」`; }
-  // 5) 系統ごとの効きやすさ
-  const p0=plans.map((p,i)=>[typeMul(p.at,enemies[i]),enemies[i]]).sort((a,b)=>a[0]-b[0])[0];
-  if(p0&&p0[0]<1){ const e=p0[1], r=SP_RES[e.sp]||{}, best=Object.entries(r).filter(([k,v])=>v>1).map(([k])=>atName(k));
-    return `「${e.base}に${atName(attackPlan(e).at)}は効きが悪い（×${p0[0]}）。${best.length?best.join('・')+'で攻めるとよい。':''}」`; }
   // 6) 闘技場・神々の座
   if(P.champ<CHAMP_MAX){ const c=makeChamp(P.champ); if(!c.flat) return `「闘技場の次の相手、${c.name}は${elTag(c.el)}の使い手。${elTag(EL_WEAK(c.el))}で挑むがよい。騎士は打と魔法に弱い。」`; }
   return `「${nm}よ、今の構えに迷いはない。あとは飲んで、戦うだけじゃ。」`; }
@@ -2162,8 +2309,16 @@ function tutHTML(){ if(P.maxArea>0||P.tutDone) return ''; const nx=TUT.find(x=>!
   return `<div class="win" style="margin:6px 0;padding:6px 8px"><div class="y">隠居じいさんの「はじまりの手ほどき」</div>`+
     TUT.map(x=>`<div class="small">${x.f()?'<span class="g">✓</span>':'・'} ${x.n}</div>`).join('')+
     `<div class="small c" style="margin-top:4px">${nx?`「次は${nx.where}に行ってみなされ。全部こなしたら、森へ進んでよいぞ」`:'「よし、これで森へ行けるのう。気をつけてな」'}</div></div>`; }
-function tutReward(L){ if(P.tutDone) return; P.tutDone=true; const g=Math.floor(enemyStats(1).gold*50); P.gold+=g; P.earned=(P.earned||0)+g; P.base[mainKey()]+=10;
-  L.push(`<span class="mir">★ はじまりの手ほどきを終えた！ じいさんから ${fmt(g)}G と ${KN[mainKey()]}+10 を授かった ★</span>`); }
+// 手ほどきのご褒美（#56）：お金・全能力+10・能力ポイント+10・エール1杯
+function tutReward(L){ if(P.tutDone) return; P.tutDone=true; const g=Math.floor(enemyStats(1).gold*50); P.gold+=g; P.earned=(P.earned||0)+g; KEYS.forEach(k=>P.base[k]+=10); P.pts+=10;
+  const ale=DRINKS.find(D=>D.id==='ale'); const dm=ale?applyDrink(ale,1):'';
+  const t=`じいさんから ${fmt(g)}G・全能力+10・能力ポイント+10 と、祝いのエールを授かった！`;
+  if(L) L.push(`<span class="mir">★ はじまりの手ほどきを終えた！ ${t} ★</span>`); return t; }
+// 5つそろった時点で、どの画面でもすぐに森を開く（#56）
+function tutCheck(){ if(!P||P.maxArea>0||P.tutDone||!TUT.every(x=>x.f())) return;
+  const t=tutReward(null); P.maxArea=1; P.areaWins=0; save();
+  showPopup({title:'<span class="mir">はじまりの手ほどき 完了！</span>',body:`<div class="small">隠居じいさん「よし、ひととおり見て回ったな。これで森へ行けるのう」<br><br>${t}<br><br><span class="y">新エリア「${areaName(1)}」が解放された！</span></div>`});
+  elementIntro(); guildIntro(); }
 // ============ 最後のエンドコンテンツ：桁の神 ============
 // 伝説の品（オーバーフロー・アンダーフロー・伝説装飾品4種・辞表・リクルートスーツ）をすべてそろえると現れる。
 // 「輪廻の結界」は転生 FINAL_REB 回以上でないと破れない。ダメージは桁数（log10）で入り、HPは持ち越し。
@@ -2306,9 +2461,14 @@ const AILMENTS={
   slow:{n:'遅延',sp:'bat',  p:.05, acc:'rSlow', how:'超音波を放った',res:'時の砂時計'},
   death:{n:'即死',sp:'skull',p:.005,acc:'rDeath',how:'死の宣告を放った',res:'身代わり人形'},
 };
+// 状態異常は4つ目のエリア（砂塵の砂漠）から。同じときに装飾品屋が開く（#48）
+const AIL_START=3;
+const accOpen=()=>P.maxArea>=AIL_START||Object.keys(P.acc||{}).length>0||!!(P.unlocked&&P.unlocked.neet);
+function accIntro(){ if(P.pops&&P.pops.acc) return; P.pops=P.pops||{}; P.pops.acc=true;
+  showPopup({title:'<span class="y">状態異常と装飾品屋</span>',body:`<div class="small">ここから先の敵は、<b>麻痺</b>（目玉）・<b>遅延</b>（コウモリ）・<b>即死</b>（骸骨）を使ってくる。<br><br>ショップに<b>装飾品屋</b>が開いた。状態異常を防ぐ品や、能力・MPを伸ばす品がそろっている。職業の格で付けられる数が変わる。</div>`}); }
 const ailmentOf=e=>e.flat||e.train||e.final?null:Object.keys(AILMENTS).find(k=>AILMENTS[k].sp===e.sp)||null;
 // 敵の攻撃のときに、状態異常を仕掛けてくるか。深い層ほど確率が上がり（最大2倍）、番人・王者は2倍
-function tryAilment(c,e){ const k=ailmentOf(e); if(!k) return null; if((k==='para'&&c.para>0)||(k==='slow'&&c.slow>0)) return null; const A=AILMENTS[k];  // かかっている間は重ねてかけない
+function tryAilment(c,e){ const k=ailmentOf(e); if(!k) return null; if((c.depth||0)<AIL_START&&!e.guard&&!e.champ) return null; if((k==='para'&&c.para>0)||(k==='slow'&&c.slow>0)) return null; const A=AILMENTS[k];  // かかっている間は重ねてかけない
   const p=A.p*(1+Math.min(1,(c.depth||0)/150))*((e.guard||e.champ)?2:1); if(!chance(p)) return null;
   if(drinkOn('nostat')){ c.L.push(`${e.name}は${A.how}！ …しかし<span class="g">気付けの酒</span>で正気を保った！`); return 'resist'; }
   if(chance(Math.min(1,.1*accT(A.acc)))){ c.L.push(`${e.name}は${A.how}！ …しかし<span class="g">${A.res}</span>が防いだ！`); return 'resist'; }
@@ -2450,7 +2610,7 @@ function simulate(e,t,fast){
     if(e.secret && !P.blessed[P.job]){P.blessed[P.job]=true; L.push(`<span class="mir">★ ${nm}は「奇跡の加護」を授かった！ ★</span>`); L.push(`<span class="mir">${JOBS[P.job].n}でいるかぎり、奇跡が頻繁に起きるようになった！</span>`);}
     if(t>=0&&t===P.maxArea&&!P.areaDone){P.areaWins++;
       if(P.areaWins>=AREA_WINS&&guardBlock()){ const first=P.areaWins===AREA_WINS; P.areaWins=AREA_WINS;
-        if(first){ L.push(`<span class="o">${makeGuard(t).name}が道をふさいでいる！ 番人を倒さないと先へ進めない。</span>`); c.trainMile=true; } }
+        if(first){ L.push(`<span class="o">${makeGuard(t).name}が道をふさいでいる！ 番人を倒さないと先へ進めない。</span>`); c.trainMile=true; c.guardWarn=t; } }
       else      if(P.areaWins>=AREA_WINS&&P.maxArea>=AREA_MAX){ P.areaDone=true; c.trainMile=true;
         L.push(`<span class="mir">★★★ 次元の果てを踏破した！ ★★★</span>`); grantNeetGear(L); L.push(`<span class="mir">これより先に、世界は存在しない。</span>`); }
       else if(P.areaWins>=AREA_WINS&&tutBlock()){ P.areaWins=AREA_WINS; if(!P.tutWarn){ P.tutWarn=true; c.trainMile=true; L.push(`<span class="o">隠居じいさん「森へ行く前に、町をひととおり見て回るんじゃ」（冒険の画面の「はじまりの手ほどき」を見よう）</span>`); } }
@@ -2469,7 +2629,7 @@ function simulate(e,t,fast){
   const head=`${e.secret?'神々の座':e.champ?'闘技場':e.guard?areaName(e.gt):e.final?'桁の神':t<0?'':areaName(t)}：${e.name}（${JOBS[P.job].n} Lv${P.lv}）`;
   LOGS.unshift({head,sum,lines:L}); if(LOGS.length>20) LOGS.length=20;
   save(); if(!fast) saveLogs();
-  return {L,sum,newArea:c.newArea,trainMile:c.trainMile,c};
+  return {L,sum,newArea:c.newArea,trainMile:c.trainMile,c,guardWarn:c.guardWarn};
 }
 function gainExp(e,L){
   P.exp+=e; let ups=0;
@@ -2485,6 +2645,9 @@ let locKey=null, locRun=0;
 function locOf(e,t){ return e.guard?'a'+e.gt:e.final?'final':e.work?'work':e.secret?'god':e.champ?'champ':'a'+t; }
 function locName(k){ return k==='final'?'桁の神':k==='work'?'ハローワーク':k==='god'?'神々の座':k==='champ'?'闘技場':k.startsWith('train_')?`${JOBS[k.slice(6)].n}の修練場`:areaName(+k.slice(1)); }
 const locTotal=k=>(P.locB&&P.locB[k])||0;
+// 番人が現れたら警告のポップアップ（#67）
+function guardWarnPopup(t){ holdEnd(); const g=makeGuard(t);
+  showPopup({title:'<span class="r">⚠ 番人が現れた！</span>',body:`<div class="small"><b class="y">${g.name}</b>が、${areaName(t)}の先への道をふさいでいる。<br><br>番人は、この層のふつうの敵よりずっと強い。倒すまで、次の層へは進めない。<br>${elemOpen()?`属性：${elTag(g.el)}　`:''}HP ${fmt(g.hp)}<br><br><span class="o">準備を整えてから挑もう</span>（装備・お酒・装飾品・属性の付け直し）。冒険の画面のエリア一覧から挑める。</div>`}); }
 function runBattle(e,t,fast){
   if(!fast) closeModal();
   show('sBattle'); if(!holdI) $('#btnAgain').textContent=againLabel();
@@ -2503,8 +2666,11 @@ function runBattle(e,t,fast){
   $('#nmP').textContent=`${P.name} Lv${P.lv}`;
   $('#result').innerHTML=sum+`<div class="small">所持金 ${fmt(P.gold)}G　<span class="c">${locName(lk)}：今回${fmt(locRun)}戦目（累計${fmt(P.locB[lk])}戦）</span></div><div class="small">${JOBS[P.job].n}での戦闘 ${fmt((P.jobB||{})[P.job]||0)}回　総戦闘${fmt(P.battles)}回</div>`;
   { const tip=(t>=0||e.champ||e.guard)&&R.c?pickTip(e,t,R.c):null; if(tip) $('#result').insertAdjacentHTML('beforeend',tip); }
+  { const cl=gCollectLine(); if(cl) $('#result').insertAdjacentHTML('beforeend',cl); }
   const box=$('#log'); box.innerHTML=L.map(x=>`<p>${x}</p>`).join(''); box.scrollTop=box.scrollHeight;
-  if(newArea!==undefined && (t>=0||e.guard)){ holdEnd(); showAreaModal(newArea); if(newArea>=1) elementIntro(); }
+  if(R.guardWarn!==undefined) guardWarnPopup(R.guardWarn);
+  gPopShow();
+  if(newArea!==undefined && (t>=0||e.guard)){ holdEnd(); showAreaModal(newArea); if(newArea>=1) elementIntro(); if(newArea>=AIL_START) accIntro(); nestIntro(newArea); if(newArea===1) guildIntro(); }
   if(trainMile){ holdEnd(); }
 }
 // ---- 汎用ポップアップ（順番待ちあり） ----
@@ -2873,6 +3039,8 @@ const PIX={z:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+
  r:["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB8AAAAfCAYAAAAfrhY5AAADeklEQVR42rWXb2hTVxTAf++97KWxg5kF1jmbKdp24vpPydpt7BFwA1elfz4EGWN/GjHsg7ghkyLVL4LmQ7EI+zK6uRlljlHCZrdCYTChBnSr3b9SS2q3gtLWxlKec2ZLmqV3H9o8U21qXpoceLz37j3n/u69551z7pMwKVZFFqnnx1UrAPfm4sST85LZsUwZOGw28fmB3eh6HAC73Wr07en8GqXoCf6J6lmPKWerWLKuTHhfqkHX40ugKenau9vswrOHO50bAQiGrjEcjjw0AZdWRSIRKwwcYDYaI59iyVYxHo/RsrMMgGjd+zS0vMLAwO/U1dXcV9p3qjBwgNDgBLPRGGXhI/QNlADQd2Ghb3NlReF8ni7uwx/R4O82oA3+birePE4ymSwMfNOmjcbzZwe9qBYZXY+T+P4HVIvM9S+PFs7nD0pPm4cGfzdOZwU9bZ6cxsh65T3ffAHAmZ9+M9r62vfwydu1xntRUTGPqTaRF7hVkYVVkYWsqMK99WVaW3cwfK6dn6cjy+pfPraLX4LvISuqWFNsFzlvu6yoomvvTlxa1f3VB0MADN24tayN72SI/Y01DJ05BMC2fadEYu5fyTT8XddWJiN3cC1C15es5ePQCFN3/8ZbX7uszdXpmwRDFoKha3i05/n19EEq3/GLTDUkI3xuy6ugD3DY/xW94XGjPRM4Jb3hcWnxLsov3aL8ORdjo4PmfH7+bKc0Yq9LgSWzFRCQxkYHpbHRQSmnUDt/tlOigGJZ7QCp2l6wOE+F26P8vdgvFq/VnWQCvkbR+ul3SzLYhf4/AGhxL1S44XCEK9cn2fLMU2iuUjZXVvDf7RscPX0l/XsxDRfe+lrc1U6G/5wxGk9e/NFIr+nS3BHEW1+Lo7iI2WiMmb/u4mvaTnNHMCPnUR+UOLTjRQMI8MLTz1Ky1oKvaftDys0dQWRFZT45x4kmjSPfhlZkyNmcXgK+RmOyQzMTK+qnwM0eLf/1PJ6cX7Y9fXv1e4n8hdpk5M4SV/WGx0V61svlGL6aOM9L8llp20Wp3ZEPhjALFw6bjTe2lfPh/l2mQHZHKf0jUws54Fw7VkXOOAEp029R51uv4dKqCAQu0j8yxdXpm1nlhlQ4Vm54Ene1E5dWxesfdDGhz5pylQj4GkX1hnVZp8sH7U80aaKnzSNkRRW5+kus0t8Z7f8HuXUzghLAfj4AAAAASUVORK5CYII=", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB0AAAAdCAYAAABWk2cPAAAB8UlEQVR42u2WzytEURTHv09mDBZmQm8mLIRBQ9lISrMgP/JjJJMyCZGNspGs/AE2GmVshKLI1ESS2ZKw8MSGnh9Z2ElqVgyhYzHc3JoZF29mw6nbu+ee8+7nnffu+fYkiBt9EZdENxJNJLfHyy3IZgvnu5x24f0SRIA5uaVRgQDw/lAkAk0USbLb69i8qsYRNqfAJv6dEkQTD5UDVNU4cHmqcAMAu2oOjWTfBWoC/Yn9Haj0U0FY9u2w+cz0OLa3/MJ7R2sZupkqxF1aO15urwEAZSNLDOZy2uH2eCGbLdje8mN91Im8EmvoRuMDSh2TFAkcDSqZh86puWgFldYsZMlGLri7f4y62mrMLqwDAAKBJ1ydXAhVKmmgud/+fEKK1NDYAwDIK7Li6ixUTXdfP4tvboSqXVqYECpECJqemRF2/mFNLa2fodq2TO/AMAfhtbc8dn0aDvivSHGFmtKzKWbQAls51POz+Feq7O1xfkqqiTSHLs7Pcf6pesT5D/cB7Spd882joiQNSUmvTIEAYNV/gB5XPWTjM1vT6w2/Phf0ebg9XlLUIC37dkhRg6TTJ5OiBqm1rYvlyJZ8+rUMhrP3/1woahAAkJ1bzGIvZEBMoDp9Mjo6BzE5Pha/06vTGbQXh5RUE33V5BFfn/QYNf4GuwmZbprMGPcAAAAASUVORK5CYII=", "data:image/png;base64,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", "data:image/png;base64,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"],
  w:{"staff": "data:image/png;base64,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", "sales": "data:image/png;base64,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", "account": "data:image/png;base64,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", "it": "data:image/png;base64,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", "metal": "data:image/png;base64,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", "estate": "data:image/png;base64,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"},
  g:["data:image/png;base64,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", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD4AAAA+CAYAAABzwahEAAARHElEQVR42uVbbUxbV5p+DCE3GIzh+iamxgQI1NAQpuMUVBqqig0VCpNNM8okbYPUDFOpZLdC0eyP/Gq0v7Krlfqjo2zUnSRSN01VWiVMoiRtibJJxEQlYQQNTckHuHwG42BizIexzcWBsz/sc3Lu9TV2SKZaaY9kGWzfc89z3vd93q9zgf+nQ/ec5yPPMD/5hdYIAEh6joBJ+/H9CPadeqZN4ucQBIHN/X9NYwgA0lBaThpKy4kgCAQAcTZ+FG+xy31P2o/vJwBIk72K1JfYSUNpOXneG/AsEicWyYojW3eyD2RZTui6K3salzW/qsZjqM4txNnREaxOTkZtvg31JXZYJOtz04BVKwXdUFqOzeYcXHcO4oZ3CrZUAQDgbPwI18eGeMlG2WhJ1tq43NM2OkAskhUn73YBACot61FpWY9b7mxcdo/D5XGSv5f9xwRdX2InR7buJPUldl4FCQDSvL2e8CbASYcAIEe27iSHKmtiSm2n9ORzi2Ql9EXv27y9njSUlis+/yVYndQVFOMVsxW93gm0OHroAuHyONm7IAjYW1SGC84heGcmAQC8er955njUvXdKIOdqcvHqd6Po9LHvSES94fI4AQD1JXasTk4GAFx2j/Pf6f5eNk7qCopRV1CCH9xOtDh6YJGs1O4AALXmbDTZq/Bx1TZ81d/DPr+ypxGf9XQCAO5NujWlfK4mN7yJglIwFDDd4Obe7vC98m2oNWezz59W8rqnBd061IvWoT5UGIBOH1CdW4i20QFYJCtqzdnYbM7BRGAOTt8MAGB4dgptowNo3l6Pbwbu04XreJe29E4uu9HwqAsbbizq1CRKJUu1CgCat9fj8rBjRZJPWOJmvQH/8dMPDPSYEF5M2+gARKMJu3LzUJtvw0RgDgCQvlpg3wPgQTN7V7P78KhLUzi81AGgwhB+vzzsWLHkVyXK4HRHKwxAWmYh5menmc1NyQGM+2fhCfqxTp+O1qFeXHMNw2QIs3dDaTljZ2fjR2xi6/F/w+CWZMXN/sWxqLmIWnM2hlMFtI0OwJZbiAoMsDlr823M5iMaEZfx4wEn1bmF2GzOwdmf70R9WWEA/jJ0D1st+XjDugEAcLD9EtLWpEOWZbjkMNHRBQLA2f476HA94KXPJN21ZATg1VzI8OwUu6cjKCMn8jede7M5Rw1+5apukazIz8jCLfcY2kYHmIoBQOHSJMYEK2RZRmGmBMeUBwfbL+G1dVb89z/swPnfNgAAtlrycWVPIw5V1gAADlw7rwBNR9eSEeVJM3DJMf068jOyMCaEQVFT48FTzaCucKXA2YUn73Yx0GmZhZo/tmVJCpveseElAMArZiv+fPsmDndcZfG3IAgQjSYFaPquYnXFoLxB10LBA8At9xhT+QQSn5jACWVpqmL8cARlhW9tHuzFgWvnAQCHKmvQOT6Kf71xGQBwuOMqWhw9aD++HwCwt6gMsizDOzMJi2TFOz1PbHp8bj5hd5QjOxUmd/JuFy4PO7DZnJMQ2cVldbWKq296qLIGH77067B921/HtBxe/Kf3f0Sw7xRO1b2LU3XvoqrxGLtGEATUFRQDCLtECvqLkQDOe1YWhvIqv7C4qDDXRMmNSdsd8GlKO4f7/7P+PrxfVIxDlTX4uPt7RaJy5o/fYV/r1wCAJnsVjna34+TdLohGE1qH+gAApytFfNnvRU22PqzmvujgJtZm8ALgVb7Ssh6rk5OZf9fKGZaV+G2fXyFttX1X5xbC5XHi0/s/4uPu73HAssTn0djX+jV228pQX2LHuH+WEZx3ZhKCIKA6txBvd4RBXx1XSnunBLL0Tq5CTQemPVFr5O08ltQTUnWqGu6Aj9kwTzg5spP9T23dPz+HL+xpOOJKUqSn1bmF8IcWIKbqUSKuU9wnVgpLAX9iS45yq2b9EymoSZD//5Z7TM3wUbaepMWCteZspKWsjnZvaRlKJo+korIsY8fnf8K1/wy7MJqjb5KyUZgpwZYlodc7gV7vBNMG0WhiHoBKe3BLMvnElsz8esuIn2lBfkZWXJKzCGGpD89OodKyXlOgcVW9xdHD1NxmSAkTneeR4jf+6XCM3lBajtTifahqPKYoTIz7Z5EprIGUmoZdL5ahxdGDvUVlEASBZW07JTDQ9LpvZsOb82W/FwDIblsZ00KtUbq+PIqQb7nHsLC4yKS+HLkRi2TFFjFLYR/VUgqzpWppLfyc+rvksEu7HAlLAeDsz3fQNjqA+hI7NmSKWKdPV9yQDzaAMOjTlSLpWgI63T788wtLGPWH8A0EnPcEwoULcR0Gp70sT6BqTdcwPDsFY0RALjnE5g4XLsbUGq2LG7LydlMBJ1x+gd3A4QsxQhmLhIq15my0jQ5gt60MC0uPsdFkjmxGD8vdBUHAa+us+Gl2Gt6ZSeyUQL7s9+ITWzI6kYT/epiEj4dCAEJoKC2H1WDE4LQXLv+sgmj5NVjSMuAP8oIKKeKPWnM2z/BRaSlzYzRSswhP1PxLn5ltwBPVf7K7nZwWNtmrWCQnpaaFk5lvm9FQWo6v+nvi1uYoYKdvhqW1FDQVhnoNaZmFMAYHYDOkoM0TQqcvnEABULg2l8epU9i4lqOnkzt8IUZkWhpBQdeX2NnN+PFGTgFTc1mWowoYNJihcywsLmJw2hsFWr2ueINWarRc2yp1TEsJhFdzmyEFnY8jLB5U2CfqS+yQ5AALSDZkihic9uK6fzAM2rqBFR9Fown++TlM+h5FAa4rKMbfvB4093YrsisetFYcT+1cEV9IKeiMmMHq5GQ1cAJAt0qd86rJJ9YI22F44tahvrCklh4DAN4vq8C9STdTczq2vbAeU3IAZr0B6asFbLHk4Q9X/gJZltmm1JfY0dzbHSXlWNKmhMbbOZ/K5mdkYXVyMqqltWjzPGKbmhQjiIi6AQ1W4qnZRpOZ1dXeyCnA2Z978M3AfQDApYcPYNYbcME5hKPd7aj/tplxgn9+DrIsM4l3+mITrdZw+Wcxk1qoiOJonPDcGgpU2k32KoWGlIjr8MW9H7CraBOuOwdxfWwIu14swz8WvsRC1YXFRWx7YT1EowlN9ip27QcbyxV2X51byMCrCY2O3LQUzU2hn/NDTNVH2TiJlcHQCUb90eTWUFqOo93toL6fjlfMVpztv4NdL5YpyO3Knka8eeY4mnu7WfkZAL596/fYfuFzFgE2lJYzUuNBnfcAiDD46UoRnW4fRv0hzXXzn1N1V8X5ZFk/fuBOAKcrRWSnr0HnGDQDEZfHCYhZzL7p8AT9kFLT8EZOAd9ZYax/8m4XC18/2FiO3xaVYvuFz9m8tE533hPtet/u8BJ+A7QEVg0wgktY1W2GFKrOurc7tGtg9SV20FASALLTMjA4/eS3u4o2AQAD7Qn6w0WL3m4093ajobQcsizjaHc7jna3480zx5nENSI8nUZZnK1NbQIH7gSYOSYE/OTdLuyUoutdWuAXlh7DEwzAIllxccQBbzCADZkier0TCsAU9MH2S5oa02SvQpO9iqWsX/X3QDSaIBpNUf5eo2GoqzAbtPhHR0lai+AsklU7ZOUvjkVs/tACAGA+FMSOPBsuPXyADzNFln5SCQNA61AvDtpfZ6UoXmuOdrcr5qclaTrmQ0EWZ1BXx4+3O7w4WKDpaXTnPU9fc4tZhrJIVohGE/7m9eDmhJNlclvNFnzW36f4fetQLyYCc3jFHJYaLUtRKTb3dkM0mhDu0oRfW8QsTPoeYdL3CO8XFeNXGZloslfB2fiRugvDAFJhRKQbJTB3wKfI5RXAY6VvfHnXIoUztG0vrGcsTNNLANgiZuH7sWFsNJlx3TmoADwtz+PEvS40lJazVpBFssI7M8miPrqJlPAOd1zFzQknxv2z+OB/Wlbc3qWgXzakxZZ4hEU11dzlcWJDpsiiMGqHotHEFiyl6vHn2zeZylMpn7jXhb1FZaxErB6tQ31oHeqDRbJib1EZc5Vpa9LhCbKQWPeUPUAd34xYkarzdXAKfk1KKuZDQSb1G94p3PBORUl5bkHG3qIyzIVkjPtnIQjCk7KWRgxx2T2u+M1PkXZVPDN8mlZxEn+zeM2FJnsVPr3/I8uPI8TD3Atd6A3vFE7c68KJe13YkWdD+moBcyEZF0ccuDjiwI48m0KL+M11eZzYlZsHANhtK4N/fk5hTs+r178q0QneshagebAXW80WuPyzrJCgbvlS+31tnRWWtAwsLD3GuH82CrDW8M5MsjK0aDTh4ogDJsNauGTnMx37Sl21amXdUotkxWX3OD586df4fmyY940K0NQcXB4nXBE1pikoBR1vA07cexLRpa1JX9Fph1jkxmtZQjbu8jgZgNdz8jVB15fYsSYlNcpuTYa12JFnwzW3K6aa02iNBjE0jn9VlBI5HhZ3rITcCJXi7wo2YnDai8FpL12gYiF8YDEfCjJ7dXmcuOGdgndmUiF1Gu7SctShyhoc7rgKk2Et4xvezT3Po15RwCOLIbyKe2cmWWLR3NuNKTmAuveLorqRgiDAlirgVxmZUZ6AHgi6OOJAi6MHO/JszP1RCfM191pzNl4VJVTnFio0iAthV7QBt33+xGycdUM5abYO9ekOoZrweXN+RhZTJ1qw4MF7ZyZZgZFPbIJ9p5BavI/9bqslH1mCHnMhGVmCHsHHs4q1NNmrcHZ0BNyZGLLC01u6pOUuoq1d+k5/y3c+HUEZF5xDcARlBWjvzCR7qRsVvLTp5tEI7tLDB7jhncKUHICkKh7QDZgPBeHyOPnYYsVHPmMdmCP82dIYDXfCH8SjL9FoUs9JmuxV7MUvlp6BDfadYn/zLzoHfeevp5/R+2lsAmkoLSd1BcUKfEmJBAVVjceo1IkWo1MS4wdl+FiDLztRMzjzx+/Y31TL1JGdRbLiaHc7u54GO/R+otHEuGE5DViVaERU1XiMqCejbkidY4tGkwI4LU+N+2ehQaZRqk83W32qkU9uzo6OMDKkG0A3hAZA1ORUUal2CynGiaGYYGnaR10Pt9uKIyMtcU4h0X66usGhXssWMUuxUUe721GdW4g7nnFFPvGWtQAXnEMJxbf8CUKFKqvB8kD5hb5sSGPt5WtuF5M6N99TP+3AqzrdBN4zaGmMRbLClirAEZSZlqjm0EUBf9mQxkCpAQ/PTuHmhJM1ALSSh922MvhDC8xnPkPISbRsXOv8WryNqCsoxm2fn79WF6XqWYI+CjRf7m0/vh9VjccYaDop65lHSlKIPpxDuAajLpGDhY6gjPlQEK+KEm77/LClCnBp+O0WRw/RIk9qBnR9ETPWabL6lBxYNtcdODeD9uP7caruXRZWDrT/OyZ9j2BLFXDb59eUdqcPuvfy9HgvT6/YhDj5Nba9sB7XXMOoNWcjPyMLotGEiMuLqrryL1rL43mGN7kk9WHZwkwpLgENnJtRENGtv7ZDlmX1TTRVPDt9DQ6WijHBU1CCIKBaWotLDx+wpMUd8KF+Qwl1eSQRb+RKgFTp8WwWAKgehNHKlPjgZtnIqcIAcmSTnpyuFMnpSpEc2aQnMcCTU3XvEkEQiGg0kd22sqhgpf34fj7QiYllt62Mf4pi2exM1zrUx9JD2h2JtHOJSq3YgzMqNdME/V6eHtnpaxLa/T1/+g0rZF4ccbBHsqj0Bs7NYPqnE8vOIQgC/unl12JVZrUrMIc7rhLKjjT4iNS0iYYrjEVUpMIAvJenZyoO1dHNWCR366+s1q6TZTnKnve1fh1PzcnvCjbSpyJ0T1unIjFPSkTOjccaBwtSWMNRC/AXI4F47K4+iUioN1GFy7oYDwvFlPTTFOiIVv+cjppsvaI7ybd0KNADdwLP47HJRB63IoneQ/ecniH9pZ9hfebxv2ac4F26ICqNAAAAAElFTkSuQmCC", "data:image/png;base64,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", "data:image/png;base64,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", "data:image/png;base64,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", "data:image/png;base64,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", "data:image/png;base64,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", "data:image/png;base64,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"]};
+// 冒険者（#58）の絵は、仮で戦士の絵を使う
+if(typeof PIX!=='undefined'&&PIX.h&&!PIX.h.adventurer) PIX.h.adventurer=PIX.h.warrior;
 // ---- 素材のドット絵（#7：PixelLab で作った絵） ----
 // 絵の切り替え：pix＝素材のドット絵（既定）／new＝SVGの絵／old＝12×12の旧ドット絵
 let artMode='pix'; try{ artMode=localStorage.getItem('ia_art2')||'pix'; }catch(e){}
@@ -2941,8 +3109,8 @@ const barHTMLOld=barHTML;
 barHTML=function(){ let h=barHTMLOld(); if(artMode!=='pix') return h;
   let who=null;
   if(barTab==='guide') who=['elder','隠居じいさん','「まあ座りなされ。急がば回れじゃ」'];
-  else if(barTab==='drink') who=['master','マスター','「いらっしゃい。何にする？」'];
-  else if(barTab==='rumor') who=['master','マスター','「…いい話があるんだがね」'];
+  else if(barTab==='drink') who=['master','マスター','「いらっしゃい。今日は何にしましょうか？」'];
+  else if(barTab==='rumor') who=['master','マスター','「…いいお話があるのよ。聞いていく？」'];
   else if(barTab==='hint') who=['bacchus','酒神バッカス',bacchusHint()];
   else { const R=RIVALS[barRival]; if(R&&TAV_RIVAL[R.id]) who=[TAV_RIVAL[R.id],R.n,'「次はどうだい？」'];
     RIVALS.forEach(R=>{ const k=TAV_RIVAL[R.id]; if(k) h=h.replace(`<div class="row"><div>${R.n}`,`<div class="row"><img class="pix tavface" src="${PIX.t[k]}" alt=""><div style="flex:1">${R.n}`); }); }

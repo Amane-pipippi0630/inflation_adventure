@@ -236,7 +236,7 @@ const accCap=()=>P.job==='neet'?ACC_LIMIT:ACC_MAX;
 // はじめ1／ギルドランクC +1／下位職を全部マスター +1／中位職を全部マスター +1／上位職を全部マスター +3／ギルドランクS +2／転生50回 +2。無職が解放されたら全部
 const rankAllMaster=r=>Object.keys(JOBS).filter(k=>JOBS[k].rank===r&&!JOBS[k].hidden).every(isMaster);
 const ACC_UNLOCKS=[['はじめ',1,()=>true],['ギルドランクC',1,()=>!!P.guild&&gRank()>=3],['下位職を全部マスター',1,()=>rankAllMaster(0)],['中位職を全部マスター',1,()=>rankAllMaster(1)],
-  ['上位職を全部マスター',3,()=>rankAllMaster(2)],['ギルドランクS',2,()=>!!P.guild&&gRank()>=6],['転生50回',2,()=>P.reb>=50]];
+  ['上位職を全部マスター',3,()=>rankAllMaster(2)],['ギルドランクS',2,()=>!!P.guild&&gRank()>=6],['転生50回',2,()=>P.reb>=50],['賭場の景品',1,()=>!!P.casAccSlot]];
 const accFree=()=>!!(P.unlocked&&P.unlocked.neet);
 const accSlots=()=>accFree()?ACC.length:ACC_UNLOCKS.reduce((a,[n,v,f])=>a+(f()?v:0),0);
 const accSlotsC=()=>accSlots();
@@ -249,8 +249,8 @@ const amuOf=id=>(P.amu||[])[+String(id).slice(2)]||null;
 const amuLv=a=>Math.min(...a.parts.map(accLv));
 const inAmu=k=>(P.amu||[]).some(a=>a&&a.parts.includes(k));
 const amuName=a=>a.parts.length===2?`${a.parts.map(k=>ACC.find(x=>x[0]===k)[1]).join('＋')}の護符`:`${ACC_CATS.find(c=>c[0]===accCatOf(a.parts[0]))[1]}の護符（${a.parts.length}）`;
-const accEqs=()=>accEqList().flatMap(k=>{ if(String(k).startsWith('am')){ const a=amuOf(k); if(!a) return []; const lv=amuLv(a); return a.parts.map(p=>{ const x=ACC.find(y=>y[0]===p); return {key:p,n:x[1],t:x[2],lv,amu:true}; }); }
-  const a=ACC.find(x=>x[0]===k); return a?[{key:a[0],n:a[1],t:a[2],lv:accLv(a[0])}]:[]; });
+const accEqs=()=>accEqList().flatMap(k=>{ if(String(k).startsWith('am')){ const a=amuOf(k); if(!a) return []; const lv=amuLv(a)+gAccB(); return a.parts.map(p=>{ const x=ACC.find(y=>y[0]===p); return {key:p,n:x[1],t:x[2],lv,amu:true}; }); }
+  const a=ACC.find(x=>x[0]===k); return a?[{key:a[0],n:a[1],t:a[2],lv:accLv(a[0])+(accLv(a[0])?gAccB():0)}]:[]; });
 function accVal(t,lv){ if(KEYS.includes(t)||t==='mpmax') return Math.pow(1.5,lv);
   if(RES_T.includes(t)) return lv>0?Math.min(.95,.45+.05*lv):0; if(t==='dbl') return Math.min(.5,.05*lv); if(t==='first') return Math.min(1,.5+.05*lv);
   if(t==='mpsave') return Math.min(.5,.05*lv); if(t==='mpregen') return .01*lv; if(t==='mprage') return 1.5+.1*lv; if(t==='crit') return Math.min(.6,.02*lv); if(t==='mir') return Math.min(.3,.004*lv); return 1+.5*lv; }
@@ -289,7 +289,7 @@ function gainJob(n,L){
   if(!up) return '';
   if(j.lv>=JMAX){ j.exp=0; L.push(`<span class="mir">★ ${J.n}をマスターした！ 全ステータス×1.05（永続） ★</span>`);
     { const g=Math.floor(enemyStats(P.maxArea).gold*50); P.gold+=g; P.earned=(P.earned||0)+g;
-      L.push(`<span class="y">マスター報酬：${J.main==='best'?'全能力×1.1':KN[J.main]+'×1.2'}（永続・全職業に有効）＋ ${fmt(g)}G</span>`); } checkMasterUnlock(L); return `${J.n}マスター`; }
+      L.push(`<span class="y">マスター報酬：${J.main==='best'?'全能力×1.1':KN[J.main]+'×1.2'}（永続・全職業に有効）＋ ${fmt(g)}G</span>`); } checkMasterUnlock(L); if(P.job==='gambler'&&isTakashi()) takashiCatchup(L); return `${J.n}マスター`; }
   L.push(`<span class="c">ジョブレベルアップ！ ${J.n} JLv${j.lv}</span>`); return `JLv${j.lv}`;
 }
 // 下位・中位・上位をすべてマスターすると隠し職業が現れる
@@ -346,9 +346,28 @@ function jobBattle(n,L,c){ P.jobB=P.jobB||{}; const k=P.job, n0=jobBN(k), n1=P.j
     L.push(`<span class="mir">★ ${J.n}で${KIWAMI_N}戦！「${J.n}の極意」を会得した！ ★</span>`);
     L.push(`<span class="mir">${(J.main==='best'||J.hidden)?'全能力×1.5':KN[J.main]+'×2'}（永続・全職業に有効）</span>`); } }
 const kiwamiLeft=k=>(P.kiwami&&P.kiwami[k])?0:Math.max(0,KIWAMI_N-jobBN(k));
+
+// たかしの追いつき（#76）：ギャンブラーを極めた瞬間に1回だけ。ふつうに進めた人（Lv70・転生2回・約2.7兆G）より少し上に
+const TK_CATCH={lv:70,reb:3,mul:16.5,gold:3.5e12,gpts:70};
+function takashiCatchup(L){ if(P.tkCatch) return; P.tkCatch=true; const C=TK_CATCH, lv0=P.lv;
+  P.reb=Math.max(P.reb,C.reb); P.rebMul=Math.max(P.rebMul,C.mul);
+  if(P.lv<C.lv){ P.pts+=3*(C.lv-P.lv); P.lv=C.lv; P.exp=0; }
+  const g0=P.gold; P.gold=Math.max(P.gold,C.gold); if(P.gold>g0) P.earned=(P.earned||0)+(P.gold-g0);
+  const g=gState(); g.pts=Math.max(g.pts,C.gpts); P.tutDone=true; P.jobOpen=true;
+  if(L) L.push(`<span class="mir">★ ギャンブラーを極めたたかしは、ついに冒険に出る…！ ★</span>`);
+  if(typeof showPopup==='function') showPopup({title:'<span class="mir">たかし、冒険に出る！</span>',body:`<div class="small">ギャンブラーを極めたたかしに、ほかの道が開けた。賭場で積んだ経験が、冒険者としての力になる。<br><br>
+    ・レベル ${lv0} → <b class="y">${P.lv}</b>（能力ポイント+${3*Math.max(0,C.lv-lv0)}）<br>・転生 <b class="y">${P.reb}回</b>（転生倍率×${+P.rebMul.toFixed(1)}）<br>・所持金 <b class="y">${fmt(P.gold)}G</b><br>・冒険者ギルド <b class="y">ランク${G_RANKS[gRank()]}</b><br><br>武器屋・防具屋で装備を整えて、冒険に出よう。</div>`}); }
 // ============ 更新ログ（#42）：プレイヤーに見える。隠し要素の名前は書かない ============
 // 配布版に出すときに、いちばん上に1版足す（新しい順）
 const CHANGELOG=[
+  {v:'1.11',d:'2026/11/20',items:[
+    'ギルドランクの恩恵を大きく増やした（素材・天井・経験値とお金・装飾品・報酬など。Sはさらに豪華に）',
+    'ギャンブル場の景品を21種追加。チープ・ふつう・豪華・超豪華に分けて表示',
+    '称号が、読み込み直すと消えてしまう不具合を直した',
+    '能力の実は持ち物に。好きなときに使うか、合成の素材（ふつう・レア）と交換できる（「能力振り」の画面）',
+    'たかしがギャンブラーを極めると、ふつうに進めた人に追いつけるだけの力をもらえるように',
+    'たかしが酒場ではじめて頼めるのは、お酒だけに',
+  ]},
   {v:'1.10',d:'2026/11/20',items:[
     'はじめての一杯では酔わないように（効き目はそのまま）',
   ]},
@@ -499,7 +518,7 @@ function sanitizeSave(o){
    'jackpots','j777','jpin','jrou','setHits','oinori','hlBest','allInWins','kajiN','miracles','deathN','hwCd','hwBreaks','coins','coinsAll','casWinRun','casBestRun','bigWins','casRing','accSlotsSeen'].forEach(k=>r[k]=num(o[k],0));
   r.lv=Math.max(1,int(o.lv,1)); r.wpn=Math.min(GEAR_MAX,int(o.wpn)); r.arm=Math.min(GEAR_MAX,int(o.arm)); r.reb=int(o.reb); r.pts=int(o.pts);
   r.maxArea=Math.min(AREA_MAX,int(o.maxArea)); r.areaWins=int(o.areaWins); r.champ=int(o.champ);
-  r.rebMul=Math.max(1,num(o.rebMul,1)); r.rebMul=Math.min(r.rebMul,Math.pow(12,r.reb||0)); /* #11：1回×12までの式に合わせて、古いセーブの倍率を丸める */ r.oneG=bool(o.oneG); r.ptsUsed=bool(o.ptsUsed); r.casPlayed=bool(o.casPlayed); r.tutDone=bool(o.tutDone)||(num(o.maxArea,0)>0); r.jobOpen=o.jobOpen===false?false:true; r.drunk=boolMap(o.drunk,k=>DRINKS.some(D=>D.id===k)); if(o.accSlotsSeen===undefined||o.accSlotsSeen===null) r.accSlotsSeen=null; { const AK=new Set(ACC.map(x=>x[0])); r.amu=(Array.isArray(o.amu)?o.amu:[]).slice(0,40).map(a=>a&&Array.isArray(a.parts)?{parts:a.parts.filter(k=>AK.has(k)).slice(0,30)}:null).map(a=>a&&a.parts.length>=2?a:null); r.amuN=int(o.amuN); } r.shobu=['good','hidden'].includes(o.shobu)?o.shobu:null; { const TT=PRIZES.filter(p=>p.title).map(p=>p.title); r.titles=boolMap(o.titles,k=>TT.includes(k)); r.title=TT.includes(o.title)&&r.titles[o.title]?o.title:''; } r.tutWarn=bool(o.tutWarn); r.areaDone=bool(o.areaDone); if(o.guideHeard!==undefined&&o.guideHeard!==null) r.guideHeard=Math.floor(num(o.guideHeard,-1)); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA); r.jsec=boolMap(o.jsec,isJob); r.lastFruit=bool(o.lastFruit); r.endingSeen=bool(o.endingSeen); r.everTakashi=bool(o.everTakashi);
+  r.rebMul=Math.max(1,num(o.rebMul,1)); r.rebMul=Math.min(r.rebMul,Math.pow(12,r.reb||0)); /* #11：1回×12までの式に合わせて、古いセーブの倍率を丸める */ r.oneG=bool(o.oneG); r.casAccSlot=bool(o.casAccSlot); r.ketaCoin=bool(o.ketaCoin); r.prizeN=numMap(o.prizeN,k=>PRIZES.some(p=>p.id===k)||/^s5_[a-z]+$/.test(k)); r.frAuto=bool(o.frAuto); r.frTrades=num(o.frTrades,0); r.fr={}; KEYS.forEach(k=>{ const f=o.fr&&o.fr[k]; if(f) r.fr[k]={n:Math.max(0,int(f.n)),v:Math.max(0,num(f.v,0))}; }); r.tkCatch=bool(o.tkCatch); r.ptsUsed=bool(o.ptsUsed); r.casPlayed=bool(o.casPlayed); r.tutDone=bool(o.tutDone)||(num(o.maxArea,0)>0); r.jobOpen=o.jobOpen===false?false:true; r.drunk=boolMap(o.drunk,k=>DRINKS.some(D=>D.id===k)); if(o.accSlotsSeen===undefined||o.accSlotsSeen===null) r.accSlotsSeen=null; { const AK=new Set(ACC.map(x=>x[0])); r.amu=(Array.isArray(o.amu)?o.amu:[]).slice(0,40).map(a=>a&&Array.isArray(a.parts)?{parts:a.parts.filter(k=>AK.has(k)).slice(0,30)}:null).map(a=>a&&a.parts.length>=2?a:null); r.amuN=int(o.amuN); } r.shobu=['good','hidden'].includes(o.shobu)?o.shobu:null; { const TT=PRIZES.filter(p=>p.title).map(p=>p.title).concat(['ギルドの英雄']); r.titles={}; if(o.titles&&typeof o.titles==='object') TT.forEach(k=>{ if(o.titles[k]===true) r.titles[k]=true; }); /* 称号は日本語のキーなので boolMap を通さない */ r.title=TT.includes(o.title)&&r.titles[o.title]?o.title:''; } r.tutWarn=bool(o.tutWarn); r.areaDone=bool(o.areaDone); if(o.guideHeard!==undefined&&o.guideHeard!==null) r.guideHeard=Math.floor(num(o.guideHeard,-1)); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA); r.jsec=boolMap(o.jsec,isJob); r.lastFruit=bool(o.lastFruit); r.endingSeen=bool(o.endingSeen); r.everTakashi=bool(o.everTakashi);
   r.playMs=int(o.playMs); r.startedAt=int(o.startedAt); if(o.pops&&typeof o.pops==='object') r.pops=boolMap(o.pops);
   if(o.final&&typeof o.final==='object') r.final={hp:Math.min(finalHP(FINAL_FORMS),Math.max(0,num(o.final.hp,FINAL_HP))),cleared:bool(o.final.cleared),seen:bool(o.final.seen),dmg:num(o.final.dmg),form:Math.min(FINAL_FORMS,Math.max(1,int(o.final.form,1))),best:Math.min(FINAL_FORMS,int(o.final.best))};
   r.base={}; KEYS.forEach(k=>r.base[k]=Math.max(0,num(o.base&&o.base[k],1)));
@@ -889,7 +908,7 @@ const GM_SP=[
 const GM_P={n:.15,r:.02}, GM_STAR=[1024,2048,4096,8192,16384], GM_MUL_MAX=4;
 // 天井（#74）：その素材が出ないまま、この数だけ倒すと次で必ず出る（★は節目の層で数える）
 const GM_PITY={n:20,r:150,s:1000};
-const gmPityMax=k=>GM_PITY[k.endsWith('_n')?'n':k.endsWith('_r')?'r':'s'];
+const gmPityMax=k=>Math.ceil(GM_PITY[k.endsWith('_n')?'n':k.endsWith('_r')?'r':'s']*gPityMul());
 // 確率で出るか、天井に届いたら出す。出たら数え直し
 function gmRoll(k,p,L){ P.gmPity=P.gmPity||{}; const c=(P.gmPity[k]||0)+1;
   if(chance(p)||c>=gmPityMax(k)){ P.gmPity[k]=0; gmAdd(k,1,L); } else P.gmPity[k]=c; }
@@ -902,7 +921,7 @@ function gmAdd(k,n,L){ P.gm=P.gm||{}; P.gmF=P.gmF||{}; const first=!P.gmF[k]; P.
   gCollectCheck(L);
   const star=k.includes('_s'); if(L) L.push(`<span class="${star?'mir':k.endsWith('_r')?'c':'g'}">${star?'★ ':''}素材「${gmName(k)}」を手に入れた！${first?'（初めて）':''}</span>`); }
 // 出やすさ：運・実りの首飾り・果実酒・職業（盗賊系など）・固有品。最大×4
-const gmMul=()=>{ const lk=st('luk'); return Math.min(GM_MUL_MAX,(1+lk/(lk+1000))*ps('drop',1)*matMul('drop')*drinkMul('drop')); };
+const gmMul=()=>{ const lk=st('luk'); return Math.min(GM_MUL_MAX,(1+lk/(lk+1000))*ps('drop',1)*matMul('drop')*drinkMul('drop'))*gDropMul(); };
 // 節目の層（第50・100・…・300層）は、その系統だけが出る「巣」
 const nestOf=t=>{ if(t<AREAS.length) return null; const n=layerOf(t); return n%50===0?GM_SP.find(g=>g.nest===n)||null:null; };
 const NEST_NM={slime:'巣くうスライム',bat:'群れなすコウモリ',eye:'ひしめく目玉',skull:'眠らぬ骸骨',knight:'亡国の騎士',dragon:'巣を守る竜'};
@@ -948,7 +967,7 @@ const jobOpen=()=>P.jobOpen!==false||P.job==='neet'||!!(P.unlocked&&P.unlocked.n
 const G_OFFERS=5;
 const gRank=()=>{ const p=gState().pts; let r=0; G_NEED.forEach((n,i)=>{ if(p>=n) r=i; }); return r; };
 const gSlots=()=>3+(gRank()>=2?1:0)+(gRank()>=5?1:0);
-const gDisc=()=>P&&P.guild&&gRank()>=4?.9:1;  // ランクB：酒場・ショップ1割引き
+const gDisc=()=>P&&P.guild&&gRank()>=4?.8:1;  // ランクB：酒場・ショップ2割引き（#78）
 const G_TYPES=['kill','weak','job','nohalf','boss','drink','casino','deliver','appraise','firstjob'];
 // 依頼のカテゴリ（#61）
 const G_CAT={kill:'討伐',weak:'討伐',job:'職業',firstjob:'職業',nohalf:'腕試し',boss:'腕試し',deliver:'収集',appraise:'収集',drink:'寄り道',casino:'寄り道'};
@@ -989,12 +1008,13 @@ const gProg=q=>q.ty==='firstjob'?((P.job!==q.k||takashiLock())?1:0):q.ty==='deli
 const gDoneQ=q=>gProg(q)>=q.goal;
 // 報酬：お金（最深エリアの敵の数十戦分）・熟練度・能力の実・ギルドポイント。★の鑑定は10倍、特別依頼（S）は2倍
 function gReward(q){ const m=(q.ty==='firstjob'?3:q.ty==='appraise'?10:q.ty==='deliver'&&q.k.endsWith('_r')?3:1)*(q.sp?2:1)*(1+q.rk*.5);
-  return {gold:Math.floor(enemyStats(P.maxArea).gold*20*m), jexp:Math.floor(50*m), fruit:Math.max(1,Math.floor(rnd(1,4)*(P.maxArea+1)*m)), pts:Math.round((1+q.rk)*(q.ty==='appraise'?3:1)*(q.sp?2:1))}; }
+  const M=m*gRewardMul();
+  return {gold:Math.floor(enemyStats(P.maxArea).gold*20*M), jexp:Math.floor(50*M*gJexpMul()), fruit:Math.max(1,Math.floor(rnd(1,4)*(P.maxArea+1)*M)), pts:Math.round((1+q.rk)*(q.ty==='appraise'?3:1)*(q.sp?2:1))}; }
 function gReport(i){ const g=gState(), q=g.board[i]; if(!q||!gDoneQ(q)||P.job==='neet') return; const R=gReward(q), L=[];
   if(q.ty==='deliver') P.gm[q.k]-=q.goal;
-  const r0=gRank(); P.gold+=R.gold; P.earned=(P.earned||0)+R.gold; gainJob(R.jexp,L); const k=KEYS[Math.floor(Math.random()*5)]; P.base[k]+=R.fruit; g.pts+=R.pts; g.done=(g.done||0)+1;
+  const r0=gRank(); P.gold+=R.gold; P.earned=(P.earned||0)+R.gold; gainJob(R.jexp,L); const k=KEYS[Math.floor(Math.random()*5)]; fruitGet(k,R.fruit); g.pts+=R.pts; g.done=(g.done||0)+1; gBonusMat(q,L); if(gRank()>r0) gRankUp(L);
   g.board.splice(i,1); gFill();
-  gMsg=`<div class="g">依頼を達成した！ ${fmt(R.gold)}G・熟練度+${fmt(R.jexp)}・${KN[k]}+${fmt(R.fruit)}・ギルドポイント+${R.pts}</div>`+(gRank()>r0?`<div class="mir">★ ギルドランクが${G_RANKS[gRank()]}に上がった！ ★</div>`:'')+L.join('');
+  gMsg=`<div class="g">依頼を達成した！ ${fmt(R.gold)}G・熟練度+${fmt(R.jexp)}・${KN[k]}の実（+${fmt(R.fruit)}）・ギルドポイント+${R.pts}</div>`+(gRank()>r0?`<div class="mir">★ ギルドランクが${G_RANKS[gRank()]}に上がった！ ★</div>`:'')+L.join('');
   save(); renderStatus(); panel('area','guild'); }
 function gDrop(i){ const g=gState(); const q=g.board[i]; if(!q||q.ty==='firstjob') return; g.board.splice(i,1); gMsg='<div class="small o">依頼を取り下げた。</div>'; save(); panel('area','guild'); }
 let gMsg='';
@@ -1015,10 +1035,10 @@ function guildHTML(){ let h=`<h3 style="margin:0 0 4px">冒険者ギルド</h3>`
   if(P.job==='neet') return h+`<div class="o">受付嬢「すみません、ギルドは職業についている方のための場所なんです。お仕事なら、ハローワークへどうぞ」</div>`;
   const g=gState(); gFill(); const r=gRank();
   // 受付嬢（仮：酒場のマスターの色違い）
-  const lines=['「ようこそ、冒険者ギルドへ！ 今日はどの依頼にしますか？」','「達成したら、忘れずに報告してくださいね」','「★の素材は、節目の層の巣でしか見つからないそうですよ」'];
+  const lines=r>=6?['「英雄さま、お帰りなさいませ！ ギルド一同、お待ちしておりました」','「英雄さまの依頼は、報酬を3倍にしてお渡ししますね」','「ギルドの誇りです。どうか無理だけはなさらないで」']:['「ようこそ、冒険者ギルドへ！ 今日はどの依頼にしますか？」','「達成したら、忘れずに報告してくださいね」','「★の素材は、節目の層の巣でしか見つからないそうですよ」'];
   h+=(typeof artMode!=='undefined'&&artMode==='pix'&&PIX.t&&PIX.t.master)?`<div class="barscene"><img class="pix tav" style="filter:hue-rotate(150deg) saturate(1.3)" src="${PIX.t.master}" alt=""><div><div class="y">受付嬢（仮）</div><div class="small">${lines[(g.done||0)%lines.length]}</div></div></div>`:`<div class="small c">受付嬢${lines[(g.done||0)%lines.length]}</div>`;
   h+=`<div class="small">ギルドランク <b class="y">${G_RANKS[r]}</b>（${g.pts}pt${r<6?` / 次の${G_RANKS[r+1]}まで ${G_NEED[r+1]-g.pts}pt`:''}）　達成 ${g.done||0}件</div>`;
-  h+=`<div class="small" style="color:#9ab">特典：D 依頼枠4件／B 酒場とショップ1割引き／A 依頼枠5件／S 報酬2倍の特別依頼</div>`;
+  h+=`<details style="margin:2px 0"><summary class="small y">ランクの恩恵（下のランクの分も残る）</summary><div class="small">`+G_PERKS.map(([n,t],i)=>`<div class="${r>=i+1?'g':''}" style="${r>=i+1?'':'color:#9ab'}">${r>=i+1?'✓':'・'} ${n}：${t}</div>`).join('')+`</div></details>`;
   if(gMsg){ h+=gMsg; gMsg=''; }
   const qrow=(q,btn)=>{ const R=gReward(q); return `<div class="row"><div style="flex:1;min-width:0"><span class="small c">【${G_CAT[q.ty]}】</span>${q.sp?'<span class="mir">【特別】</span>':''}${gText(q)}<div class="small">${fmt(gProg(q))}/${fmt(q.goal)}　報酬 ${fmt(R.gold)}G・熟練度・能力の実・${R.pts}pt</div></div>${btn}</div>`; };
   h+=`<div class="y" style="margin-top:6px">受けている依頼（${g.board.length}/${gSlots()}）</div>`;
@@ -1095,6 +1115,60 @@ function guildIntro(){ if(P.pops&&P.pops.guild) return; P.pops=P.pops||{}; P.pop
 // 長押し中でも見える：受けている収集の依頼の集まり具合（戦闘の結果の欄に1行）
 function gCollectLine(){ if(!P.guild) return ''; const l=gState().board.filter(q=>q.ty==='deliver'||q.ty==='appraise'); if(!l.length) return '';
   return `<div class="small c">依頼の素材：`+l.map(q=>`${gmName(q.k)} ${fmt(Math.min(gmN(q.k),q.goal))}/${fmt(q.goal)}${gDoneQ(q)?' ✓':''}`).join('　')+`</div>`; }
+// ============ 能力の実（#79）：拾ったら持ち物に。使う（能力が上がる）か、合成の素材に交換するかを選ぶ ============
+// P.fr = {str:{n:個数,v:上がる量の合計},…}。P.frAuto=true なら、拾ったその場で使う（前の遊び方）
+const FR_TRADE={n:10,r:100}; // 交換：実10個→ふつうの素材1個、実100個→レアの素材1個（系統は選べる）
+const frOf=k=>{ P.fr=P.fr||{}; if(!P.fr[k]) P.fr[k]={n:0,v:0}; return P.fr[k]; };
+const frN=k=>(P.fr&&P.fr[k]&&P.fr[k].n)||0;
+const frTotal=()=>KEYS.reduce((a,k)=>a+frN(k),0);
+// 実を手に入れる。使った／しまったの文を返す
+function fruitGet(k,v){ if(P.frAuto){ P.base[k]+=v; return `${KN[k]}が${fmt(v)}上がった`; }
+  const f=frOf(k); f.n++; f.v+=v; return `持ち物へ（${KN[k]}+${fmt(v)}ぶん）`; }
+// 使う：1個（平均の量）か全部
+function frUse(k,all){ const f=frOf(k); if(!f.n) return; const m=all?f.n:1, v=all?f.v:Math.floor(f.v/f.n);
+  P.base[k]+=v; f.n-=m; f.v=f.n?f.v-v:0; P.frMsg=`<div class="g">${KN[k]}の実を${m}個使った！ ${KN[k]}が${fmt(v)}上がった</div>`; save(); renderStatus(); panel('stat'); }
+function frUseAll(){ KEYS.forEach(k=>{ const f=frOf(k); if(f.n){ P.base[k]+=f.v; f.n=0; f.v=0; } }); P.frMsg='<div class="g">持っている実をすべて使った！</div>'; save(); renderStatus(); panel('stat'); }
+// 交換：多く持っている実から順に使う
+const frCost=rare=>Math.round((rare?FR_TRADE.r:FR_TRADE.n)*gTradeMul());
+function frTrade(sp,rare){ const need=frCost(rare); if(frTotal()<need||!gmSp(sp)) return; let left=need;
+  while(left>0){ const k=KEYS.slice().sort((a,b)=>frN(b)-frN(a))[0], f=frOf(k), m=Math.min(left,f.n); f.v-=f.n===m?f.v:Math.floor(f.v/f.n)*m; f.n-=m; left-=m; }
+  gmAdd(sp+(rare?'_r':'_n'),1); P.frTrades=(P.frTrades||0)+1;
+  P.frMsg=`<div class="g">実${need}個を、素材「${gmName(sp+(rare?'_r':'_n'))}」と交換した！</div>`; save(); renderStatus(); panel('stat'); }
+let frSp='slime';
+function frHTML(){ let h=`<h3 style="margin:10px 0 4px">能力の実（${frTotal()}個）</h3>`;
+  if(P.frMsg){ h+=P.frMsg; P.frMsg=''; }
+  h+=`<label class="small" style="display:block;margin-bottom:4px"><input type="checkbox" ${P.frAuto?'checked':''} onchange="P.frAuto=this.checked;save();panel('stat')"> 拾ったらすぐ使う</label>`;
+  KEYS.forEach(k=>{ const f=frOf(k); h+=`<div class="row"><div>${KN[k]}の実 ×${f.n}<div class="small">使うと ${KN[k]}+${fmt(f.v)}（全部）</div></div><div><button ${f.n?'':'disabled'} onclick="frUse('${k}',false)">1個</button> <button ${f.n?'':'disabled'} onclick="frUse('${k}',true)">全部</button></div></div>`; });
+  h+=`<button style="width:100%;margin-top:4px" ${frTotal()?'':'disabled'} onclick="frUseAll()">すべての実を使う</button>`;
+  h+=`<div class="small y" style="margin-top:8px">合成の素材と交換（能力は上がらない）</div><div class="grid" style="grid-template-columns:repeat(6,1fr);margin:4px 0">`+
+    GM_SP.map(g=>`<button style="font-size:11px;padding:5px 0" class="${frSp===g.sp?'sel':''}" onclick="frSp='${g.sp}';panel('stat')">${g.n}</button>`).join('')+`</div>`;
+  [[false,frCost(false)],[true,frCost(true)]].forEach(([r,n])=>{ const k=frSp+(r?'_r':'_n'); h+=`<div class="row"><div>実${n}個 → ${gmName(k)}<div class="small">持っている ${gmN(k)}個</div></div><button ${frTotal()>=n?'':'disabled'} onclick="frTrade('${frSp}',${r})">交換</button></div>`; });
+  return h; }
+// ============ ギルドランクの恩恵（#78）：下のランクの恩恵は上でも残る。同じ種類は上のランクで上書き ============
+// ランク：F0 E1 D2 C3 B4 A5 S6
+const gRk=()=>P&&P.guild?gRank():0;
+const gExpGold=()=>{ const r=gRk(); return r>=6?2:r>=4?1.5:r>=3?1.2:1; };       // C×1.2・B×1.5・S×2
+const gDropMul=()=>{ const r=gRk(); return r>=6?2:r>=5?1.5:r>=2?1.2:1; };       // 素材：D×1.2・A×1.5・S×2
+const gPityMul=()=>{ const r=gRk(); return r>=5?.5:r>=3?.8:1; };                 // 天井：C 2割早く・A 半分
+const gTradeMul=()=>gRk()>=2?.8:1;                                               // 実の交換：D 8個・80個
+const gAccB=()=>gRk()>=5?1:0;                                                    // 装飾品の効果：A +1Lv
+const gJexpMul=()=>gRk()>=1?2:1;                                                 // 依頼の熟練度：E×2
+const gRewardMul=()=>gRk()>=6?3:1;                                               // 依頼の報酬：S×3（特別依頼は×2と合わせて×6）
+const G_PERKS=[
+  ['E','依頼を報告すると素材を1個おまけ・依頼の熟練度×2'],
+  ['D','依頼枠4件・実の交換が安く（8個／80個）・素材×1.2'],
+  ['C','装飾品の枠+1・素材の天井が2割早く・経験値とお金×1.2'],
+  ['B','酒場とショップ2割引き・経験値とお金×1.5'],
+  ['A','依頼枠5件・素材×1.5・天井が半分・装飾品の効果+1Lv'],
+  ['S','特別依頼・装飾品の枠+2・経験値とお金×2・素材×2・依頼の報酬×3・転生ごとに★1〜★3を支給・称号「ギルドの英雄」'],
+];
+// 報告のおまけ（E）：依頼に合う系統（なければランダム）のふつうの素材
+function gBonusMat(q,L){ if(gRk()<1) return; const sp=q.k&&gmSp(String(q.k).split('_')[0])?String(q.k).split('_')[0]:GM_SP[Math.floor(Math.random()*GM_SP.length)].sp; gmAdd(sp+'_n',1,L); }
+// 転生のたびの支給（S）
+function gRebirthGift(){ if(gRk()<6) return ''; const got=[1,2,3].map(s=>{ const g=GM_SP[Math.floor(Math.random()*GM_SP.length)]; gmAdd(`${g.sp}_s${s}`,1); return gmName(`${g.sp}_s${s}`); });
+  return `ギルドからの支給：${got.join('・')}`; }
+// Sになったら称号
+function gRankUp(L){ if(gRk()>=6){ P.titles=P.titles||{}; if(!P.titles['ギルドの英雄']){ P.titles['ギルドの英雄']=true; if(L) L.push('<span class="mir">★ 称号「ギルドの英雄」を手に入れた！ ★</span>'); } } }
 // ============ 画面 ============
 function show(id){['sTitle','sMain','sBattle'].forEach(s=>$('#'+s).classList.toggle('hide',s!==id)); window.scrollTo(0,0)}
 let pickedJob='adventurer', slimeTaps=[];
@@ -1247,7 +1321,7 @@ function panel(p,arg){
       h+=`<div class="row"><div>${i>=GEAR_MAX?`${isW?wName(20):aName(20)}+99 <span class="mir">→ ？？？</span>`:itemName(isW?WPN:ARM,i)}<div class="small">${isW?'攻撃':'防御'}+${fmt(isW?wpnPow(i):armPow(i))}　${fmt(pr)}G</div></div><button ${P.gold<pr?'disabled':''} onclick="buy('${p}',${i})">買う</button></div>`;}
   } else if(p==='acc'){
     const eq=accEqList(), cap=accCap();
-    h=shopTabs('acc')+`<h2>装飾品屋</h2><div class="small">カテゴリごとに装備枠がある（上位の職業ほど多い）。買うたびに+1強化、最大+${ACC_MAX}。${P.job==='neet'?'<span class="mir">無職は限界突破で+'+ACC_LIMIT+'まで</span>':''}</div>`;
+    h=shopTabs('acc')+`<h2>装飾品屋</h2><div class="small">装備枠は進み具合で増える（どの職業でも同じ）。買うたびに+1強化、最大+${ACC_MAX}。${P.job==='neet'?'<span class="mir">無職は限界突破で+'+ACC_LIMIT+'まで</span>':''}</div>`;
     const here=areaAils(P.maxArea);
     { const n=accEqCount(), sl=accSlots();
       h+=`<div class="small" style="margin-top:4px">装備枠：<b class="y">${n}/${accFree()?'∞':sl}</b>（どの職業でも同じ）　`+(accFree()?'<span class="mir">無職への道が開かれ、すべて付けられる</span>':ACC_UNLOCKS.map(([nm,v,f])=>`<span class="${f()?'g':''}" style="${f()?'':'color:#789'}">${f()?'✓':'・'}${nm}+${v}</span>`).join(' '))+`</div>`; }
@@ -1296,13 +1370,13 @@ function panel(p,arg){
       ・能力振りの画面に出る数字は、倍率を掛ける前の<b>基礎値</b>なので、転生しても変わらない。実際の能力は「基礎値×転生倍率×…」で、ステータス欄に出ている（今の${KN[mainKey()]}：基礎 ${fmt(P.base[mainKey()])} → 実際 ${fmt(st(mainKey()))}）。<br>
       ・転生倍率は能力だけでなく、<b>武器・防具の強さにも掛かる</b>。攻撃力の「Lvの補正」は、これまでの最高Lv（Lv${fmt(lvB())}）で計算するので、転生してLv1に戻っても弱くならない。
       </div></details>`;
-    if(rebNote){ h=`<div class="mir" style="margin:6px 0">★ 転生した！（${P.reb}回目） ★</div>${rebTable(rebNote)}`+h; rebNote=null; }
+    if(rebNote){ h=`<div class="mir" style="margin:6px 0">★ 転生した！（${P.reb}回目） ★</div>${rebTable(rebNote)}${rebGift?`<div class="mir small">★ ${rebGift}</div>`:''}`+h; rebNote=null; rebGift=''; }
     h+=`<div class="small" style="margin-top:8px">転生すると、こう変わる：</div>${rebTable(rebPreview())}`;
     h+=`<button style="width:100%;margin-top:8px" ${P.lv<rebReq()?'disabled':''} onclick="rebirth()">転生する</button>`;
   } else if(p==='stat'){
     h=`<h2>能力振り（残り ${P.pts}pt）</h2><button class="y" style="width:100%;margin-bottom:6px" ${P.pts<1?'disabled':''} onclick="addPt(mainKey(),P.pts)">おまかせ：${KN[mainKey()]}（${JOBS[P.job].n}の得意な能力）に全部振る</button>`;
     KEYS.forEach(k=>{h+=`<div class="row"><div>${KN[k]} <span class="small">基礎 ${fmt(P.base[k])}</span></div><div><button ${P.pts<1?'disabled':''} onclick="addPt('${k}',1)">+1</button> <button ${P.pts<1?'disabled':''} onclick="addPt('${k}',${P.pts})">+全部</button></div></div>`});
-    h+=`<div class="small" style="margin-top:6px">レベルが上がるたびに3pt。メイン能力：<span class="y">${KN[mainKey()]}</span>（攻撃力に直結）</div><div class="small" style="color:#9ab">ここの数字は、転生倍率などを掛ける前の基礎値。転生しても変わらない（実際の能力はステータス欄）。</div>`;
+    h+=`<div class="small" style="margin-top:6px">レベルが上がるたびに3pt。メイン能力：<span class="y">${KN[mainKey()]}</span>（攻撃力に直結）</div><div class="small" style="color:#9ab">ここの数字は、転生倍率などを掛ける前の基礎値。転生しても変わらない（実際の能力はステータス欄）。</div>`+frHTML();
   } else if(p==='log'){
     if(arg!==undefined && LOGS[arg]){
       const l=LOGS[arg];
@@ -1352,11 +1426,11 @@ function eqAcc(k){ const am=String(k).startsWith('am'); if(am?!amuOf(k):(!accLv(
 function changeJob(k){if(!canJob(k))return; if(P.job!==k) P.casBeg=null; P.job=k; trimAcc(); save(); renderStatus(); panel('job');}
 function addPt(k,n){n=Math.min(n,P.pts); if(n>0) P.ptsUsed=true; P.base[k]+=n; P.pts-=n; save(); renderStatus(); panel('stat');}
 // 転生した直後に出す「何がどれだけ上がったか」
-let rebNote=null;
+let rebNote=null, rebGift='';
 const rebRows=()=>[[KN[mainKey()],st(mainKey())],['攻撃力',isMagicJob(P.job)?matk():atk()],['防御力',def()],['最大HP',maxhp()]];
 function rebPreview(){ const m=P.rebMul, lv=P.lv; P.maxLv=Math.max(P.maxLv||0,P.lv); const a=rebRows(); P.rebMul=capN(m*rebStep(lv)); const b=rebRows(); P.rebMul=m; return a.map((r,i)=>[r[0],r[1],b[i][1]]); }
 const rebTable=rows=>rows.map(([n,a,b])=>`<div class="row small"><div>${n}</div><div>${fmt(a)} → <span class="g">${fmt(b)}</span>${a>0&&isFinite(b/a)?`（×${fmtMul(b/a)}）`:''}</div></div>`).join('');
-function rebirth(){if(P.lv<rebReq())return; const rows=rebPreview(); P.rebMul=capN(P.rebMul*rebStep()); rebNote=rows; P.reb++; P.lv=1; P.exp=0; P.secret={}; P.blessed={}; save(); renderStatus(); panel('reb');}
+function rebirth(){if(P.lv<rebReq())return; const rows=rebPreview(); P.rebMul=capN(P.rebMul*rebStep()); rebNote=rows; P.reb++; P.lv=1; P.exp=0; P.secret={}; P.blessed={}; rebGift=gRebirthGift(); save(); renderStatus(); panel('reb');}
 function resetSave(){ if(!resetArm){resetArm=true; panel('rec'); return;} resetArm=false; try{localStorage.removeItem(SAVE);localStorage.removeItem(LOGSAVE)}catch(e){} P=null; LOGS=[]; curPanel='area'; renderTitle(); show('sTitle'); }
 
 // ============ ギャンブル場 ============
@@ -1549,7 +1623,7 @@ function hlStart(){ const b=takeBet(); if(!b){panel('casino');return;} const [n,
 function hlReward(n){ const B=HL_BONUS[n]; if(!B) return ''; const lv0=P.lv, L=[];
   for(let i=0;i<B.lv;i++) gainExp(Math.max(0,need(P.lv)-P.exp),L);
   let t=`<div class="lv">${n}連勝ボーナス！ Lv${lv0}→${P.lv}`;
-  if(B.fruit){ const v=Math.max(1,Math.floor(rnd(1,4)*(P.maxArea+1))); KEYS.forEach(k=>P.base[k]+=v); t+=`、全能力+${v}`; }
+  if(B.fruit){ const v=Math.max(1,Math.floor(rnd(1,4)*(P.maxArea+1))); KEYS.forEach(k=>fruitGet(k,v)); t+=`、全能力の実（各+${v}）`; }
   if(B.x2){ hl.pot*=2; t+=`、賞金さらに×2`; }
   save(); renderStatus(); return t+'</div>'; }
 function hlGuess(hi){
@@ -1742,27 +1816,62 @@ function casCoinOnWin(mult){ const c=Math.max(1,Math.ceil(mult)); P.coins=(P.coi
   let t=`<span class="y">🪙 コイン+${c}（${fmt(P.coins)}枚）</span>`;
   if(mult>=10){ P.bigWins=(P.bigWins||0)+1; t=`<div class="mir" style="font-size:18px">★☆ 大勝ち！ ×${+mult.toFixed(1)} ☆★</div>`+t; }
   if(P.casWinRun>=3) t+=` <span class="c">${P.casWinRun}連勝中！</span>`; return t; }
-// 景品
+// 景品（#50 #71）。tier：区分、sel：選ぶもの（sp 系統・drink お酒・acc 装飾品）、lim：交換できる回数、ok：今交換できるか
+const frV=()=>Math.max(1,Math.floor(rnd(1,4)*(P.maxArea+1)));
+const PR_TIERS=[['cheap','チープ'],['mid','ふつう'],['lux','豪華'],['top','超豪華']];
+let prSp='slime', prDrink='ale', prAcc='';
+const prizeN=id=>(P.prizeN&&P.prizeN[id])||0;
 const PRIZES=[
-  {id:'fruit', n:'能力の実',          c:20,   d:'全能力が上がる（最深エリアに応じて）', give:()=>{ const v=Math.max(1,Math.floor(rnd(1,4)*(P.maxArea+1))); KEYS.forEach(k=>P.base[k]+=v); return `全能力+${v}`; }},
-  {id:'ale',   n:'エールの引換券',    c:10,   d:'その場でエールを1杯',     give:()=>prizeDrink('ale')},
-  {id:'wine',  n:'赤ワインの引換券',  c:30,   d:'その場で赤ワインを1杯',   give:()=>prizeDrink('wine')},
-  {id:'fire',  n:'火酒の引換券',      c:60,   d:'その場で火酒を1杯',       give:()=>prizeDrink('fire')},
-  {id:'koshu', n:'古酒の引換券',      c:300,  d:'その場で古酒を1杯',       give:()=>prizeDrink('koshu')},
-  {id:'ring',  n:'勝負師の指輪',      c:100,  d:'ギャンブルの儲け+5%（1つごと、最大+50%）。ギャンブル場の景品でしか手に入らない', max:10, give:()=>{ P.casRing=Math.min(10,(P.casRing||0)+1); return `勝負師の指輪 +${P.casRing}`; }},
-  {id:'t1',    n:'称号「ギャンブル好き」', c:50,   d:'名前の横に出る称号', title:'ギャンブル好き'},
-  {id:'t2',    n:'称号「勝負師」',         c:500,  d:'名前の横に出る称号', title:'勝負師'},
-  {id:'t3',    n:'称号「賭場の主」',       c:3000, d:'名前の横に出る称号', title:'賭場の主'},
+  // チープ
+  {id:'kuji',  tier:'cheap', n:'当たりくじ',          c:10,  d:'最深エリアの敵のお金×10戦分', give:()=>{ const g=Math.floor(goldBase()*10); P.gold+=g; P.earned=(P.earned||0)+g; return `${fmt(g)}G当たった！`; }},
+  {id:'ale',   tier:'cheap', n:'エールの引換券',      c:10,  d:'その場でエールを1杯',     give:()=>prizeDrink('ale')},
+  {id:'hang',  tier:'cheap', n:'二日酔いの薬',        c:15,  d:'二日酔いがすぐ治る', ok:()=>(P.hangover||0)>0, give:()=>{ P.hangover=0; return '頭痛がすっと引いた。'; }},
+  {id:'fruit', tier:'cheap', n:'能力の実',            c:20,  d:'全能力の実（最深エリアに応じて）', give:()=>{ const v=frV(); KEYS.forEach(k=>fruitGet(k,v)); return `全能力の実（各+${v}）${P.frAuto?'':'を持ち物へ'}`; }},
+  {id:'npack', tier:'cheap', n:'ふつう素材の詰め合わせ', c:20, d:'選んだ系統のふつうの素材を5個', sel:'sp', give:()=>{ gmAdd(prSp+'_n',5); return `${gmName(prSp+'_n')}×5`; }},
+  {id:'free',  tier:'cheap', n:'一杯無料券',          c:25,  d:'酒場の好きなお酒を1杯（選んでから交換）', sel:'drink', give:()=>prizeDrink(prDrink)},
+  {id:'wine',  tier:'cheap', n:'赤ワインの引換券',    c:30,  d:'その場で赤ワインを1杯',   give:()=>prizeDrink('wine')},
+  {id:'fbag',  tier:'cheap', n:'実の福袋',            c:30,  d:'ランダムな能力の実を3個', give:()=>{ const t=[0,1,2].map(()=>{ const k=KEYS[Math.floor(Math.random()*5)], v=frV(); fruitGet(k,v); return `${KN[k]}の実(+${v})`; }); return t.join('・'); }},
+  {id:'forge', tier:'cheap', n:'付け直し無料券',      c:40,  d:'次の1回、属性・武器の種類の付け直しが無料', ok:()=>!P.forgeFree, give:()=>{ P.forgeFree=true; return '次の付け直しが無料になった'; }},
+  {id:'t1',    tier:'cheap', n:'称号「ギャンブル好き」', c:50,   d:'名前の横に出る称号', title:'ギャンブル好き'},
+  {id:'fire',  tier:'cheap', n:'火酒の引換券',        c:60,  d:'その場で火酒を1杯',       give:()=>prizeDrink('fire')},
+  // ふつう
+  {id:'ring',  tier:'mid',   n:'勝負師の指輪',        c:100, d:'ギャンブルの儲け+5%（1つごと、最大+50%）。ギャンブル場の景品でしか手に入らない', ok:()=>(P.casRing||0)<10, give:()=>{ P.casRing=Math.min(10,(P.casRing||0)+1); return `勝負師の指輪 +${P.casRing}`; }},
+  {id:'shobu', tier:'mid',   n:'本物の勝負酒',        c:100, d:'次の1回の勝率80%。隠れ酔いなし', ok:()=>!P.shobu, give:()=>{ P.shobu='good'; P.drinks=(P.drinks||0)+1; return '本物の勝負酒を飲んだ。次の1回は勝ちやすい'; }},
+  {id:'rpack', tier:'mid',   n:'レア素材の詰め合わせ', c:150, d:'選んだ系統のレアの素材を3個', sel:'sp', give:()=>{ gmAdd(prSp+'_r',3); return `${gmName(prSp+'_r')}×3`; }},
+  {id:'age',   tier:'mid',   n:'熟成チケット',        c:200, d:'酒蔵のお酒1本（いちばん若いもの）をすぐ熟成済みに', ok:()=>(P.cellar||[]).some(c=>ageH(c)<AGE_FULL_H), give:()=>{ const c=(P.cellar||[]).filter(c=>ageH(c)<AGE_FULL_H).sort((a,b)=>b.t-a.t)[0]; c.t=Date.now()-AGE_FULL_H*3600000; return `${(DRINKS.find(x=>x.id===c.type)||{n:'お酒'}).n}が熟成した`; }},
+  {id:'book',  tier:'mid',   n:'熟練の書',            c:250, d:'今の職業のジョブレベル+1', ok:()=>jl(P.job).lv<JMAX, give:()=>{ const j=jl(P.job), L=[]; gainJob(jneed(j.lv)-j.exp,L); return L.join(''); }},
+  {id:'koshu', tier:'mid',   n:'古酒の引換券',        c:300, d:'その場で古酒を1杯',       give:()=>prizeDrink('koshu')},
+  {id:'s1',    tier:'mid',   n:'★1の引換券',          c:300, d:'選んだ系統の★1の素材を1個', sel:'sp', give:()=>{ gmAdd(prSp+'_s1',1); return gmName(prSp+'_s1'); }},
+  {id:'accup', tier:'mid',   n:'装飾品の強化券',      c:300, d:'持っている装飾品を1つ選んで+1（上限まで）', sel:'acc', ok:()=>!!prAccOk(), give:()=>{ const k=prAccOk(); P.acc[k]=accLv(k)+1; return `${ACC.find(x=>x[0]===k)[1]} +${P.acc[k]}`; }},
+  {id:'rec',   tier:'mid',   n:'ギルドの推薦状',      c:400, d:'ギルドポイント+10', ok:()=>!!P.guild, give:()=>{ const g=gState(), r0=gRank(), L=[]; g.pts+=10; if(gRank()>r0){ L.push(`ギルドランクが${G_RANKS[gRank()]}に上がった！`); gRankUp(L); } return 'ギルドポイント+10 '+L.join(''); }},
+  {id:'t2',    tier:'mid',   n:'称号「勝負師」',      c:500, d:'名前の横に出る称号', title:'勝負師'},
+  // 豪華
+  {id:'s3',    tier:'lux',   n:'★3の引換券',          c:1000, d:'選んだ系統の★3の素材を1個', sel:'sp', give:()=>{ gmAdd(prSp+'_s3',1); return gmName(prSp+'_s3'); }},
+  {id:'gold',  tier:'lux',   n:'黄金の実',            c:1500, d:'全能力の実を10個ずつ', give:()=>{ for(let i=0;i<10;i++) KEYS.forEach(k=>fruitGet(k,frV())); return `全能力の実×10${P.frAuto?'':'を持ち物へ'}`; }},
+  {id:'s5',    tier:'lux',   n:'★5の引換券',          c:3000, d:'選んだ系統の★5の素材を1個（系統ごとに1回）', sel:'sp', ok:()=>!prizeN('s5_'+prSp), give:()=>{ P.prizeN['s5_'+prSp]=1; gmAdd(prSp+'_s5',1); return gmName(prSp+'_s5'); }},
+  {id:'t3',    tier:'lux',   n:'称号「賭場の主」',    c:3000, d:'名前の横に出る称号', title:'賭場の主'},
+  {id:'slot',  tier:'lux',   n:'賭場の装飾品枠',      c:5000, d:'装飾品の枠+1（1回だけ）', lim:1, give:()=>{ P.casAccSlot=true; return '装飾品の枠が1つ増えた'; }},
+  // 超豪華
+  {id:'t4',    tier:'top',   n:'称号「伝説の勝負師」', c:10000, d:'名前の横に出る称号', title:'伝説の勝負師'},
+  {id:'keta',  tier:'top',   n:'桁のコイン',          c:20000, d:'桁の神との戦いで1回だけ、与えるダメージ×2', lim:1, give:()=>{ P.ketaCoin=true; return '桁のコインを手に入れた。桁の神との次の戦いで使われる'; }},
 ];
-function prizeDrink(id){ const D=DRINKS.find(x=>x.id===id); if(!D) return ''; P.drunk=P.drunk||{}; P.drunk[id]=true; P.drinks=(P.drinks||0)+1; return applyDrink(D,sakePow())||`${D.n}を飲んだ`; }
-function prizeOk(p){ if(p.title) return !(P.titles&&P.titles[p.title]); if(p.max) return (P.casRing||0)<p.max; return true; }
+// 強化券で強化する装飾品：選んだもの（持っていて上限未満）
+function prAccOk(){ const own=ACC.filter(a=>accLv(a[0])>0&&accLv(a[0])<accCap()).map(a=>a[0]); if(!own.length) return ''; if(!own.includes(prAcc)) prAcc=own[0]; return prAcc; }
+function prizeDrink(id){ const D=DRINKS.find(x=>x.id===id); if(!D) return ''; P.drunk=P.drunk||{}; P.drunk[id]=true; return applyDrink(D,sakePow())||`${D.n}を飲んだ`; }
+function prizeOk(p){ if(p.title) return !(P.titles&&P.titles[p.title]); if(p.lim&&prizeN(p.id)>=p.lim) return false; return p.ok?!!p.ok():true; }
 function buyPrize(id){ const p=PRIZES.find(x=>x.id===id); if(!p||(P.coins||0)<p.c||!prizeOk(p)) return;
-  P.coins-=p.c; let t;
+  P.coins-=p.c; P.prizeN=P.prizeN||{}; P.prizeN[p.id]=prizeN(p.id)+1; let t;
   if(p.title){ P.titles=P.titles||{}; P.titles[p.title]=true; P.title=p.title; t=`称号「${p.title}」を手に入れた`; } else t=p.give();
   casMsg=`<span class="g">🎁 ${p.n}と交換した！</span><div class="small">${t||''}</div>`; save(); renderStatus(); panel('casino'); }
+function prSelHTML(p){ if(p.sel==='sp') return `<select style="font-size:11px" onchange="prSp=this.value;panel('casino')">`+GM_SP.map(g=>`<option value="${g.sp}" ${prSp===g.sp?'selected':''}>${g.n}</option>`).join('')+`</select>`;
+  if(p.sel==='drink') return `<select style="font-size:11px" onchange="prDrink=this.value;panel('casino')">`+DRINKS.filter(D=>drinkOpen(D)&&D.k!=='forge').map(D=>`<option value="${D.id}" ${prDrink===D.id?'selected':''}>${D.n}</option>`).join('')+`</select>`;
+  if(p.sel==='acc'){ const own=ACC.filter(a=>accLv(a[0])>0&&accLv(a[0])<accCap()); prAccOk(); return own.length?`<select style="font-size:11px" onchange="prAcc=this.value;panel('casino')">`+own.map(a=>`<option value="${a[0]}" ${prAcc===a[0]?'selected':''}>${a[1]} +${accLv(a[0])}</option>`).join('')+`</select>`:'<span class="small o">（強化できる装飾品がない）</span>'; }
+  return ''; }
 function prizeHTML(){ let h=`<div class="small">勝つとコインがたまる（倍率ぶん。×10以上は大勝ち）。いま <span class="y">🪙 ${fmt(P.coins||0)}枚</span>　最高 ${P.casBestRun||0}連勝・大勝ち ${P.bigWins||0}回</div>`;
-  PRIZES.forEach(p=>{ const ok=prizeOk(p), can=ok&&(P.coins||0)>=p.c;
-    h+=`<div class="row"><div style="flex:1;min-width:0">${p.n}${p.id==='ring'?` <span class="small">（今 +${P.casRing||0}）</span>`:''}<div class="small">${p.d}</div></div><button ${can?'':'disabled'} onclick="buyPrize('${p.id}')">${ok?'🪙'+p.c:'交換済み'}</button></div>`; });
+  PR_TIERS.forEach(([tk,tn])=>{ h+=`<details ${tk==='cheap'?'open':''} style="margin:4px 0"><summary class="small y">${tn}</summary>`;
+    PRIZES.filter(p=>p.tier===tk).forEach(p=>{ const ok=prizeOk(p), can=ok&&(P.coins||0)>=p.c, done=p.title?!ok:(p.lim&&prizeN(p.id)>=p.lim);
+      h+=`<div class="row"><div style="flex:1;min-width:0">${p.n}${p.id==='ring'?` <span class="small">（今 +${P.casRing||0}）</span>`:''}<div class="small">${p.d}</div>${p.sel?`<div>${prSelHTML(p)}</div>`:''}</div><button ${can?'':'disabled'} onclick="buyPrize('${p.id}')">${done?'交換済み':'🪙'+fmt(p.c)}</button></div>`; });
+    h+=`</details>`; });
   if(P.titles) h+=`<div class="small" style="margin-top:6px">称号：`+Object.keys(P.titles).map(t=>`<button style="font-size:11px" class="${P.title===t?'sel':''}" onclick="P.title='${t}';save();renderStatus();panel('casino')">${t}</button>`).join(' ')+` <button style="font-size:11px" onclick="P.title='';save();renderStatus();panel('casino')">外す</button></div>`;
   return h; }
 // 勝負師の指輪：儲け×(1＋0.05×Lv)
@@ -2361,8 +2470,10 @@ function guideHTML(){
 }
 let barTab='guide', barMsg='';
 function barHTML(){
-  const tabs=[['guide','相談'],['hint','攻略'],['drink','お酒'],['rumor','噂話'],['contest','飲み比べ']];
-  let h=`<h2>酒場</h2><div class="grid" style="margin-bottom:6px;grid-template-columns:repeat(5,1fr)">`+tabs.map(([k,n])=>`<button style="font-size:12px;padding:7px 1px;white-space:nowrap" class="${barTab===k?'sel':''}" onclick="barMsg='';panel('bar','${k}')">${n}</button>`).join('')+`</div>`;
+  // たかしは、はじめての一杯を飲むまでお酒しか頼めない（#76）
+  const tkFirst=isTakashi()&&!P.drinks; if(tkFirst) barTab='drink';
+  const tabs=tkFirst?[['drink','お酒']]:[['guide','相談'],['hint','攻略'],['drink','お酒'],['rumor','噂話'],['contest','飲み比べ']];
+  let h=`<h2>酒場</h2><div class="grid" style="margin-bottom:6px;grid-template-columns:repeat(${tabs.length},1fr)">`+tabs.map(([k,n])=>`<button style="font-size:12px;padding:7px 1px;white-space:nowrap" class="${barTab===k?'sel':''}" onclick="barMsg='';panel('bar','${k}')">${n}</button>`).join('')+`</div>`;
   if(barTab==='guide'){ h+=guideHTML(); }
   else if(barTab==='drink'){
     h+=`<div class="small">${isTakashi()?'<span class="o">たかしが飲むと…もう一人のたかしが出てくる。エール・火酒は戦闘、ワイン・神酒は博打。</span>':'同時に効くお酒は酒豪Lvで1〜3杯（あふれたら、残りの少ないものから覚める）。冒険・闘技場・神々の座の戦闘で効く。'}</div>`;
@@ -2543,6 +2654,7 @@ function simulateFinal(e,fast){
   const barrier=P.reb<FINAL_REB;
   if(barrier) L.push(`<span class="o">輪廻の結界が神を包んでいる… 転生を重ねた者でなければ破れない（転生 ${P.reb}/${FINAL_REB}回）</span>`);
   else L.push(`<span class="c">輪廻の結界が砕けた！ ダメージは「桁数」で神に届く（転生ボーナス ×${M.toFixed(2)}）</span>`);
+  if(!barrier&&P.ketaCoin){ P.ketaCoin=false; c.M*=2; L.push('<span class="mir">🪙 桁のコインが輝いた！ この戦いでは、与える桁ダメージ×2</span>'); }
   for(let turn=1;turn<=FINAL_TURNS&&c.ehp>0;turn++){
     L.push(`<span class="hpl">― ターン${turn} ―</span>`);
     if(accT('mpregen')) c.mp=Math.min(c.mmp,c.mp+c.mmp*.01*accT('mpregen'));
@@ -2846,14 +2958,14 @@ function simulate(e,t,fast){
   if(res==='win'){
     P.kills++;
     const lk=st('luk');
-    const exp=Math.floor(Math.min(e.exp*rnd(.9,1.1)*ps('exp',1)*drinkMul('exp')*matMul('exp'),need(P.lv)*expCap())); const gold=Math.floor(e.gold*goldRate(t>=0?t:e.guard?e.gt:P.maxArea)*goldJobMul()*rnd(.8,1.2)*(1+lk/(lk+200))*ps('gold',1)*drinkMul('gold')*(c.secGold||1)*matMul('gold'))+c.gold;
+    const exp=Math.floor(Math.min(e.exp*rnd(.9,1.1)*ps('exp',1)*drinkMul('exp')*matMul('exp')*gExpGold(),need(P.lv)*expCap())); const gold=Math.floor(e.gold*goldRate(t>=0?t:e.guard?e.gt:P.maxArea)*goldJobMul()*rnd(.8,1.2)*(1+lk/(lk+200))*ps('gold',1)*drinkMul('gold')*(c.secGold||1)*matMul('gold')*gExpGold())+c.gold;
     L.push(`<span class="y">${e.name}を倒した！</span>`);
     L.push(`<span class="rw">${fmt(exp)}の経験値と ${fmt(gold)}G を手に入れた！</span>`);
     P.gold+=gold; P.earned=(P.earned||0)+gold; if(t>=0) casDonateBack(L);
     const lv0=P.lv;
     let drop='';
     if(c.secDrop||chance((.04+lk/(lk+1000)*.1)*ps('drop',1)*matMul('drop')*drinkMul('drop'))){const k=KEYS[Math.floor(Math.random()*5)]; const n=Math.max(1,Math.floor(rnd(1,4)*(Math.max(t,P.champ,P.maxArea*(e.train?1:0),0)+1)*(c.secFruitX||1))); P.lastFruit=true;
-      P.base[k]+=n; drop=`${KN[k]}の実(+${n})`; L.push(`<span class="g">${KN[k]}の実を拾った！ ${KN[k]}が${n}上がった！</span>`);}
+      const fm=fruitGet(k,n); drop=`${KN[k]}の実(+${n})`; L.push(`<span class="g">${KN[k]}の実を拾った！ ${fm}</span>`);}
     gmDrop(e,t,L);
     gainExp(exp,L);
     const jg=gainJob(Math.max(1,Math.floor((e.secret?10:e.champ?5:1+Math.floor(Math.sqrt(Math.max(t,0))))*matMul('jexp')*drinkMul('jexp'))),L);

@@ -360,6 +360,9 @@ function takashiCatchup(L){ if(P.tkCatch) return; P.tkCatch=true; const C=TK_CAT
 // ============ 更新ログ（#42）：プレイヤーに見える。隠し要素の名前は書かない ============
 // 配布版に出すときに、いちばん上に1版足す（新しい順）
 const CHANGELOG=[
+  {v:'1.12',d:'2026/11/20',items:[
+    'ヘルプ・TIPS・お知らせ・噂話などの説明を、今の仕組みに合わせて見直した（素材と合成・能力の実の説明を追加）',
+  ]},
   {v:'1.11',d:'2026/11/20',items:[
     'ギルドランクの恩恵を大きく増やした（素材・天井・経験値とお金・装飾品・報酬など。Sはさらに豪華に）',
     'ギャンブル場の景品を21種追加。チープ・ふつう・豪華・超豪華に分けて表示',
@@ -748,7 +751,7 @@ function jobMod(k){ const J=JOBS[P.job]; if(!J||J.hidden||J.main==='best') retur
 function jobModText(k0){ const J=JOBS[k0]; if(!J||J.hidden||J.main==='best') return ''; const save=P.job; P.job=k0;
   const t=KEYS.map(k=>{ const m=jobMod(k); const p=Math.round((m-1)*100); return p?`${KN[k]}${p>0?'+':''}${p}%`:''; }).filter(Boolean).join('・'); P.job=save; return t; }
 
-// 属性・武器の種類の付け直し（武器屋・防具屋）：今の装備の値段の1割。無職の武器（辞表）は無属性から変えられない
+// 属性・武器の種類の付け直し（武器屋・防具屋）：値段は forgePrice。無職の武器（辞表）は無属性から変えられない
 // 付け直しの値段（#60）：次元の彼方に入るまでは無料、そのあとは最深エリアの敵のお金×5戦分
 const forgePrice=isW=>P.forgeFree||P.maxArea<AREAS.length?0:Math.floor(goldBase()*5);
 function forgeEl(isW,el){ if(!ELS.includes(el)) return; if(isW&&neetW()) return; if(isW?!P.wpn:!P.arm) return; const pr=forgePrice(isW); if(P.gold<pr) return;
@@ -759,7 +762,7 @@ const elemOpen=()=>!!(P.pops&&P.pops.elem)||P.maxArea>=1;
 function forgeHTML(isW){ if(!elemOpen()) return '';
   const cur=isW?P.wpn:P.arm; if(!cur) return '';
   const pr=forgePrice(isW), el=isW?(neetW()?'無':(P.wEl||gearDefEl(true,P.wpn))):myArmEl();
-  let h=`<div class="win" style="margin:6px 0;padding:6px 8px"><div class="small y">属性の付け直し（${P.forgeFree?'<span class="g">次の1回は無料（精霊の酒）</span>':fmt(pr)+'G＝今の'+(isW?'武器':'防具')+'の値段の1割'}）</div><div class="small">今の属性：</div>`;
+  let h=`<div class="win" style="margin:6px 0;padding:6px 8px"><div class="small y">属性の付け直し（${P.forgeFree?'<span class="g">次の1回は無料（精霊の酒）</span>':(pr?fmt(pr)+'G＝最深エリアの敵のお金×5戦分':'<span class="g">無料（次元の彼方に入るまで）</span>')}）</div><div class="small">今の属性：</div>`;
   if(isW&&neetW()) h+=`<div class="small o">${NEET_W}は無属性から変えられない。</div>`;
   else h+=`<div class="grid" style="grid-template-columns:repeat(7,1fr);margin-top:4px">`+ELS.map(x=>`<button style="font-size:12px;padding:5px 0;color:${EL_COLOR[x]}" ${x===el||P.gold<pr?'disabled':''} onclick="forgeEl(${isW},'${x}')">${x}</button>`).join('')+`</div>`;
   if(isW){ h+=`<div class="small y" style="margin-top:6px">武器の種類（${fmt(pr)}G）：今は ${myWType()}（${atName(WTYPES[myWType()])}）${prefMul()>1?' <span class="g">得意な武器×1.5</span>':JOB_WT[P.job]?` <span class="small">（${JOBS[P.job].n}の得意は${JOB_WT[P.job]}）</span>`:''}</div>`;
@@ -1108,10 +1111,10 @@ function synthIntro(){ if(P.pops&&P.pops.synth) return; P.pops=P.pops||{}; P.pop
   showPopup({title:'<span class="y">ここから先は鍛冶屋の仕事</span>',body:`<div class="small">武器屋・防具屋で買えるのはここまで。この先は、<b>敵が落とす素材</b>とお金を使って、<b>鍛冶屋で合成</b>して1段ずつ鍛える。<br><br>今の${myWType()}には<b>${g.n}系</b>の素材がいる（武器の種類で変わる）。${g.n}系の敵を倒して「${gmName(g.sp+'_n')}」を集めよう。<br><br>合成は武器屋・防具屋の画面に出る。集まり具合は冒険の画面と、アイテム図鑑で見られる。</div>`}); }
 // 節目の層（巣）に初めて着いたら（#67）
 function nestIntro(t){ const ne=nestOf(t); if(!ne) return; P.pops=P.pops||{}; const k='nest'+ne.nest; if(P.pops[k]) return; P.pops[k]=true;
-  showPopup({title:`<span class="y">${ne.n}の巣</span>`,body:`<div class="small">この層には${ne.n}系の魔物しかいない。ここでしか拾えない<b>★の素材</b>（★1〜★5）が眠っている。<br><br>★の素材は合成の上の段で必要になる。運・実りの首飾り・果実酒で見つかりやすくなる。</div>`}); }
+  showPopup({title:`<span class="y">${ne.n}の巣</span>`,body:`<div class="small">この層には${ne.n}系の魔物しかいない。ここでしか拾えない<b>★の素材</b>（★1〜★5）が眠っている。<br><br>★の素材は合成の上の段で必要になる。運・実りの首飾り・果実酒・ギルドランクで見つかりやすくなる。しばらく出なくても、いつかは必ず出る（天井）。</div>`}); }
 // ギルドが開いたら（#67）
 function guildIntro(){ if(P.pops&&P.pops.guild) return; P.pops=P.pops||{}; P.pops.guild=true;
-  showPopup({title:'<span class="y">冒険者ギルドが開いた！</span>',body:'<div class="small">冒険の画面に「ギルド」ができた。依頼をこなすと、お金・熟練度・能力の実がもらえ、ランクが上がる。<br><br>まずは最初の依頼を受けてみよう。</div>'}); }
+  showPopup({title:'<span class="y">冒険者ギルドが開いた！</span>',body:'<div class="small">冒険の画面に「ギルド」ができた。依頼をこなすと、お金・熟練度・能力の実がもらえ、ランクが上がる。ランクが上がるほど恩恵が増える（ギルドの画面の「ランクの恩恵」）。<br><br>まずは最初の依頼を受けてみよう。</div>'}); }
 // 長押し中でも見える：受けている収集の依頼の集まり具合（戦闘の結果の欄に1行）
 function gCollectLine(){ if(!P.guild) return ''; const l=gState().board.filter(q=>q.ty==='deliver'||q.ty==='appraise'); if(!l.length) return '';
   return `<div class="small c">依頼の素材：`+l.map(q=>`${gmName(q.k)} ${fmt(Math.min(gmN(q.k),q.goal))}/${fmt(q.goal)}${gDoneQ(q)?' ✓':''}`).join('　')+`</div>`; }
@@ -2317,10 +2320,10 @@ const RUMORS=[
  {id:'kiwami',t:'「ひとつの職業で三千回戦い抜くと、その道の“極意”というものが身につくらしいわ」',when:()=>P.maxArea>=3,found:()=>Object.keys(P.kiwami||{}).length>0},
  {id:'legend',t:'「武器屋の先は鍛冶屋の仕事よ。素材で鍛え続けて99を超えると、桁があふれて別物になるって噂よ」',when:()=>P.wpn>=SHOP_MAX,found:()=>legW()||legA()},
  // #44：新しい要素の噂
- {id:'guild',t:'「冒険者ギルドの依頼はこなしておくといいわ。ランクが上がると、酒もショップも安くなるらしいわ」',when:()=>P.maxArea>=12,found:()=>P.guild&&gRank()>=4},
+ {id:'guild',t:'「冒険者ギルドの依頼はこなしておくといいわ。ランクが上がると、酒もショップも安くなるし、素材も出やすくなるらしいわ」',when:()=>P.maxArea>=12,found:()=>P.guild&&gRank()>=4},
  {id:'nest',t:'「50層ごとに、同じ魔物ばかりが巣くう層があるらしいわ。そこでしか拾えない★の素材があるんですって」',when:()=>maxLayer()>=30,found:()=>Object.keys(P.gmF||{}).some(k=>k.includes('_s'))},
  {id:'synth',t:'「鍛冶屋で使う素材は、武器の種類で決まる。杖ならスライム、剣なら竜…剣使いは苦労するわね」',when:()=>P.wpn>=SHOP_MAX,found:()=>(P.synthN||0)>=10},
- {id:'ailment',t:'「目玉はしびれさせ、コウモリは足を鈍らせ、骸骨は…命を刈る。装飾品屋に、防ぐ品があるって話よ」',when:()=>P.maxArea>=4,found:()=>['rPara','rSlow','rDeath'].some(t=>accT(t)>0)},
+ {id:'ailment',t:'「奥へ行くほど、しびれ・毒・石化…厄介な技を使う魔物が増えるわ。装飾品屋に、それぞれを防ぐ品があるって話よ」',when:()=>P.maxArea>=4,found:()=>RES_T.some(t=>accT(t)>0)},
  {id:'mp',t:'「技にはMPがいる。節約の指輪や魔力の泉があれば、長い戦いでも技が尽きないらしいわ」',when:()=>P.maxArea>=6,found:()=>accT('mpsave')+accT('mpregen')>0},
  {id:'forms',t:'「桁の神は、倒しても倒しても姿を変えてよみがえるらしい。十の姿をすべて越えた者がいるとか…」',when:()=>!!(P.final&&P.final.cleared),found:()=>finalDone()},
  {id:'slime',t:'「はじまりの画面のスライム、つつかれると喜ぶらしいよ。何度もつつくと…いや、なんでもないわ」',when:()=>upperOpen(),found:()=>!!P.unlocked.apprentice},
@@ -2508,23 +2511,19 @@ function barHTML(){
 // TIPS：種類ごとに最初の3回まで、戦闘の結果の下に出す。一度出たものは TIPS集（記録→ヘルプ）に残る
 const TIP_MAX=3;
 const TIPS=[
- {id:'imm',  n:'効きにくい敵',     t:'物理に強い敵（亡霊・幽霊）は魔法職で、魔法に強い敵（鉱石スライム）は物理職で挑むと楽。どちらでも半分は通る。'},
- {id:'elbad',n:'属性が不利',       t:'敵の属性に弱い属性で攻めると×0.2。武器屋で、敵の弱点の属性に付け直そう（値段の1割）。'},
+ {id:'elbad',n:'属性が不利',       t:'敵の属性に弱い属性で攻めると×0.2。武器屋で、敵の弱点の属性に付け直そう（次元の彼方に入るまでは無料）。'},
  {id:'elgood',n:'弱点を突いた',     t:'敵の弱点の属性で攻めると×5。火→風→土→水→火、光⇄闇。'},
  {id:'pref', n:'得意な武器',       t:'職業には得意な武器がある。持ち替えると×1.5（魔法職は杖で魔法×1.5）。武器屋で武器の種類を変えられる。'},
  {id:'armbad',n:'守りが不利',       t:'防具の属性が敵に弱いと、受けるダメージ×5。防具屋で付け直そう。'},
- {id:'type', n:'物理と魔法',       t:'物理に強い敵・魔法に強い敵には、ダメージが半分になる。次元の彼方では層ごとに決まっていて、エリア一覧に出る。魔法職と物理職を使い分けると楽'},
  {id:'bacchus',n:'酒神の助言',     t:'困ったら酒場の「攻略」で、酒神バッカスに今の場所の攻め方を聞ける（無料）。'},
 ];
 const tipN=id=>(P.tips&&P.tips[id])||0;
 // この戦闘のあとに出す TIPS を1つ選ぶ（まだ3回出ていないものだけ）
 function pickTip(e,t,c){ if(!c||!c.plan||e.flat||!e.el) return null;
   const p=c.plan, em=elMul(p.el,e.el), cand=[];
-  if(typeMul(p.at,e)<1) cand.push('imm');
   if(em<1) cand.push('elbad'); else if(em>=5) cand.push('elgood');
   if(c.dplan&&c.dplan.mul>1) cand.push('armbad');
   if(JOB_WT[P.job]&&prefMul()===1) cand.push('pref');
-  if(typeMul(p.at,e)!==1&&p.aff!==0) cand.push('type');
   cand.push('bacchus');
   const id=cand.find(x=>tipN(x)<TIP_MAX); if(!id) return null;
   P.tips=P.tips||{}; P.tips[id]=tipN(id)+1; const T=TIPS.find(x=>x.id===id);
@@ -2533,7 +2532,7 @@ function pickTip(e,t,c){ if(!c||!c.plan||e.flat||!e.el) return null;
 function elementIntro(){ if(P.pops&&P.pops.elem) return; P.pops=P.pops||{}; P.pops.elem=true;
   showPopup({title:'<span class="y">属性と相性</span>',body:`<div class="small">ここから先の敵には<b>属性</b>がある。<br>${ELS.slice(0,6).map(elTag).join('・')}・${elTag('無')}<br><br>
     ${elTag('火')}→${elTag('風')}→${elTag('土')}→${elTag('水')}→${elTag('火')}（矢印の先に強い）、${elTag('光')}⇄${elTag('闇')}<br>
-    弱点を突くと<b class="g">×5</b>、不利だと<b class="o">×0.2</b>。武器屋・防具屋で属性を付け直せる。<br><br>くわしくは「記録 → ヘルプ」。攻め方に迷ったら、酒場の「攻略」で酒神バッカスに聞いてみよう。</div>`,buttons:[{label:'閉じる'}]}); }
+    弱点を突くと<b class="g">×5</b>、不利だと<b class="o">×0.2</b>。攻撃の属性は武器で、守りの属性は防具で決まる。武器屋・防具屋で付け直せる（次元の彼方に入るまでは無料）。<br><br>くわしくは「記録 → ヘルプ」。攻め方に迷ったら、酒場の「攻略」で酒神バッカスに聞いてみよう。</div>`,buttons:[{label:'閉じる'}]}); }
 
 // ヘルプ（記録の中）
 let recTab='rec';
@@ -2545,17 +2544,19 @@ function helpHTML(){
   let h=`<div class="y">属性と相性</div><div class="small" style="line-height:1.8">
     ${elTag('火')} → ${elTag('風')} → ${elTag('土')} → ${elTag('水')} → ${elTag('火')}　（矢印の先に強い）<br>${elTag('光')} ⇄ ${elTag('闇')}　（お互いに弱点）　${elTag('無')}は相性なし</div>`;
   h+=row('弱点を突く','<span class="g">×5</span>')+row('相手に有利をとられている','<span class="o">×0.2</span>')+row('同じ属性','×0.5')+row('どちらかが無属性','×1');
-  h+=`<div class="small" style="margin:4px 0 8px">攻撃の属性は武器の属性（どの職業でも同じ）。守りの属性は防具の属性で、敵の攻撃にも同じ相性が掛かる。武器屋・防具屋で、値段の1割で付け直せる${P.neetW?`（${NEET_W}は無属性のまま）`:''}。</div>`;
+  h+=`<div class="small" style="margin:4px 0 8px">攻撃の属性は武器の属性（どの職業でも同じ）。守りの属性は防具の属性で、敵の攻撃にも同じ相性が掛かる。武器屋・防具屋で付け直せる（次元の彼方に入るまでは無料、そのあとは最深エリアの敵のお金×5戦分）${P.neetW?`（${NEET_W}は無属性のまま）`:''}。</div>`;
   h+=`<div class="y">能力と強さの計算</div><div class="small" style="line-height:1.8;margin-bottom:8px">
     ・能力 ＝ 基礎値 × 転生倍率 × マスターの数 × 装飾品 × 職業・極意 × 固有品 × お酒（ステータスの「（+○）」は、基礎値に上乗せされている分）<br>
     ・攻撃力 ＝（得意な能力 ＋ 武器 × 転生倍率）× 最高Lvの補正 × 熟練度 × 職業の格 × 固有品<br>
     ・魔法攻撃 ＝（知力 ＋ 武器の半分 × 転生倍率）× 同じ補正<br>
     ・防御力 ＝（体力の半分 ＋ 防具 × 転生倍率）× 職業の格 × 固有品<br>
     ・基礎値は、レベルアップ・能力の実・能力振りで上がり、転生しても減らない</div>`;
-  h+=`<div class="y">攻撃の種類と得意な武器</div>`;
-  h+=row('斬','剣・大剣・斧')+row('突','小剣・槍')+row('射','弓')+row('打','棍棒・体術・杖')+row('魔法','知力が得意な職業（杖を持つと×1.5）');
-  h+=`<div class="small" style="margin:4px 0 8px">職業の得意な武器を持つと×1.5（転職所の「くわしく」に書いてある）。</div>`;
-  h+=`<div class="y">物理と魔法</div><div class="small" style="margin:4px 0 8px">物理に強い敵・魔法に強い敵には、ダメージが×${RES_MUL}になる（効かないことはない）。最初の12エリアでは坑道の亡霊・船幽霊が物理に強く、鉱石スライムが魔法に強い。次元の彼方では、層ごとに「物理に強い層」「魔法に強い層」が決まっている（エリア一覧に出る）。<br>${lastFoes()}図鑑で、その敵を10回倒すと耐性が見える。</div>`;
+  h+=`<div class="y">武器の種類</div>`;
+  h+=Object.entries(W_SP).map(([w,sp])=>row(w,`合成の素材：${gmSp(sp).n}`)).join('');
+  h+=`<div class="small" style="margin:4px 0 8px">職業の得意な武器を持つと×1.5（転職所の「くわしく」に書いてある）。魔法職は杖で魔法×1.5。武器の種類は、得意な武器と合成の素材にだけ関わる（斬・突・射・打の相性はない）。</div>`;
+  h+=`<div class="y">物理と魔法</div><div class="small" style="margin:4px 0 8px">力が得意な職業は物理（攻撃力）、知力が得意な職業は魔法（魔法攻撃）で戦う。魔法剣士は効くほうを選ぶ。物理・魔法の効きにくい敵はいないので、どの職業でも戦える。敵の守りは、物理には防御、魔法には魔法防御（骸骨は魔法に弱く、目玉と竜は魔法に強め）。</div>`;
+  h+=`<div class="y">素材と合成</div><div class="small" style="margin:4px 0 8px">武器・防具は武器屋で段${SHOP_MAX}まで。その先は鍛冶屋で、素材とお金で1段ずつ鍛える。素材は敵の系統ごとに ふつう・レア・★1〜★5。★は50層ごとの「巣」の層でだけ出る。<br>しばらく出ないと、次で必ず出る（天井：ふつう${GM_PITY.n}体・レア${GM_PITY.r}体・★${GM_PITY.s}体）。運・装飾品・お酒・ギルドランクで出やすくなる。</div>`;
+  h+=`<div class="y">能力の実</div><div class="small" style="margin:4px 0 8px">拾った実は持ち物に入る。「能力振り」の画面で使う（能力が上がる）か、合成の素材と交換する（実${FR_TRADE.n}個→ふつう1個、${FR_TRADE.r}個→レア1個）。「拾ったらすぐ使う」で、拾ったその場で使うこともできる。</div>`;
   h+=`<div class="y">TIPS集（${TIPS.filter(T=>tipN(T.id)>0).length}/${TIPS.length}）</div>`+TIPS.map(T=>tipN(T.id)>0?`<div class="small" style="margin:3px 0">💡 <b>${T.n}</b>：${T.t}</div>`:`<div class="small" style="margin:3px 0;color:#789">💡 ？？？（まだ出ていない）</div>`).join('');
   return h; }
 

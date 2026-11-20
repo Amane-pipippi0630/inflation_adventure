@@ -327,6 +327,14 @@ const kiwamiLeft=k=>(P.kiwami&&P.kiwami[k])?0:Math.max(0,KIWAMI_N-jobBN(k));
 // ============ 更新ログ（#42）：プレイヤーに見える。隠し要素の名前は書かない ============
 // 配布版に出すときに、いちばん上に1版足す（新しい順）
 const CHANGELOG=[
+  {v:'1.6',d:'2026/11/20',items:[
+    '闘技場・神々の座に勝てそうになったら、お知らせを出すように',
+    'ギャンブル場：勝つとコインがたまり、景品と交換できるように（お酒・勝負師の指輪・称号・能力の実）',
+    'ギャンブル場：ハイ&ローに「同じ」とジョーカー、ルーレットは2か所賭けとディーラーのくせ、丁半は壺振り師のひと言・ゾロ目・見',
+    'ギャンブル場：酔っていると頭が回らない。「酔いに任せる」で勢いよく勝負',
+    'お酒の続く戦闘数を大幅に増やした（ふつうのお酒は500戦、強いお酒ほど短く、桁の酒は100戦）',
+    'ギャンブル場でもお酒を頼めるように（博徒の酒・迎え酒・新しい「勝負酒」）',
+  ]},
   {v:'1.5',d:'2026/11/20',items:[
     '転職所で、物理職・魔法職・両方の職業が分かるように',
     'はじめの職業は「冒険者」に。ギルドの最初の依頼で転職所が開く',
@@ -445,10 +453,10 @@ function sanitizeSave(o){
   r.job=isJob(o.job)?o.job:'warrior';
   r.yomi=typeof o.yomi==='string'&&/^[ぁ-ゖー]{1,15}$/.test(o.yomi)?o.yomi:'';
   ['lv','exp','gold','pts','wpn','arm','reb','maxArea','areaWins','champ','kills','maxDmg','battles','earned','maxLv','godTries','godWins','godMaxForm',
-   'jackpots','j777','jpin','jrou','setHits','oinori','hlBest','allInWins','kajiN','miracles','deathN','hwCd','hwBreaks'].forEach(k=>r[k]=num(o[k],0));
+   'jackpots','j777','jpin','jrou','setHits','oinori','hlBest','allInWins','kajiN','miracles','deathN','hwCd','hwBreaks','coins','coinsAll','casWinRun','casBestRun','bigWins','casRing'].forEach(k=>r[k]=num(o[k],0));
   r.lv=Math.max(1,int(o.lv,1)); r.wpn=Math.min(GEAR_MAX,int(o.wpn)); r.arm=Math.min(GEAR_MAX,int(o.arm)); r.reb=int(o.reb); r.pts=int(o.pts);
   r.maxArea=Math.min(AREA_MAX,int(o.maxArea)); r.areaWins=int(o.areaWins); r.champ=int(o.champ);
-  r.rebMul=Math.max(1,num(o.rebMul,1)); r.rebMul=Math.min(r.rebMul,Math.pow(12,r.reb||0)); /* #11：1回×12までの式に合わせて、古いセーブの倍率を丸める */ r.oneG=bool(o.oneG); r.ptsUsed=bool(o.ptsUsed); r.casPlayed=bool(o.casPlayed); r.tutDone=bool(o.tutDone)||(num(o.maxArea,0)>0); r.jobOpen=o.jobOpen===false?false:true; r.drunk=boolMap(o.drunk,k=>DRINKS.some(D=>D.id===k)); r.tutWarn=bool(o.tutWarn); r.areaDone=bool(o.areaDone); if(o.guideHeard!==undefined&&o.guideHeard!==null) r.guideHeard=Math.floor(num(o.guideHeard,-1)); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA); r.jsec=boolMap(o.jsec,isJob); r.lastFruit=bool(o.lastFruit); r.endingSeen=bool(o.endingSeen); r.everTakashi=bool(o.everTakashi);
+  r.rebMul=Math.max(1,num(o.rebMul,1)); r.rebMul=Math.min(r.rebMul,Math.pow(12,r.reb||0)); /* #11：1回×12までの式に合わせて、古いセーブの倍率を丸める */ r.oneG=bool(o.oneG); r.ptsUsed=bool(o.ptsUsed); r.casPlayed=bool(o.casPlayed); r.tutDone=bool(o.tutDone)||(num(o.maxArea,0)>0); r.jobOpen=o.jobOpen===false?false:true; r.drunk=boolMap(o.drunk,k=>DRINKS.some(D=>D.id===k)); r.shobu=['good','hidden'].includes(o.shobu)?o.shobu:null; { const TT=PRIZES.filter(p=>p.title).map(p=>p.title); r.titles=boolMap(o.titles,k=>TT.includes(k)); r.title=TT.includes(o.title)&&r.titles[o.title]?o.title:''; } r.tutWarn=bool(o.tutWarn); r.areaDone=bool(o.areaDone); if(o.guideHeard!==undefined&&o.guideHeard!==null) r.guideHeard=Math.floor(num(o.guideHeard,-1)); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA); r.jsec=boolMap(o.jsec,isJob); r.lastFruit=bool(o.lastFruit); r.endingSeen=bool(o.endingSeen); r.everTakashi=bool(o.everTakashi);
   r.playMs=int(o.playMs); r.startedAt=int(o.startedAt); if(o.pops&&typeof o.pops==='object') r.pops=boolMap(o.pops);
   if(o.final&&typeof o.final==='object') r.final={hp:Math.min(finalHP(FINAL_FORMS),Math.max(0,num(o.final.hp,FINAL_HP))),cleared:bool(o.final.cleared),seen:bool(o.final.seen),dmg:num(o.final.dmg),form:Math.min(FINAL_FORMS,Math.max(1,int(o.final.form,1))),best:Math.min(FINAL_FORMS,int(o.final.best))};
   r.base={}; KEYS.forEach(k=>r.base[k]=Math.max(0,num(o.base&&o.base[k],1)));
@@ -804,10 +812,22 @@ function makeSecret(){
   const r=P?P.reb:0; return elemize(Object.assign(s,{name:r?`創世神竜 アルケイオン・第${r+1}形態`:'創世神竜 アルケイオン',sp:'dragon',hue:(45+r*60)%360,secret:true}),'無',true);
 }
 // 危険度：自分が倒すまでのターン数と、倒されるまでのターン数の比
+// 勝ちやすさ（自分が倒れるまでの時間 ÷ 敵を倒すまでの時間）。1.5以上なら「適正」（勝てる見込み）
+function winRatio(e){ const p=attackPlan(e), q=defensePlan(e), pa=p.base*1.5*p.aff, ea=e.atk*1.5*ps('taken',1)*q.mul;
+  const pd=p.aff===0?1e-300:Math.max(pa-p.edef*.5,pa*.08,1), ed=Math.max(ea-q.d*.5,ea*.08,1); return (maxhp()/ed)/(e.hp/pd); }
+// 闘技場・神々の座に勝てそうになったら知らせる（#59）。それぞれ最初の1回だけポップアップ、そのあとは戦闘の結果に1行
+function arenaNotice(){ if(!P||takashiLock()) return ''; P.pops=P.pops||{}; let line='';
+  if(P.champ<CHAMP_MAX){ const c=makeChamp(P.champ); if(winRatio(c)>=1.5){
+    if(!P.pops.arena){ P.pops.arena=true; holdEnd(); showPopup({title:'<span class="y">闘技場に挑めそうだ！</span>',body:`<div class="small">闘技場の${P.champ+1}人目の王者「${c.name}」に、今の強さなら勝てそうだ。<br><br>王者を倒すと、経験値と賞金がまとめて入る。勝つたびに次の王者が現れる。メニューの「闘技場」から挑もう。</div>`}); }
+    else if(P.pops.arenaN!==P.champ){ P.pops.arenaN=P.champ; line+=`<div class="small y">🏟 闘技場の${P.champ+1}人目「${c.name}」に勝てそうだ</div>`; } } }
+  if(!P.blessed[P.job]){ const g=makeSecret(); if(winRatio(g)>=1.5&&!P.pops['god_'+P.job]){ P.pops['god_'+P.job]=true;
+    if(!P.pops.god){ P.pops.god=true; holdEnd(); showPopup({title:'<span class="mir">神々の座に挑めそうだ！</span>',body:'<div class="small">冒険の「神々の座」で待つ神に、今の強さなら勝てそうだ。<br><br>職業ごとに一度勝つと、その職業で「奇跡の加護」を授かる。</div>'}); }
+    else line+=`<div class="small mir">✨ 今の職業（${JOBS[P.job].n}）で、神々の座に勝てそうだ</div>`; } }
+  return line; }
 function danger(e){
   const p=attackPlan(e), q=defensePlan(e), pa=p.base*1.5*p.aff, ea=e.atk*1.5*ps('taken',1)*q.mul;
   const pd=p.aff===0?1e-300:Math.max(pa-p.edef*.5,pa*.08,1), ed=Math.max(ea-q.d*.5,ea*.08,1);
-  const r=(maxhp()/ed)/(e.hp/pd);
+  const r=winRatio(e);
   if(r>=5) return '<span class="g">楽勝</span>';
   if(r>=1.5) return '<span class="c">適正</span>';
   if(r>=.6) return '<span class="o">強敵</span>';
@@ -1081,7 +1101,7 @@ const atkKind=k=>k==='spellblade'?'both':isMagicJob(k)?'magic':'phys';
 const atkKindTag=k=>({phys:'<span class="tag" style="background:#743">物理</span>',magic:'<span class="tag" style="background:#447">魔法</span>',both:'<span class="tag" style="background:#636">物理＋魔法</span>'})[atkKind(k)];
 function renderStatus(){
   const J=JOBS[P.job];
-  let h=`<div class="row"><b class="y">${nameHTML()}</b><span>${J.n}<span class="tag">${RANKS[J.rank]}</span> Lv${P.lv}${P.reb?` <span class="c">転生${P.reb}</span>`:''}</span></div>`;
+  let h=`<div class="row"><b class="y">${nameHTML()}${P.title?` <span class="small mir">《${esc(P.title)}》</span>`:''}</b><span>${J.n}<span class="tag">${RANKS[J.rank]}</span> Lv${P.lv}${P.reb?` <span class="c">転生${P.reb}</span>`:''}</span></div>`;
   { const j=jl(P.job);
     h+=`<div class="grid2" style="gap:10px">`;
     h+=`<div><div class="small">EXP ${fmt(P.exp)}/${fmt(need(P.lv))}</div><div class="bar"><i style="width:${Math.min(100,P.exp/need(P.lv)*100)}%"></i></div></div>`;
@@ -1288,12 +1308,18 @@ function setBet(v){ if(busy) return; if(v<0) betLeave1=true; else {betLeave1=fal
 function payout(bet,mult){ const prof=bet*mult-bet; return Math.floor(bet+(prof>0?prof*casMul():prof)); }
 let lastAllIn=false, betNote='';
 function takeBet(){ if(takashiLock()&&P.gold<1){ P.gold=10000; betNote='<div class="o">実家から仕送りが届いた…！ +10000G</div>'; save(); renderStatus(); }
-  const b=betAmt(); lastAllIn=b>0&&b===P.gold; if(b<1){casMsg='<span class="r">賭けるお金がない！</span>'; return 0;} const before=P.gold; P.gold-=b; casBegin(b,before); if(P.casArm){ casCtx.sure=true; P.casArm=false; } return b; }
+  const b=betAmt(); lastAllIn=b>0&&b===P.gold; if(b<1){casMsg='<span class="r">賭けるお金がない！</span>'; return 0;} const before=P.gold; P.gold-=b; casBegin(b,before); if(P.casArm){ casCtx.sure=true; P.casArm=false; } shobuArm(); return b; }
 function settle(bet,mult,txt){ P.casPlayed=true; let ret=payout(bet,mult), back=0; const notes=casCtx?casCtx.notes:[];
-  if(ret>bet){ const w=casWinMul(); if(w.m!==1){ ret=bet+Math.floor((ret-bet)*w.m); if(w.t.length) notes.push(`<span class="c">【${JOBS[P.job].n}の特性】${w.t.join('・')}</span>`); } P.casStreak=(P.casStreak||0)+1; }
-  else if(mult===0){ const L=casOnLoss(bet); back=L.back; if(L.t) notes.push(`<span class="c">${L.t}</span>`); if(isT('swordsaint')&&P.casStreak&&chance(.5)) notes.push('<span class="c">【無心】連勝は途切れない</span>'); else P.casStreak=0; ret=back; }
+  let coinT='';
+  if(ret>bet){ const w=casWinMul(); if(w.m!==1){ ret=bet+Math.floor((ret-bet)*w.m); if(w.t.length) notes.push(`<span class="c">【${JOBS[P.job].n}の特性】${w.t.join('・')}</span>`); } P.casStreak=(P.casStreak||0)+1;
+    if(P.casRing) ret=bet+Math.floor((ret-bet)*casRingMul());
+    if(casDrunkGo&&drunkNow()){ ret=bet+Math.floor((ret-bet)*drunkBoost()); notes.push(`<span class="o">🍺 酔いの勢い！ 儲け×${drunkBoost().toFixed(2)}</span>`); }
+    coinT=casCoinOnWin(mult); }
+  else if(mult===0){ P.casWinRun=0; const L=casOnLoss(bet); back=L.back; if(L.t) notes.push(`<span class="c">${L.t}</span>`); if(isT('swordsaint')&&P.casStreak&&chance(.5)) notes.push('<span class="c">【無心】連勝は途切れない</span>'); else P.casStreak=0; ret=back; }
+  casDrunkGo=false;
   P.gold+=ret; if(ret>bet){ guildCasinoWin(); P.earned=(P.earned||0)+ret-bet; if(lastAllIn) P.allInWins=(P.allInWins||0)+1;} if(P.gold===1) P.oneG=true;
   casMsg = mult>0 ? `${txt} <span class="g">+${fmt(ret-bet)}G</span>` : `${txt} <span class="r">-${fmt(bet-back)}G</span>`;
+  if(coinT) casMsg+=`<div>${coinT}</div>`;
   if(notes.length) casMsg+=`<div class="small">${notes.join('<br>')}</div>`; casCtx=null;
   if(P.gold===1) casMsg+=`<div class="small o">所持金がちょうど1Gになった…</div>`;
   if(betNote){ casMsg=betNote+casMsg; betNote=''; }
@@ -1308,12 +1334,14 @@ function betUI(lock){
 }
 function casinoHTML(){
   let h=`<h2>ギャンブル場</h2><div class="small">所持金 <span class="y">${fmt(P.gold)}G</span></div>`+casTraitHTML();
-  h+=`<div class="grid" style="grid-template-columns:repeat(4,1fr);margin:6px 0">`+[['hl','ハイ&ロー'],['slot','スロット'],['rou','ルーレット'],['dice','丁半']].map(([k,n])=>`<button ${busy||(takashiLock()&&k!=='slot')?'disabled':''} class="${casinoGame===k?'sel':''}" style="font-size:12px;padding:7px 2px" onclick="casMsg='';panel('casino','${k}')">${n}</button>`).join('')+`</div>`;
+  h+=`<div class="grid" style="grid-template-columns:repeat(5,1fr);margin:6px 0;font-size:12px">`+[['hl','ハイ&ロー'],['slot','スロット'],['rou','ルーレット'],['dice','丁半'],['prize','景品']].map(([k,n])=>`<button ${busy||(takashiLock()&&k!=='slot')?'disabled':''} class="${casinoGame===k?'sel':''}" style="font-size:12px;padding:7px 2px" onclick="casMsg='';panel('casino','${k}')">${n}</button>`).join('')+`</div>`;
   if(takashiLock()&&casinoGame!=='slot') casinoGame='slot';
   if(casinoGame==='hl') h+=hlHTML();
   if(casinoGame==='slot') h+=slotHTML();
   if(casinoGame==='rou') h+=rouHTML();
   if(casinoGame==='dice') h+=diceHTML();
+  if(casinoGame==='prize') h+=prizeHTML();
+  if(casinoGame!=='prize') h+=casDrinkHTML();
   h+=`<div id="casMsg">${casMsg}</div>`;
   return h;
 }
@@ -1450,12 +1478,13 @@ function hlHTML(){
     if(hl.next) h+=`<div class="small c" style="text-align:center">【千里眼】次のカードは ${cardHTML(...hl.next)}</div>`;
     else if(isT('archmage')) h+=`<button ${casReady()?'':'disabled'} style="width:100%;margin-bottom:4px" onclick="hlPeek()">千里眼で次のカードをのぞく</button>`;
     h+=`<div class="small" style="text-align:center">賞金 <span class="y">${fmt(hl.pot)}G</span>（${hl.streak}/${HL_MAX}連勝）</div>`;
-    h+=`<div class="grid" style="margin-top:6px"><button onclick="hlGuess(1)">ハイ ▲</button><button onclick="hlGuess(0)">ロー ▼</button><button ${hl.streak?'':'disabled'} onclick="hlCollect()">降りる</button></div>`;
+    if(hl.ghost) h+=`<div class="small o" style="text-align:center">…カードが二重に見える。${cardHTML(...hl.ghost)}だったかもしれない</div>`;
+    h+=`<div class="grid" style="margin-top:6px"><button onclick="hlGuess(1)">ハイ ▲</button><button onclick="hlGuess(0)">ロー ▼</button><button onclick="hlGuess(2)">同じ（×10）</button><button ${hl.streak?'':'disabled'} onclick="hlCollect()">降りる</button></div>`+drunkBtn('hlGuess(Math.random()<.5?1:0)');
   } else h+=`<button style="width:100%;margin-top:6px" onclick="hlStart()">カードを引く</button>`;
   h+=`<div class="small" style="margin-top:6px">連勝ボーナス：`+Object.entries(HL_BONUS).map(([n,b])=>`<span class="${hl.active&&hl.streak>=+n?'g':''}">${n}連勝 ${b.t}</span>`).join('　')+`</div>`;
   return h;
 }
-function hlStart(){ const b=takeBet(); if(!b){panel('casino');return;} const [n,s]=drawCard(); hl={active:true,card:n,suit:s,bet:b,pot:b,streak:0,prev:null}; casMsg=''; save(); renderStatus(); panel('casino'); }
+function hlStart(){ const b=takeBet(); if(!b){panel('casino');return;} const [n,s]=drawCard(); hl={active:true,card:n,suit:s,bet:b,pot:b,streak:0,prev:null,ghost:drunkNow()&&chance(.4)?drawCard():null}; casMsg=''; save(); renderStatus(); panel('casino'); }
 function hlReward(n){ const B=HL_BONUS[n]; if(!B) return ''; const lv0=P.lv, L=[];
   for(let i=0;i<B.lv;i++) gainExp(Math.max(0,need(P.lv)-P.exp),L);
   let t=`<div class="lv">${n}連勝ボーナス！ Lv${lv0}→${P.lv}`;
@@ -1463,15 +1492,25 @@ function hlReward(n){ const B=HL_BONUS[n]; if(!B) return ''; const lv0=P.lv, L=[
   if(B.x2){ hl.pot*=2; t+=`、賞金さらに×2`; }
   save(); renderStatus(); return t+'</div>'; }
 function hlGuess(hi){
+  if(!hl.active) return;
+  // ジョーカー（1/30）：必ず勝ち、賞金×4
+  if(!hl.next&&chance(1/30)){ hl.prev=[hl.card,hl.suit]; hl.pot*=4; hl.streak++; P.hlBest=Math.max(P.hlBest||0,hl.streak); const [n,s]=drawCard(); hl.card=n; hl.suit=s; hl.ghost=drunkNow()&&chance(.4)?drawCard():null;
+    casMsg=`<span class="mir">🃏 ジョーカー！ 必ず勝ち、賞金×4（${fmt(hl.pot)}G）</span>`+hlReward(hl.streak); casDrunkGo=false;
+    if(hl.streak>=HL_MAX){ const bonus=casMsg; hl.active=false; settle(hl.bet,hl.pot/hl.bet,`<span class="mir">★ ${HL_MAX}連勝パーフェクト！ ★</span>`); casMsg=bonus+casMsg; hl.prev=null; } panel('casino'); return; }
+  if(hi===2){ let [n,s]=hl.next||drawCard(); hl.next=null; hl.prev=[hl.card,hl.suit]; hl.card=n; hl.suit=s;
+    if(n===hl.prev[0]){ hl.pot*=10; hl.streak++; casMsg=`<span class="mir">同じ数字！ 賞金×10（${fmt(hl.pot)}G）</span>`+hlReward(hl.streak); hl.ghost=drunkNow()&&chance(.4)?drawCard():null; casDrunkGo=false; panel('casino'); return; }
+    hl.active=false; settle(hl.bet,0,`ちがう数字…（${hl.streak}連勝で終了）`); panel('casino'); return; }
   const tieWin=persona('gamble')||isT('spellblade'), win=n=>n===hl.card?tieWin:(hi?n>hl.card:n<hl.card);
   let [n,s]=hl.next||drawCard(); hl.next=null; hl.prev=[hl.card,hl.suit];
   if(!win(n)&&(n!==hl.card||casSure())){ if(casSure()){ for(let i=0;i<60&&!win(n);i++) [n,s]=drawCard(); casCtx.notes.push('<span class="c">【急所】必ず勝つ！</span>'); } else if(casRetry()) [n,s]=drawCard(); }
+  if(casCtx&&!casCtx.force&&P.shobu) shobuArm();
+  shobuFix(()=>win(n),()=>{ [n,s]=drawCard(); });
   if(casCtx) casCtx.sure=false;
   if(n===hl.card&&!tieWin){ casMsg='同じ数字！ 引き分け、続行。'; }
   else if(win(n)){ hl.pot*=isT('kenou')?2.5:2; hl.streak++; P.hlBest=Math.max(P.hlBest||0,hl.streak); casMsg=`<span class="g">当たり！ 賞金 ${fmt(hl.pot)}G</span>`+hlReward(hl.streak);
     if(hl.streak>=HL_MAX){ hl.card=n; hl.suit=s; const bonus=casMsg; hl.active=false; settle(hl.bet,hl.pot/hl.bet,`<span class="mir">★ ${HL_MAX}連勝パーフェクト！ ★</span>`); casMsg=bonus+casMsg; hl.prev=null; panel('casino'); return; } }
   else { hl.card=n; hl.suit=s; hl.active=false; settle(hl.bet,0,`ハズレ…（${hl.streak}連勝で終了）`); panel('casino'); return; }
-  hl.card=n; hl.suit=s; panel('casino');
+  hl.card=n; hl.suit=s; hl.ghost=drunkNow()&&chance(.4)?drawCard():null; panel('casino');
 }
 function hlCollect(){ hl.active=false; settle(hl.bet,hl.pot/hl.bet,`${hl.streak}連勝で降りた！`); hl.prev=null; panel('casino'); }
 // --- スロット ---
@@ -1543,6 +1582,7 @@ function slotSpin(fast){
   busy=true; casMsg=''; renderStatus(); panel('casino');
   let role=rollRole();
   if(!role){ if(casSure()){ for(let i=0;i<200&&!role;i++) role=rollRole(); casCtx.notes.push('<span class="c">【急所】必ず勝つ！</span>'); } else if(casRetry()) role=rollRole(); }
+  shobuFix(()=>!!role,()=>{ role=rollRole(); });
   if(!role&&((isT('alchemist')&&chance(.1))||(isT('grandalch')&&chance(.25)))){ role='🍒2'; casCtx&&casCtx.notes.push('<span class="c">【錬成】ハズレを🍒🍒に変えた！</span>'); }
   const fin=reelsFor(role), stop=fast?[3,5,7]:[8,13,18], end=stop[2]; let tick=0;
   const iv=setInterval(()=>{ tick++;
@@ -1573,56 +1613,141 @@ let rouBet='red', rouRes=null;
 const ROU_T={red:['赤',2],black:['黒',2],odd:['奇数',2],even:['偶数',2],d1:['1-12',3],d2:['13-24',3],d3:['25-36',3]};
 function rouLabel(b){return b.startsWith('n')?`${b.slice(1)}番（×36）`:`${ROU_T[b][0]}（×${ROU_T[b][1]}）`}
 function rouHTML(){
-  let h=`<div class="small">0〜36のどこに止まるか。赤黒・奇偶は×2、12個ごとは×3、一点賭けは×36。</div>`+betUI(busy);
+  let h=`<div class="small">0〜36のどこに止まるか。赤黒・奇偶は×2、12個ごとは×3、一点賭けは×36。2か所まで同時に賭けられる（賭け金は半分ずつ）。台ごとにディーラーのくせがある。</div>`+betUI(busy)+rouHistHTML();
   h+=`<div class="big" id="rouNum">${rouRes===null?'―':`<span class="${REDN.includes(rouRes)?'r':rouRes===0?'g':''}">${rouRes}</span>`}</div>`;
-  h+=`<div class="grid" style="grid-template-columns:repeat(4,1fr)">`+Object.entries(ROU_T).map(([k,[n]])=>`<button ${busy?'disabled':''} class="${rouBet===k?'sel':''}" onclick="rouBet='${k}';panel('casino')">${n}</button>`).join('')+`</div>`;
-  h+=`<div class="numgrid">`+Array.from({length:37},(_,i)=>`<button ${busy?'disabled':''} class="${rouBet==='n'+i?'sel':REDN.includes(i)?'redn':''}" onclick="rouBet='n${i}';panel('casino')">${i}</button>`).join('')+`</div>`;
-  h+=`<button style="width:100%;margin-top:6px" ${busy?'disabled':''} onclick="rouSpin()">${rouLabel(rouBet)}に賭けて回す</button>`;
+  h+=`<div class="grid" style="grid-template-columns:repeat(4,1fr)">`+Object.entries(ROU_T).map(([k,[n]])=>`<button ${busy?'disabled':''} class="${rouBets.includes(k)?'sel':''}" onclick="rouToggle('${k}');panel('casino')">${n}</button>`).join('')+`</div>`;
+  h+=`<div class="numgrid">`+Array.from({length:37},(_,i)=>`<button ${busy?'disabled':''} class="${rouBets.includes('n'+i)?'sel':REDN.includes(i)?'redn':''}" onclick="rouToggle('n${i}')">${i}</button>`).join('')+`</div>`;
+  h+=`<button style="width:100%;margin-top:6px" ${busy?'disabled':''} onclick="rouSpin()">${rouBets.map(rouLabel).join('＋')}に賭けて回す</button>`+drunkBtn("rouBets=chance(.1)?['n'+Math.floor(Math.random()*37)]:[Object.keys(ROU_T)[Math.floor(Math.random()*7)]];rouSpin()");
   return h;
 }
 function rouSpin(){
   if(busy) return; const b=takeBet(); if(!b){panel('casino');return;}
   busy=true; casMsg=''; renderStatus(); panel('casino');
-  const rouWin=f=>rouBet.startsWith('n')?+rouBet.slice(1)===f:f!==0&&({red:REDN.includes(f),black:!REDN.includes(f),odd:f%2===1,even:f%2===0,d1:f<=12,d2:f>12&&f<=24,d3:f>24})[rouBet];
-  let fin=Math.floor(Math.random()*37);
+  const rouWin=f=>rouBets.some(k=>rouWinOf(k,f));
+  let fin=rouBiased(Math.floor(Math.random()*37));
   if(!rouWin(fin)){ if(casSure()){ for(let i=0;i<500&&!rouWin(fin);i++) fin=Math.floor(Math.random()*37); casCtx.notes.push('<span class="c">【急所】必ず勝つ！</span>'); } else if(casRetry()) fin=Math.floor(Math.random()*37); }
+  shobuFix(()=>!!rouWin(fin),()=>{ fin=Math.floor(Math.random()*37); });
   let tick=0;
   const iv=setInterval(()=>{ tick++; const n=tick<20?Math.floor(Math.random()*37):fin;
     const el=document.getElementById('rouNum'); if(el) el.innerHTML=`<span class="${REDN.includes(n)?'r':n===0?'g':''}">${n}</span>`;
     if(tick>=20){ clearInterval(iv); busy=false; rouRes=fin;
-      let win=false, m=0;
-      if(rouBet.startsWith('n')){ win=+rouBet.slice(1)===fin; m=36; if(win){ P.jackpots=(P.jackpots||0)+1; P.jrou=(P.jrou||0)+1; } }
-      else { m=ROU_T[rouBet][1];
-        win= fin!==0 && ({red:REDN.includes(fin),black:!REDN.includes(fin),odd:fin%2===1,even:fin%2===0,d1:fin<=12,d2:fin>12&&fin<=24,d3:fin>24})[rouBet]; }
-      settle(b,win?m:0,win?`${fin}！ 当たり ×${m}`:`${fin}… ハズレ`); if(curPanel==='casino') panel('casino'); }
+      rouHist.push(fin); if(rouHist.length>20) rouHist.shift();
+      // 2か所賭けは半分ずつ：倍率＝当たった分の配当の平均
+      const m=rouBets.reduce((a,k)=>a+(rouWinOf(k,fin)?rouMulOf(k):0),0)/rouBets.length, win=m>0;
+      if(rouBets.some(k=>k.startsWith('n')&&rouWinOf(k,fin))){ P.jackpots=(P.jackpots||0)+1; P.jrou=(P.jrou||0)+1; }
+      settle(b,m,win?`${fin}！ 当たり ×${+m.toFixed(2)}`:`${fin}… ハズレ`); if(curPanel==='casino') panel('casino'); }
   },60);
 }
 // --- 丁半 ---
 const DICE=['','⚀','⚁','⚂','⚃','⚄','⚅'];
 let dice=[1,1];
 function diceHTML(){
-  return `<div class="small">サイコロ2つの合計が偶数なら丁、奇数なら半。当たれば×2。丁でピンゾロ(1・1)なら×10！</div>`+betUI(busy)+
+  return `<div class="small">サイコロ2つの合計が偶数なら丁、奇数なら半。当たれば×2。丁でゾロ目なら、ピンゾロ×10・ほかは×3〜×6！ 壺振り師のひと言は、本当のことも嘘もある。</div>`+betUI(busy)+diceHintHTML()+
    `<div class="big" id="diceBox" style="font-size:56px">${DICE[dice[0]]}${DICE[dice[1]]}</div>`+
-   `<div class="grid2"><button ${busy?'disabled':''} onclick="diceRoll(0)">丁（偶数）</button><button ${busy?'disabled':''} onclick="diceRoll(1)">半（奇数）</button></div>`;
+   `<div class="grid" style="grid-template-columns:2fr 2fr 1fr"><button ${busy?'disabled':''} onclick="diceRoll(0)">丁（偶数）</button><button ${busy?'disabled':''} onclick="diceRoll(1)">半（奇数）</button><button ${busy?'disabled':''} onclick="diceKen()">見</button></div>`+drunkBtn('diceRoll(Math.random()<.5?1:0)');
 }
 function diceRoll(odd){
   if(busy) return; const b=takeBet(); if(!b){panel('casino');return;}
   busy=true; casMsg=''; renderStatus(); panel('casino');
-  const d=()=>1+Math.floor(Math.random()*6), dWin=f=>((f[0]+f[1])%2===1)===!!odd; let fin=[d(),d()];
+  if(!diceHint) diceNext(); const T=tsuboShi(), H=diceHint;
+  const d=()=>1+Math.floor(Math.random()*6), dWin=f=>((f[0]+f[1])%2===1)===!!odd; let fin=H.fin.slice();
+  T.n++; if(H.honest) T.ok++; diceHint=null;
   if(!dWin(fin)){ if(casSure()){ for(let i=0;i<100&&!dWin(fin);i++) fin=[d(),d()]; casCtx.notes.push('<span class="c">【急所】必ず勝つ！</span>'); } else if(casRetry()) fin=[d(),d()]; }
+  shobuFix(()=>dWin(fin),()=>{ fin=[d(),d()]; });
   let tick=0;
   const iv=setInterval(()=>{ tick++; dice=tick<12?[d(),d()]:fin;
     const el=document.getElementById('diceBox'); if(el) el.textContent=DICE[dice[0]]+DICE[dice[1]];
     if(tick>=12){ clearInterval(iv); busy=false;
       const sum=fin[0]+fin[1], isOdd=sum%2===1; let m=0, t;
       if(!odd&&fin[0]===1&&fin[1]===1){ m=10; t='<span class="mir">ピンゾロの丁！ ×10！</span>'; P.jackpots=(P.jackpots||0)+1; P.jpin=(P.jpin||0)+1; }
+      else if(!odd&&fin[0]===fin[1]){ m=fin[0]+1>6?6:Math.max(3,fin[0]+1); t=`<span class="y">${fin[0]}のゾロ目の丁！ ×${m}</span>`; }
       else if(isOdd===!!odd){ m=2; t=`${sum}の${isOdd?'半':'丁'}！ 当たり`; }
       else t=`${sum}の${isOdd?'半':'丁'}… ハズレ`;
-      settle(b,m,t); if(curPanel==='casino') panel('casino'); }
+      settle(b,m,t); diceNext(); if(curPanel==='casino') panel('casino'); }
   },60);
 }
 
 
+// ============ ギャンブル場の拡張（#50）：酔い・酔いに任せる・コインと景品・各ゲームの読み合い ============
+// 酔いの勢い：酔って「酔いに任せる」で勝つと払い戻し×1.2（酒豪Lvで最大×1.5）
+const drunkBoost=()=>Math.min(1.5,1.2+.03*sakeLv());
+let casDrunkGo=false;
+// 酔っていると、読み合いのヒントの半分は逆に見える／ぼやける
+const drunkBlur=t=>drunkNow()?`<span style="opacity:.6;filter:blur(.4px)">…たぶん…${t}？</span>`:t;
+const drunkFlip=v=>drunkNow()&&chance(.5)?!v:v;
+// コイン：勝つと倍率ぶん（切り上げ）たまる。景品交換所で使う
+function casCoinOnWin(mult){ const c=Math.max(1,Math.ceil(mult)); P.coins=(P.coins||0)+c; P.coinsAll=(P.coinsAll||0)+c;
+  P.casWinRun=(P.casWinRun||0)+1; P.casBestRun=Math.max(P.casBestRun||0,P.casWinRun);
+  let t=`<span class="y">🪙 コイン+${c}（${fmt(P.coins)}枚）</span>`;
+  if(mult>=10){ P.bigWins=(P.bigWins||0)+1; t=`<div class="mir" style="font-size:18px">★☆ 大勝ち！ ×${+mult.toFixed(1)} ☆★</div>`+t; }
+  if(P.casWinRun>=3) t+=` <span class="c">${P.casWinRun}連勝中！</span>`; return t; }
+// 景品
+const PRIZES=[
+  {id:'fruit', n:'能力の実',          c:20,   d:'全能力が上がる（最深エリアに応じて）', give:()=>{ const v=Math.max(1,Math.floor(rnd(1,4)*(P.maxArea+1))); KEYS.forEach(k=>P.base[k]+=v); return `全能力+${v}`; }},
+  {id:'ale',   n:'エールの引換券',    c:10,   d:'その場でエールを1杯',     give:()=>prizeDrink('ale')},
+  {id:'wine',  n:'赤ワインの引換券',  c:30,   d:'その場で赤ワインを1杯',   give:()=>prizeDrink('wine')},
+  {id:'fire',  n:'火酒の引換券',      c:60,   d:'その場で火酒を1杯',       give:()=>prizeDrink('fire')},
+  {id:'koshu', n:'古酒の引換券',      c:300,  d:'その場で古酒を1杯',       give:()=>prizeDrink('koshu')},
+  {id:'ring',  n:'勝負師の指輪',      c:100,  d:'ギャンブルの儲け+5%（1つごと、最大+50%）。ギャンブル場の景品でしか手に入らない', max:10, give:()=>{ P.casRing=Math.min(10,(P.casRing||0)+1); return `勝負師の指輪 +${P.casRing}`; }},
+  {id:'t1',    n:'称号「ギャンブル好き」', c:50,   d:'名前の横に出る称号', title:'ギャンブル好き'},
+  {id:'t2',    n:'称号「勝負師」',         c:500,  d:'名前の横に出る称号', title:'勝負師'},
+  {id:'t3',    n:'称号「賭場の主」',       c:3000, d:'名前の横に出る称号', title:'賭場の主'},
+];
+function prizeDrink(id){ const D=DRINKS.find(x=>x.id===id); if(!D) return ''; P.drunk=P.drunk||{}; P.drunk[id]=true; P.drinks=(P.drinks||0)+1; return applyDrink(D,sakePow())||`${D.n}を飲んだ`; }
+function prizeOk(p){ if(p.title) return !(P.titles&&P.titles[p.title]); if(p.max) return (P.casRing||0)<p.max; return true; }
+function buyPrize(id){ const p=PRIZES.find(x=>x.id===id); if(!p||(P.coins||0)<p.c||!prizeOk(p)) return;
+  P.coins-=p.c; let t;
+  if(p.title){ P.titles=P.titles||{}; P.titles[p.title]=true; P.title=p.title; t=`称号「${p.title}」を手に入れた`; } else t=p.give();
+  casMsg=`<span class="g">🎁 ${p.n}と交換した！</span><div class="small">${t||''}</div>`; save(); renderStatus(); panel('casino'); }
+function prizeHTML(){ let h=`<div class="small">勝つとコインがたまる（倍率ぶん。×10以上は大勝ち）。いま <span class="y">🪙 ${fmt(P.coins||0)}枚</span>　最高 ${P.casBestRun||0}連勝・大勝ち ${P.bigWins||0}回</div>`;
+  PRIZES.forEach(p=>{ const ok=prizeOk(p), can=ok&&(P.coins||0)>=p.c;
+    h+=`<div class="row"><div style="flex:1;min-width:0">${p.n}${p.id==='ring'?` <span class="small">（今 +${P.casRing||0}）</span>`:''}<div class="small">${p.d}</div></div><button ${can?'':'disabled'} onclick="buyPrize('${p.id}')">${ok?'🪙'+p.c:'交換済み'}</button></div>`; });
+  if(P.titles) h+=`<div class="small" style="margin-top:6px">称号：`+Object.keys(P.titles).map(t=>`<button style="font-size:11px" class="${P.title===t?'sel':''}" onclick="P.title='${t}';save();renderStatus();panel('casino')">${t}</button>`).join(' ')+` <button style="font-size:11px" onclick="P.title='';save();renderStatus();panel('casino')">外す</button></div>`;
+  return h; }
+// 勝負師の指輪：儲け×(1＋0.05×Lv)
+const casRingMul=()=>1+.05*(P.casRing||0);
+// 「酔いに任せる」ボタン
+const drunkBtn=fn=>`<button style="width:100%;margin-top:4px" class="${drunkNow()?'y':''}" ${busy?'disabled':''} onclick="casDrunkGo=true;${fn}">🍺 酔いに任せる${drunkNow()?`（勝てば×${drunkBoost().toFixed(2)}）`:'（ランダム）'}</button>`;
+
+// ---- ルーレット：ディーラーのくせ（台ごと）と、2か所賭け ----
+let rouDealer=null, rouHist=[], rouBets=['red'];
+function dealer(){ if(!rouDealer) rouDealer={habit:['near','far',null][Math.floor(Math.random()*3)]}; return rouDealer; }
+const rouDist=(a,b)=>{ const d=Math.abs(a-b); return Math.min(d,37-d); };
+// くせ：30%の確率で、前の数字の近く（6以内）／遠く（13以上）に止まる
+function rouBiased(fin){ const d=dealer(); if(!d.habit||rouRes===null||!chance(.3)) return fin; for(let i=0;i<50;i++){ const f=Math.floor(Math.random()*37); if(d.habit==='near'?rouDist(f,rouRes)<=6:rouDist(f,rouRes)>=13) return f; } return fin; }
+function rouHistHTML(){ if(!rouHist.length) return ''; const avg=rouHist.length>1?rouHist.slice(1).reduce((a,v,i)=>a+rouDist(v,rouHist[i]),0)/(rouHist.length-1):null;
+  return `<div class="small">これまでの目：${rouHist.slice(-8).join('・')}${avg!==null?`　前の目との差の平均 ${drunkNow()?drunkBlur(Math.round(avg)):avg.toFixed(1)}`:''}<span style="color:#9ab">（くせを読もう。ふつうは平均 約9）</span></div>`; }
+function rouToggle(k){ if(busy) return; const i=rouBets.indexOf(k); if(i>=0){ if(rouBets.length>1) rouBets.splice(i,1); } else { rouBets.push(k); if(rouBets.length>2) rouBets.shift(); } rouBet=rouBets[0]; panel('casino'); }
+const rouWinOf=(k,f)=>k.startsWith('n')?+k.slice(1)===f:f!==0&&({red:REDN.includes(f),black:!REDN.includes(f),odd:f%2===1,even:f%2===0,d1:f<=12,d2:f>12&&f<=24,d3:f>24})[k];
+const rouMulOf=k=>k.startsWith('n')?36:ROU_T[k][1];
+
+// ---- 丁半：壺振り師のひと言（本当か嘘か）、見（けん） ----
+let tsubo=null, diceHint=null;
+function tsuboShi(){ if(!tsubo) tsubo={trust:.3+Math.random()*.6,ok:0,n:0,name:['お竜','銀次','お艶','鉄五郎'][Math.floor(Math.random()*4)]}; return tsubo; }
+// 次の目を先に決め、ひと言を作る（信用度の確率で本当、外れれば嘘）。見（けん）のあとは信用度+0.25
+function diceNext(bonus){ const d=()=>1+Math.floor(Math.random()*6), fin=[d(),d()], even=(fin[0]+fin[1])%2===0, T=tsuboShi(), honest=chance(Math.min(.95,T.trust+(bonus||0)));
+  const say=honest?even:!even; diceHint={fin,say,honest,shown:drunkFlip(say)}; }
+function diceHintHTML(){ const T=tsuboShi(); if(!diceHint) diceNext();
+  const t=diceHint.shown?'丁':'半';
+  return `<div class="small c">壺振り師${T.name}「次は…${drunkNow()?drunkBlur(t):t}かねぇ」<span style="color:#9ab">（${T.n?`当たり ${T.ok}/${T.n}`:'まだわからない'}）</span></div>`; }
+function diceKen(){ if(busy) return; const T=tsuboShi(); diceNext(.25); casMsg=`<span class="small">見（けん）：賭けずに一回見送った。壺振り師の手元がよく見えた…（次のひと言は当たりやすい）</span>`; panel('casino'); }
+
+// ---- ギャンブル中のお酒の提供（博徒の酒・迎え酒・勝負酒） ----
+// 勝負酒：次の1回の勝率80%。ただし半分の確率で「隠れ酔い」…そのときは90%で負ける（飲んだ時点ではわからない）
+const shobuPrice=()=>Math.max(50,Math.floor(enemyStats(P.maxArea).gold*goldRate(P.maxArea)*30));
+function buyShobu(){ if(busy||P.shobu) return; const pr=shobuPrice(); if(P.gold<pr) return; P.gold-=pr; P.shobu=chance(.5)?'hidden':'good'; P.drinks=(P.drinks||0)+1;
+  casMsg='<span class="o">🍶 勝負酒をあおった！ 次の勝負は、きっと勝てる…気がする</span>'; save(); renderStatus(); panel('casino'); }
+// takeBet のあとに呼ぶ：勝負酒が効いていれば、この勝負の結果を決めておく
+function shobuArm(){ if(!P.shobu||!casCtx) return; const hid=P.shobu==='hidden'; P.shobu=null; casCtx.force=chance(hid?.1:.8)?'win':'lose'; casCtx.shobuHidden=hid; }
+// 各ゲームで、決めておいた結果に寄せる（win：勝つか、reroll：引き直し）
+function shobuFix(win,reroll){ if(!casCtx||!casCtx.force) return; const want=casCtx.force==='win'; casCtx.force=null;
+  for(let i=0;i<300&&win()!==want;i++) reroll();
+  casCtx.notes.push(casCtx.shobuHidden?'<span class="r">🍶 …隠れ酔いだった！ 頭がぐるぐる回る</span>':'<span class="c">🍶 勝負酒が効いた！</span>'); }
+function casDrinkHTML(){ const B=DRINKS.find(D=>D.id==='bakuto'), M=DRINKS.find(D=>D.id==='mukae'), row=[];
+  if(B&&drinkOpen(B)) row.push(`<button style="font-size:11px" ${busy||P.gold<drinkPrice(B)?'disabled':''} onclick="buyDrink('bakuto');panel('casino')">${B.n}<br>${fmt(drinkPrice(B))}G</button>`);
+  if(M&&drinkOpen(M)) row.push(`<button style="font-size:11px" ${busy||P.gold<drinkPrice(M)?'disabled':''} onclick="buyDrink('mukae');panel('casino')">${M.n}<br>${fmt(drinkPrice(M))}G</button>`);
+  row.push(`<button style="font-size:11px" ${busy||P.shobu||P.gold<shobuPrice()?'disabled':''} onclick="buyShobu()">勝負酒${P.shobu?'（効いている）':''}<br>${fmt(shobuPrice())}G</button>`);
+  return `<details style="margin:4px 0"><summary class="small y">🍶 お酒の提供（勝負中でも飲める）</summary><div class="small" style="color:#9ab">勝負酒：次の1回（ハイ&ローは次の1枚）の勝率が80%。ただし半分の確率で隠れ酔いになり、そのときは90%で負ける。</div><div class="grid" style="grid-template-columns:repeat(${row.length},1fr);gap:4px">${row.join('')}</div></details>`; }
 // ============ ハローワーク（無職専用：選択式の就活） ============
 // 出発 → ハロワ（ルート選択）→ 登録（履歴書）→ 面談 → 面接（一次・二次・最終）→ 内定
 // 長押しなし。面接は「質問に答える」形式で、印象ポイント（圧縮ダメージ）を積み上げる。
@@ -1827,6 +1952,12 @@ function buildAch(){
   A.push(T('gm5','ギルド','★5の輝き','★5の素材を手に入れた',()=>Object.keys(P.gmF||{}).some(k=>k.endsWith('_s5'))));
   A.push(T('gmall','ギルド','素材博士','すべての素材を見つけた',()=>gmKeys().every(k=>P.gmF&&P.gmF[k])));
   A.push(T('syn1','ギルド','鍛冶の第一歩','合成で武器か防具を鍛えた',()=>(P.synthN||0)>=1));
+  // ギャンブル場（#50）
+  [[100,'コイン100枚'],[1000,'コイン1000枚'],[10000,'コイン長者']].forEach(([v,n])=>A.push(T('coin'+v,'ギャンブル',n,`コインを合計${v}枚ためた`,()=>(P.coinsAll||0)>=v)));
+  A.push(T('big1','ギャンブル','大勝ち','ギャンブルで×10以上の大勝ち',()=>(P.bigWins||0)>=1));
+  A.push(T('big10','ギャンブル','大勝ち10回','ギャンブルで×10以上の大勝ちを10回',()=>(P.bigWins||0)>=10));
+  [5,10].forEach(v=>A.push(T('run'+v,'ギャンブル',`${v}連勝`,`ギャンブルで${v}連勝した`,()=>(P.casBestRun||0)>=v)));
+  A.push(T('title3','ギャンブル','賭場の主','称号「賭場の主」を手に入れた',()=>!!(P.titles&&P.titles['賭場の主'])));
   A.push(T('final','冒険','インフレの果て','桁の神を倒した',()=>!!(P.final&&P.final.cleared)));
   [[2,'桁の向こう側'],[5,'桁の神殺し'],[10,'桁を超えた者']].forEach(([v,n])=>A.push(T('fin'+v,'冒険',n,`桁の神の第${v}形態を倒した`,()=>!!(P.final&&(P.final.best||0)>=v))));
   A.push(T('neetWA','装備','最強の無職','無職専用の武器と防具をそろえた',()=>!!(P.neetW&&P.neetA)));
@@ -1905,25 +2036,25 @@ function achHTML(){
 // when：品書きに並ぶ条件（なければ最初から）。hint：並ぶ前に出す目安。hang：効き目が切れたあとの二日酔い（戦闘数）
 // k：exp/gold/atk/jexp/drop/all は倍率（酒豪Lvで強まる）、mir は加算、cas/train は回数、reb/rebLv は次の転生だけ
 const DRINKS=[
- {id:'ale', n:'エール',   d:'経験値×1.5', left:30, k:'exp',  v:1.5, price:20},
- {id:'wine',n:'赤ワイン', d:'お金×2',     left:30, k:'gold', v:2,   price:20},
- {id:'fire',n:'火酒',     d:'攻撃力×3',   left:20, k:'atk',  v:3,   price:30},
- {id:'miki',n:'神酒',     d:'奇跡率+10%', left:10, k:'mir',  v:.1,  price:400},
+ {id:'ale', n:'エール',   d:'経験値×1.5', left:500, k:'exp',  v:1.5, price:20},
+ {id:'wine',n:'赤ワイン', d:'お金×2',     left:500, k:'gold', v:2,   price:20},
+ {id:'fire',n:'火酒',     d:'攻撃力×3',   left:400, k:'atk',  v:3,   price:30},
+ {id:'miki',n:'神酒',     d:'奇跡率+10%', left:200, k:'mir',  v:.1,  price:400},
  // お酒でしか得られない効果（#10 案3）
- {id:'shoku',n:'職人の地酒', d:'熟練度（ジョブ経験値）×2', left:40, k:'jexp', v:2, price:60, when:()=>P.maxArea>=4, hint:'4つ目のエリアに着くと'},
- {id:'kaji', n:'果実酒',     d:'能力の実が出やすい（×3）', left:40, k:'drop', v:3, price:60, when:()=>P.maxArea>=6, hint:'6つ目のエリアに着くと'},
- {id:'shuren',n:'鍛錬の酒',  d:'今の職業の戦闘回数が2倍で数えられる（極意が早くなる）', left:50, k:'train', v:2, price:40, when:()=>Object.values(P.jobB||{}).some(v=>v>=100), hint:'どれかの職業で100戦すると'},
- {id:'bakuto',n:'博徒の酒',  d:'ギャンブル特性の再使用までの戦闘数が2倍の速さで減る', left:50, k:'cas', v:2, price:60, when:()=>P.maxArea>=8, hint:'8つ目のエリアに着くと'},
+ {id:'shoku',n:'職人の地酒', d:'熟練度（ジョブ経験値）×2', left:500, k:'jexp', v:2, price:60, when:()=>P.maxArea>=4, hint:'4つ目のエリアに着くと'},
+ {id:'kaji', n:'果実酒',     d:'能力の実が出やすい（×3）', left:500, k:'drop', v:3, price:60, when:()=>P.maxArea>=6, hint:'6つ目のエリアに着くと'},
+ {id:'shuren',n:'鍛錬の酒',  d:'今の職業の戦闘回数が2倍で数えられる（極意が早くなる）', left:500, k:'train', v:2, price:40, when:()=>Object.values(P.jobB||{}).some(v=>v>=100), hint:'どれかの職業で100戦すると'},
+ {id:'bakuto',n:'博徒の酒',  d:'ギャンブル特性の再使用までの戦闘数が2倍の速さで減る', left:500, k:'cas', v:2, price:60, when:()=>P.maxArea>=8, hint:'8つ目のエリアに着くと'},
  {id:'seirei',n:'精霊の酒',  d:'次の1回だけ、属性・武器の種類の付け直しが無料', left:0, k:'forge', v:1, price:200, when:()=>P.maxArea>=2, hint:'3つ目のエリアに着くと'},
- {id:'mukae',n:'迎え酒',     d:'二日酔いがすぐ治り、効いているあいだは二日酔いにならない', left:30, k:'nohang', v:1, price:30, when:()=>P.maxArea>=3, hint:'4つ目のエリアに着くと'},
+ {id:'mukae',n:'迎え酒',     d:'二日酔いがすぐ治り、効いているあいだは二日酔いにならない', left:500, k:'nohang', v:1, price:30, when:()=>P.maxArea>=3, hint:'4つ目のエリアに着くと'},
  // MP・状態異常のお酒（#10）
- {id:'maryoku',n:'魔力の酒', d:'最大MP×3', left:30, k:'mpmax', v:3, price:80, when:()=>P.maxArea>=4, hint:'5つ目のエリアに着くと'},
- {id:'kitsuke',n:'気付けの酒', d:'麻痺・遅延・即死を防ぐ', left:20, k:'nostat', v:1, price:100, when:()=>P.maxArea>=4, hint:'5つ目のエリアに着くと'},
+ {id:'maryoku',n:'魔力の酒', d:'最大MP×3', left:500, k:'mpmax', v:3, price:80, when:()=>P.maxArea>=4, hint:'5つ目のエリアに着くと'},
+ {id:'kitsuke',n:'気付けの酒', d:'麻痺・遅延・即死を防ぐ', left:400, k:'nostat', v:1, price:100, when:()=>P.maxArea>=4, hint:'5つ目のエリアに着くと'},
  // 後半向けのお酒（#10 案2）
- {id:'koshu',n:'古酒',       d:'経験値×10', left:100, k:'exp',  v:10,  price:300, when:()=>P.maxArea>=12, hint:'次元の彼方に着くと'},
- {id:'ougon',n:'黄金酒',     d:'お金×100',  left:100, k:'gold', v:100, price:300, when:()=>P.maxArea>=40, hint:'次元の彼方 第29層に着くと'},
- {id:'ryu',  n:'竜殺し',     d:'攻撃力×100', left:50, k:'atk',  v:100, price:500, when:()=>P.maxArea>=60, hint:'次元の彼方 第49層に着くと'},
- {id:'keta', n:'桁の酒',     d:'全能力×1000。ただし切れたあと20戦、ひどい二日酔い', left:50, k:'all', v:1000, price:3000, hang:20, when:()=>P.reb>=30, hint:'転生30回で'},
+ {id:'koshu',n:'古酒',       d:'経験値×10', left:300, k:'exp',  v:10,  price:300, when:()=>P.maxArea>=12, hint:'次元の彼方に着くと'},
+ {id:'ougon',n:'黄金酒',     d:'お金×100',  left:300, k:'gold', v:100, price:300, when:()=>P.maxArea>=40, hint:'次元の彼方 第29層に着くと'},
+ {id:'ryu',  n:'竜殺し',     d:'攻撃力×100', left:200, k:'atk',  v:100, price:500, when:()=>P.maxArea>=60, hint:'次元の彼方 第49層に着くと'},
+ {id:'keta', n:'桁の酒',     d:'全能力×1000。ただし切れたあと20戦、ひどい二日酔い', left:100, k:'all', v:1000, price:3000, hang:20, when:()=>P.reb>=30, hint:'転生30回で'},
 ];
 // 酒豪Lv：飲んだ杯数で上がる。効き目が強く・長くなり、二日酔いと記憶が飛ぶのが減る（#10 案4）
 const SAKE_NEED=[0,5,15,30,60,100,160,250,400,600,1000];
@@ -2667,6 +2798,7 @@ function runBattle(e,t,fast){
   $('#result').innerHTML=sum+`<div class="small">所持金 ${fmt(P.gold)}G　<span class="c">${locName(lk)}：今回${fmt(locRun)}戦目（累計${fmt(P.locB[lk])}戦）</span></div><div class="small">${JOBS[P.job].n}での戦闘 ${fmt((P.jobB||{})[P.job]||0)}回　総戦闘${fmt(P.battles)}回</div>`;
   { const tip=(t>=0||e.champ||e.guard)&&R.c?pickTip(e,t,R.c):null; if(tip) $('#result').insertAdjacentHTML('beforeend',tip); }
   { const cl=gCollectLine(); if(cl) $('#result').insertAdjacentHTML('beforeend',cl); }
+  if(t>=0){ const an=arenaNotice(); if(an) $('#result').insertAdjacentHTML('beforeend',an); }
   const box=$('#log'); box.innerHTML=L.map(x=>`<p>${x}</p>`).join(''); box.scrollTop=box.scrollHeight;
   if(R.guardWarn!==undefined) guardWarnPopup(R.guardWarn);
   gPopShow();

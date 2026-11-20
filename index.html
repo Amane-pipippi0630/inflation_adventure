@@ -349,6 +349,9 @@ const kiwamiLeft=k=>(P.kiwami&&P.kiwami[k])?0:Math.max(0,KIWAMI_N-jobBN(k));
 // ============ 更新ログ（#42）：プレイヤーに見える。隠し要素の名前は書かない ============
 // 配布版に出すときに、いちばん上に1版足す（新しい順）
 const CHANGELOG=[
+  {v:'1.9',d:'2026/11/20',items:[
+    '番人を倒したあとの連戦が空回りする不具合を直した。連戦中にお知らせが出たら連戦を止めるように',
+  ]},
   {v:'1.8',d:'2026/11/20',items:[
     '物理・魔法の「効きにくい」をなくした。どの職業でも、すべての敵に普通に通る',
     '攻撃の属性は武器だけで決まるように（職業の属性はなくした）',
@@ -2716,14 +2719,18 @@ let last=null;
 function fightArea(t,f){ if(takashiLock()) return;last={type:'area',t}; runBattle(makeEnemy(t),t,f)}
 function fightChamp(f){ if(takashiLock()||P.champ>=CHAMP_MAX) return;last={type:'champ'}; runBattle(makeChamp(P.champ),-1,f)}
 function fightSecret(f){ if(takashiLock()) return;last={type:'secret'}; runBattle(makeSecret(),-2,f)}
-function again(f){ if(!last) return; if(last.type==='area') fightArea(last.t,f); else if(last.type==='guard') fightGuard(last.t,f); else if(last.type==='champ') fightChamp(f); else if(last.type==='final') fightFinal(f); else fightSecret(f); }
+function again(f){ if(!last) return;
+  // 番人を倒したあとは、同じ層のふつうの敵と戦う（倒した番人には挑めないので、空回りしないように）
+  if(last.type==='guard'&&!canGuard(last.t)) last={type:'area',t:last.t};
+  if(last.type==='area') fightArea(last.t,f); else if(last.type==='guard') fightGuard(last.t,f); else if(last.type==='champ') fightChamp(f); else if(last.type==='final') fightFinal(f); else fightSecret(f); }
 // 長押し連戦
 let holdT=null, holdI=null, holdN=0, holdW=0, holdL=0;
 function holdStart(ev){ ev.preventDefault(); if(holdT||holdI||!$('#modal').classList.contains('hide')) return;
   holdN=0; holdW=0; holdL=0; again();
   if(last&&last.type==='champ') return;
+  if(!$('#modal').classList.contains('hide')) return; // 1戦目でお知らせが出たら連戦は始めない
   holdT=setTimeout(()=>{ holdT=null; $('#btnAgain').classList.add('holding');
-    holdI=setInterval(()=>{ again(true); if(!holdI) return; holdN++; const r=$('#result').dataset.res; if(r==='win') holdW++; else if(r==='lose') holdL++;
+    holdI=setInterval(()=>{ if(!$('#modal').classList.contains('hide')){ holdEnd(); return; } again(true); if(!holdI) return; holdN++; const r=$('#result').dataset.res; if(r==='win') holdW++; else if(r==='lose') holdL++;
       $('#btnAgain').textContent=`連戦中… ${holdN}回（${holdW}勝）`; },60); },350);
 }
 function holdEnd(){ const was=!!holdI; clearTimeout(holdT); clearInterval(holdI); holdT=holdI=null;

@@ -212,29 +212,51 @@ const JOBS={
   neet:{rank:3,hidden:true,byMaster:true,n:'無職',hue:0,main:'best',g:{str:1.3,int:1.3,agi:1.3,vit:1.3,luk:1.3},skill:{n:'本気を出す',p:.1,m:10},d:'働かずして、すべてを極めた者。一番高い能力で攻撃し、マスターした全職業の特性と技を使いこなす。'},
   alchemist:{rank:0,n:'錬金術師',hue:260,main:'int',g:{str:.5,int:1.5,agi:.8,vit:.9,luk:1.2},skill:{n:'爆薬調合',p:.13,m:4},pass:{drop:3},d:'能力の実を3倍拾いやすい。'},
 };
-// アクセサリー（1つだけ装備。買うたびに+1強化）
+// ============ 装飾品（#65 #66）：4つのカテゴリ。買うたびに+1強化。カテゴリごとに枠がある ============
 const ACC=[
- ['ring','力の指輪','str'],['brace','知恵の腕輪','int'],['boots','疾風のブーツ','agi'],['charm','守りのお守り','vit'],['coin','幸運のコイン','luk'],
- ['cat','招き猫','gold'],['book','経験の書','exp'],['earring','会心のピアス','crit'],['rosary','奇跡のロザリオ','mir'],['neck','実りの首飾り','drop'],
- // MP（#34）
- ['mpsave','節約の指輪','mpsave'],['mporb','魔力の宝珠','mpmax'],['mpfount','魔力の泉','mpregen'],['mprage','魔力暴走の首飾り','mprage'],
- // 状態異常を防ぐ（#29）
- ['paral','麻痺よけの指輪','rPara'],['hourglass','時の砂時計','rSlow'],['doll','身代わり人形','rDeath']];
-// +1〜+10：+1は300G、以降1段ごとに110倍（全種+10で合計約7垓…見習い？の神々→転生5周ほど）
-// +11〜+20：無職だけの限界突破。バカ高い。
+ // ステータスUP
+ ['ring','力の指輪','str'],['brace','知恵の腕輪','int'],['boots','疾風のブーツ','agi'],['charm','守りのお守り','vit'],['coin','幸運のコイン','luk'],['mporb','魔力の宝珠','mpmax'],
+ // 状態耐性（+1で50%、+10で95%）
+ ['paral','麻痺よけの指輪','rPara'],['hourglass','時の砂時計','rSlow'],['antidote','解毒のペンダント','rPoison'],['nightglass','暗視のメガネ','rBlind'],['kotodama','言霊の耳飾り','rSilence'],
+ ['juzu','聖なる数珠','rCurse'],['ribbon','魅了よけのリボン','rCharm'],['mirror','石化よけの鏡','rStone'],['doll','身代わり人形','rDeath'],
+ // 戦闘中効果
+ ['earring','会心のピアス','crit'],['rosary','奇跡のロザリオ','mir'],['mpsave','節約の指輪','mpsave'],['mpfount','魔力の泉','mpregen'],['mprage','魔力暴走の首飾り','mprage'],
+ ['anklet','疾風のアンクレット','dbl'],['bell','先制の鈴','first'],
+ // その他
+ ['cat','招き猫','gold'],['book','経験の書','exp'],['neck','実りの首飾り','drop']];
+const ACC_CATS=[['stat','ステータスUP'],['res','状態耐性'],['battle','戦闘中効果'],['other','その他']];
+const RES_T=['rPara','rSlow','rPoison','rBlind','rSilence','rCurse','rCharm','rStone','rDeath'];
+const accCatOfT=t=>KEYS.includes(t)||t==='mpmax'?'stat':RES_T.includes(t)?'res':['gold','exp','drop'].includes(t)?'other':'battle';
+const accCatOf=k=>{ if(String(k).startsWith('am')){ const a=amuOf(k); return a?accCatOf(a.parts[0]):'other'; } const a=ACC.find(x=>x[0]===k); return a?accCatOfT(a[2]):'other'; };
+// +1〜+10：+1は300G、以降1段ごとに110倍。+11〜+20：無職だけの限界突破
 const ACC_MAX=10, ACC_LIMIT=20;
 const accPrice=lv=>(lv<ACC_MAX?300*Math.pow(110,lv):1e36*Math.pow(1000,lv-ACC_MAX))*gDisc();
 const accCap=()=>P.job==='neet'?ACC_LIMIT:ACC_MAX;
-const accSlots=()=>(P.job==='neet'||P.job==='apprentice')?ACC.length:[3,5,7][JOBS[P.job].rank];
+// 装飾品の枠（#73）：職業ではなく進み具合で増える。どの職業に転職しても枠は同じ（カテゴリは分けず、合計で数える）
+// はじめ1／ギルドランクC +1／下位職を全部マスター +1／中位職を全部マスター +1／上位職を全部マスター +3／ギルドランクS +2／転生50回 +2。無職が解放されたら全部
+const rankAllMaster=r=>Object.keys(JOBS).filter(k=>JOBS[k].rank===r&&!JOBS[k].hidden).every(isMaster);
+const ACC_UNLOCKS=[['はじめ',1,()=>true],['ギルドランクC',1,()=>!!P.guild&&gRank()>=3],['下位職を全部マスター',1,()=>rankAllMaster(0)],['中位職を全部マスター',1,()=>rankAllMaster(1)],
+  ['上位職を全部マスター',3,()=>rankAllMaster(2)],['ギルドランクS',2,()=>!!P.guild&&gRank()>=6],['転生50回',2,()=>P.reb>=50]];
+const accFree=()=>!!(P.unlocked&&P.unlocked.neet);
+const accSlots=()=>accFree()?ACC.length:ACC_UNLOCKS.reduce((a,[n,v,f])=>a+(f()?v:0),0);
+const accSlotsC=()=>accSlots();
 const accEqList=()=>{ if(!Array.isArray(P.accEq)) P.accEq=P.accEq?[P.accEq]:[]; return P.accEq; };
+const accEqCount=()=>accEqList().length;
 function trimAcc(){ const l=accEqList(); if(l.length>accSlots()) l.length=accSlots(); }
 const accLv=k=>(P.acc&&P.acc[k])||0;
-const accEqs=()=>accEqList().map(k=>ACC.find(x=>x[0]===k)).filter(Boolean).map(a=>({key:a[0],n:a[1],t:a[2],lv:accLv(a[0])}));
+// 護符（装飾品の合成）：同じカテゴリの装飾品をまとめて1枠に。Lvは中身のいちばん低いもの
+const amuOf=id=>(P.amu||[])[+String(id).slice(2)]||null;
+const amuLv=a=>Math.min(...a.parts.map(accLv));
+const inAmu=k=>(P.amu||[]).some(a=>a&&a.parts.includes(k));
+const amuName=a=>a.parts.length===2?`${a.parts.map(k=>ACC.find(x=>x[0]===k)[1]).join('＋')}の護符`:`${ACC_CATS.find(c=>c[0]===accCatOf(a.parts[0]))[1]}の護符（${a.parts.length}）`;
+const accEqs=()=>accEqList().flatMap(k=>{ if(String(k).startsWith('am')){ const a=amuOf(k); if(!a) return []; const lv=amuLv(a); return a.parts.map(p=>{ const x=ACC.find(y=>y[0]===p); return {key:p,n:x[1],t:x[2],lv,amu:true}; }); }
+  const a=ACC.find(x=>x[0]===k); return a?[{key:a[0],n:a[1],t:a[2],lv:accLv(a[0])}]:[]; });
 function accVal(t,lv){ if(KEYS.includes(t)||t==='mpmax') return Math.pow(1.5,lv);
-  if(t==='mpsave') return Math.min(.5,.05*lv); if(t==='mpregen') return .01*lv; if(t==='mprage') return 1.5+.1*lv; if(t==='rPara'||t==='rSlow'||t==='rDeath') return Math.min(1,.1*lv); if(t==='crit') return Math.min(.6,.02*lv); if(t==='mir') return Math.min(.3,.004*lv); return 1+.5*lv; }
+  if(RES_T.includes(t)) return lv>0?Math.min(.95,.45+.05*lv):0; if(t==='dbl') return Math.min(.5,.05*lv); if(t==='first') return Math.min(1,.5+.05*lv);
+  if(t==='mpsave') return Math.min(.5,.05*lv); if(t==='mpregen') return .01*lv; if(t==='mprage') return 1.5+.1*lv; if(t==='crit') return Math.min(.6,.02*lv); if(t==='mir') return Math.min(.3,.004*lv); return 1+.5*lv; }
 function accDesc(t,lv){ if(KEYS.includes(t)) return `${KN[t]}×${fmtMul(accVal(t,lv))}`;
   if(t==='mpmax') return `最大MP×${fmtMul(accVal(t,lv))}`; if(t==='mpsave') return `技のMP消費−${Math.round(accVal(t,lv)*100)}%`; if(t==='mpregen') return `毎ターン MP+${Math.round(accVal(t,lv)*100)}%`;
-  if(t==='mprage') return `技のMP消費×2・技のダメージ×${accVal(t,lv).toFixed(1)}`; if(t==='rPara'||t==='rSlow'||t==='rDeath') return `${({rPara:'麻痺',rSlow:'遅延',rDeath:'即死'})[t]}を${Math.round(accVal(t,lv)*100)}%防ぐ`; if(t==='crit') return `会心率+${Math.round(accVal(t,lv)*100)}%`; if(t==='mir') return `奇跡率+${(accVal(t,lv)*100).toFixed(1)}%`;
+  if(t==='mprage') return `技のMP消費×2・技のダメージ×${accVal(t,lv).toFixed(1)}`; if(RES_T.includes(t)) return `${AILMENTS[AIL_KEYS[RES_T.indexOf(t)]].n}を${Math.round(accVal(t,lv)*100)}%防ぐ`; if(t==='dbl') return `${Math.round(accVal(t,lv)*100)}%で2回行動`; if(t==='first') return `必ず先制。状態異常の先手を${Math.round(accVal(t,lv)*100)}%防ぐ`; if(t==='crit') return `会心率+${Math.round(accVal(t,lv)*100)}%`; if(t==='mir') return `奇跡率+${(accVal(t,lv)*100).toFixed(1)}%`;
   return `${({gold:'お金',exp:'経験値',drop:'実の入手率'})[t]}×${accVal(t,lv).toFixed(1)}`; }
 const accStat=k=>accEqs().reduce((m,a)=>a.t===k?m*accVal(k,a.lv):m,1);
 const accMir=()=>accEqs().reduce((m,a)=>a.t==='mir'?m+accVal('mir',a.lv):m,0);
@@ -327,6 +349,16 @@ const kiwamiLeft=k=>(P.kiwami&&P.kiwami[k])?0:Math.max(0,KIWAMI_N-jobBN(k));
 // ============ 更新ログ（#42）：プレイヤーに見える。隠し要素の名前は書かない ============
 // 配布版に出すときに、いちばん上に1版足す（新しい順）
 const CHANGELOG=[
+  {v:'1.7',d:'2026/11/20',items:[
+    '状態異常を9種類に（麻痺・遅延・毒・暗闇・沈黙・呪い・魅了・石化・即死）。層ごとに使ってくるものが決まり、エリア一覧に表示',
+    '状態異常を使う敵は、戦闘の最初に先手で仕掛けてくる。状態異常で負けたら連戦を止めて案内',
+    '装飾品を4つのカテゴリ（ステータスUP・状態耐性・戦闘中効果・その他）に分けて表示。状態耐性は+1で50%',
+    '装飾品の枠は職業ではなく進み具合で増えるように（はじめ1つ、ギルドランク・職業のマスター・転生で最大11）。転職しても外れない',
+    'ギルドの職業の依頼から、その場で転職できるように',
+    '装飾品の枠が増えたら、お知らせを出すように',
+    '新しい装飾品：状態耐性6種、疾風のアンクレット（2回行動）、先制の鈴（必ず先制）',
+    '装飾品の合成（護符）：同じカテゴリの装飾品をまとめて枠を空ける。進むほど多くまとめられる',
+  ]},
   {v:'1.6',d:'2026/11/20',items:[
     '闘技場・神々の座に勝てそうになったら、お知らせを出すように',
     'ギャンブル場：勝つとコインがたまり、景品と交換できるように（お酒・勝負師の指輪・称号・能力の実）',
@@ -453,16 +485,16 @@ function sanitizeSave(o){
   r.job=isJob(o.job)?o.job:'warrior';
   r.yomi=typeof o.yomi==='string'&&/^[ぁ-ゖー]{1,15}$/.test(o.yomi)?o.yomi:'';
   ['lv','exp','gold','pts','wpn','arm','reb','maxArea','areaWins','champ','kills','maxDmg','battles','earned','maxLv','godTries','godWins','godMaxForm',
-   'jackpots','j777','jpin','jrou','setHits','oinori','hlBest','allInWins','kajiN','miracles','deathN','hwCd','hwBreaks','coins','coinsAll','casWinRun','casBestRun','bigWins','casRing'].forEach(k=>r[k]=num(o[k],0));
+   'jackpots','j777','jpin','jrou','setHits','oinori','hlBest','allInWins','kajiN','miracles','deathN','hwCd','hwBreaks','coins','coinsAll','casWinRun','casBestRun','bigWins','casRing','accSlotsSeen'].forEach(k=>r[k]=num(o[k],0));
   r.lv=Math.max(1,int(o.lv,1)); r.wpn=Math.min(GEAR_MAX,int(o.wpn)); r.arm=Math.min(GEAR_MAX,int(o.arm)); r.reb=int(o.reb); r.pts=int(o.pts);
   r.maxArea=Math.min(AREA_MAX,int(o.maxArea)); r.areaWins=int(o.areaWins); r.champ=int(o.champ);
-  r.rebMul=Math.max(1,num(o.rebMul,1)); r.rebMul=Math.min(r.rebMul,Math.pow(12,r.reb||0)); /* #11：1回×12までの式に合わせて、古いセーブの倍率を丸める */ r.oneG=bool(o.oneG); r.ptsUsed=bool(o.ptsUsed); r.casPlayed=bool(o.casPlayed); r.tutDone=bool(o.tutDone)||(num(o.maxArea,0)>0); r.jobOpen=o.jobOpen===false?false:true; r.drunk=boolMap(o.drunk,k=>DRINKS.some(D=>D.id===k)); r.shobu=['good','hidden'].includes(o.shobu)?o.shobu:null; { const TT=PRIZES.filter(p=>p.title).map(p=>p.title); r.titles=boolMap(o.titles,k=>TT.includes(k)); r.title=TT.includes(o.title)&&r.titles[o.title]?o.title:''; } r.tutWarn=bool(o.tutWarn); r.areaDone=bool(o.areaDone); if(o.guideHeard!==undefined&&o.guideHeard!==null) r.guideHeard=Math.floor(num(o.guideHeard,-1)); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA); r.jsec=boolMap(o.jsec,isJob); r.lastFruit=bool(o.lastFruit); r.endingSeen=bool(o.endingSeen); r.everTakashi=bool(o.everTakashi);
+  r.rebMul=Math.max(1,num(o.rebMul,1)); r.rebMul=Math.min(r.rebMul,Math.pow(12,r.reb||0)); /* #11：1回×12までの式に合わせて、古いセーブの倍率を丸める */ r.oneG=bool(o.oneG); r.ptsUsed=bool(o.ptsUsed); r.casPlayed=bool(o.casPlayed); r.tutDone=bool(o.tutDone)||(num(o.maxArea,0)>0); r.jobOpen=o.jobOpen===false?false:true; r.drunk=boolMap(o.drunk,k=>DRINKS.some(D=>D.id===k)); if(o.accSlotsSeen===undefined||o.accSlotsSeen===null) r.accSlotsSeen=null; { const AK=new Set(ACC.map(x=>x[0])); r.amu=(Array.isArray(o.amu)?o.amu:[]).slice(0,40).map(a=>a&&Array.isArray(a.parts)?{parts:a.parts.filter(k=>AK.has(k)).slice(0,30)}:null).map(a=>a&&a.parts.length>=2?a:null); r.amuN=int(o.amuN); } r.shobu=['good','hidden'].includes(o.shobu)?o.shobu:null; { const TT=PRIZES.filter(p=>p.title).map(p=>p.title); r.titles=boolMap(o.titles,k=>TT.includes(k)); r.title=TT.includes(o.title)&&r.titles[o.title]?o.title:''; } r.tutWarn=bool(o.tutWarn); r.areaDone=bool(o.areaDone); if(o.guideHeard!==undefined&&o.guideHeard!==null) r.guideHeard=Math.floor(num(o.guideHeard,-1)); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA); r.jsec=boolMap(o.jsec,isJob); r.lastFruit=bool(o.lastFruit); r.endingSeen=bool(o.endingSeen); r.everTakashi=bool(o.everTakashi);
   r.playMs=int(o.playMs); r.startedAt=int(o.startedAt); if(o.pops&&typeof o.pops==='object') r.pops=boolMap(o.pops);
   if(o.final&&typeof o.final==='object') r.final={hp:Math.min(finalHP(FINAL_FORMS),Math.max(0,num(o.final.hp,FINAL_HP))),cleared:bool(o.final.cleared),seen:bool(o.final.seen),dmg:num(o.final.dmg),form:Math.min(FINAL_FORMS,Math.max(1,int(o.final.form,1))),best:Math.min(FINAL_FORMS,int(o.final.best))};
   r.base={}; KEYS.forEach(k=>r.base[k]=Math.max(0,num(o.base&&o.base[k],1)));
   r.jlv={}; if(o.jlv&&typeof o.jlv==='object') for(const k of Object.keys(o.jlv)) if(isJob(k)&&o.jlv[k]) r.jlv[k]={lv:Math.min(JMAX,Math.max(1,int(o.jlv[k].lv,1))),exp:int(o.jlv[k].exp)};
   r.acc=numMap(o.acc,k=>ACC.some(a=>a[0]===k)); Object.keys(r.acc).forEach(k=>r.acc[k]=Math.min(ACC_LIMIT,int(r.acc[k])));
-  const eq=Array.isArray(o.accEq)?o.accEq:(o.accEq?[o.accEq]:[]); r.accEq=eq.filter(k=>ACC.some(a=>a[0]===k)).slice(0,ACC.length);
+  const eq=Array.isArray(o.accEq)?o.accEq:(o.accEq?[o.accEq]:[]); r.accEq=eq.filter(k=>ACC.some(a=>a[0]===k)||/^am\d{1,2}$/.test(k)).slice(0,ACC.length);
   r.lacc=boolMap(o.lacc,k=>LACC.some(a=>a[0]===k));
   r.secret=numMap(o.secret,isJob); r.jobB=numMap(o.jobB,isJob); r.train=numMap(o.train,isJob);
   r.blessed=boolMap(o.blessed,isJob); r.unlocked=boolMap(o.unlocked,isJob); r.kiwami=boolMap(o.kiwami,isJob); r.been=boolMap(o.been,isJob); r.jobSeen=boolMap(o.jobSeen,isJob);
@@ -507,7 +539,7 @@ function sanitizeSave(o){
 function load(){
   try{const s=localStorage.getItem(SAVE); if(s) P=sanitizeSave(JSON.parse(s));}catch(e){P=null}
   try{const l=localStorage.getItem(LOGSAVE); if(l) LOGS=JSON.parse(l)||[];}catch(e){LOGS=[]}
-  if(P){ if(!JOBS[P.job]) P.job='warrior'; P.secret=P.secret||{}; P.blessed=P.blessed||{}; P.unlocked=P.unlocked||{}; P.jlv=P.jlv||{}; P.acc=P.acc||{}; accEqList(); if(P.job==='apprentice'||P.blessed.apprentice||P.secret.apprentice) P.unlocked.apprentice=true; }
+  if(P){ if(!JOBS[P.job]) P.job='warrior'; P.secret=P.secret||{}; P.blessed=P.blessed||{}; P.unlocked=P.unlocked||{}; P.jlv=P.jlv||{}; P.acc=P.acc||{}; accEqList(); try{ trimAcc(); }catch(e){} if(P.job==='apprentice'||P.blessed.apprentice||P.secret.apprentice) P.unlocked.apprentice=true; }
 }
 
 // ============ セーブコード（書き出し・読み込み） ============
@@ -714,9 +746,10 @@ function areaMatch(t){ const el=areaEl(t), sp=AREAS[t%AREAS.length][1];
   const plans=fake.map(attackPlan);
   const emul=elMul(myAtkEl(),el), dm=elMul(el,myArmEl());
   const mark=emul>=5?'<span class="g">◎ 有利（×5）</span>':emul<1?`<span class="o">△ 不利（×${emul}）</span>`:'<span class="small">○ 普通</span>';
+  const al=areaAils(t), ailT=al.length?` <span class="r">状態異常：${ailNames(al)}</span>`:'';
   const tk=fake.map(resKind).find(Boolean), imm=tk?` <span class="o">${t>=AREAS.length?'この層は':'効きにくい敵：'}${tendName(tk)}</span>`:'';
   const def=dm>=5?' <span class="r">守り△（受けるダメージ×5）</span>':dm<1?` <span class="g">守り◎（×${dm}）</span>`:'';
-  return {el,html:`属性 ${elTag(el)}　${mark}${def}${imm}`}; }
+  return {el,html:`属性 ${elTag(el)}　${mark}${def}${imm}${ailT}`}; }
 
 // ============ 武器・防具の名前（#31）：段の名前＋種類の名前 ============
 // 段の名前（20段）。kata：カタカナの名前と組み合わせる段、one：1字でつなげる段（聖剣・魔斧・神杖）
@@ -780,8 +813,8 @@ function guardWin(e,L,c){ const t=e.gt, n=layerOf(t); P.guard=P.guard||{}; P.gua
   c.trainMile=true; }
 // 図鑑：その敵を10回倒すと、弱点・耐性が見える（番人は1回）
 function weakHTML(nm,sp,show){ if(!show) return '<span style="color:#789">弱点：あと少し戦えばわかりそう（10回倒すと見える）</span>';
-  const im=IMMUNE[nm], ail=Object.values(AILMENTS).find(x=>x.sp===sp);
-  return `${im?`<span class="o">${tendName(im)}（×${RES_MUL}）</span>`:'<span class="g">物理・魔法とも普通</span>'}${ail?`　<span class="r">使ってくる：${ail.n}</span>`:''}`; }
+  const im=IMMUNE[nm];
+  return `${im?`<span class="o">${tendName(im)}（×${RES_MUL}）</span>`:'<span class="g">物理・魔法とも普通</span>'}`; }
 // 図鑑の画面
 function bookHTML(){
   const pic=(a,i,seen)=>{ const src=typeof PIX!=='undefined'&&PIX.z&&typeof PIX_AREA!=='undefined'?PIX.z[PIX_AREA[a][i]]:''; return src?`<img src="${src}" style="width:36px;height:36px;image-rendering:pixelated;${seen?'':'filter:brightness(0) opacity(.5)'}">`:''; };
@@ -976,7 +1009,7 @@ function guildHTML(){ let h=`<h3 style="margin:0 0 4px">冒険者ギルド</h3>`
   h+=`<div class="y" style="margin-top:6px">受けている依頼（${g.board.length}/${gSlots()}）</div>`;
   if(!g.board.length) h+=`<div class="small" style="color:#9ab">（まだ受けていない。下の候補から選ぼう）</div>`;
   g.board.forEach((q,i)=>{ const ta=gDoneQ(q)?null:questAreaOf(q);
-    h+=qrow(q,gDoneQ(q)?`<button class="y" onclick="gReport(${i})">報告</button>`:q.ty==='firstjob'?'':`<div style="display:flex;flex-direction:column;gap:3px">${ta!==null?`<button class="y" style="font-size:11px" onclick="fightArea(${ta})">向かう</button>`:''}<button style="font-size:11px" onclick="gDrop(${i})">取り下げ</button></div>`)
+    h+=qrow(q,gDoneQ(q)?`<button class="y" onclick="gReport(${i})">報告</button>`:q.ty==='firstjob'?'':`<div style="display:flex;flex-direction:column;gap:3px">${ta!==null?`<button class="y" style="font-size:11px" onclick="fightArea(${ta})">向かう</button>`:''}${q.ty==='job'&&P.job!==q.k&&canJob(q.k)?`<button class="y" style="font-size:11px" onclick="gJobChange('${q.k}')">転職する</button>`:''}<button style="font-size:11px" onclick="gDrop(${i})">取り下げ</button></div>`)
       +(ta!==null?`<div class="small" style="color:#9ab;margin:-2px 0 4px">行き先：${areaName(ta)}（冒険の画面のいちばん上にも出る）</div>`:''); });
   h+=`<div class="y" style="margin-top:8px">依頼の候補</div>`;
   g.offers.forEach((q,i)=>{ h+=qrow(q,`<button ${g.board.length>=gSlots()?'disabled':''} onclick="gAccept(${i})">受ける</button>`); });
@@ -1000,6 +1033,9 @@ function questAreaOf(q){ const sp=q.ty==='kill'?q.k:q.ty==='deliver'?q.k.split('
 function questAreaHTML(){ if(!P.guild||P.job==='neet') return ''; const rows=gState().board.filter(q=>!gDoneQ(q)).map(q=>[q,questAreaOf(q)]).filter(([q,t])=>t!==null);
   if(!rows.length) return '';
   return `<div class="win" style="margin:6px 0;padding:6px 8px"><div class="y">依頼に向かう</div>`+rows.map(([q,t])=>`<div class="row"><div style="flex:1;min-width:0"><span class="small">${gText(q)}（${fmt(gProg(q))}/${fmt(q.goal)}）</span><div class="small" style="color:#9ab">${areaName(t)}</div></div><button onclick="fightArea(${t})">戦う</button></div>`).join('')+`</div>`; }
+
+// ギルドから直接転職（#73）
+function gJobChange(k){ if(!canJob(k)||P.job===k) return; changeJob(k); gMsg=`<div class="g">${JOBS[k].n}に転職した！</div>`; panel('area','guild'); }
 // ============ アイテム図鑑（#70）・合成の導線（#64）・お知らせ（#67） ============
 // 素材の説明書き（系統ごとに ふつう・レア・★）
 const GM_DESC={
@@ -1129,6 +1165,7 @@ function renderStatus(){
   else if(activeDrinks().length){ activeDrinks().forEach(({d,D})=>h+=`<div class="small o">🍺 ${D.n}：${D.d}（あと${d.left}戦）</div>`); activeCocktails().forEach(c=>h+=`<div class="small mir">🍸 ${c.n}</div>`); }
   if(P.hangover>0) h+=`<div class="small r">二日酔い：攻撃力半分（あと${P.hangover}戦）</div>`;
   $('#status').innerHTML=h;
+  setTimeout(accSlotCheck,0);
   if(P.maxArea===0&&!P.tutDone) setTimeout(tutCheck,0);
   const gl=$('#goal'); if(gl){ const g=goalHTML(); gl.innerHTML=g; gl.classList.toggle('hide',!g); }
 }
@@ -1194,11 +1231,20 @@ function panel(p,arg){
     for(let i=cur+1;i<=Math.min(cur+3,SHOP_MAX);i++){const pr=isW?wpnPrice(i):armPrice(i);
       h+=`<div class="row"><div>${i>=GEAR_MAX?`${isW?wName(20):aName(20)}+99 <span class="mir">→ ？？？</span>`:itemName(isW?WPN:ARM,i)}<div class="small">${isW?'攻撃':'防御'}+${fmt(isW?wpnPow(i):armPow(i))}　${fmt(pr)}G</div></div><button ${P.gold<pr?'disabled':''} onclick="buy('${p}',${i})">買う</button></div>`;}
   } else if(p==='acc'){
-    const eq=accEqList(), slots=accSlots(), cap=accCap();
-    h=shopTabs('acc')+`<h2>装飾品屋</h2><div class="small">装備枠：<span class="y">${eq.length}/${slots}</span>（${JOBS[P.job].n}は${slots}枠。上位の職業ほど枠が多い）。買うたびに+1強化、最大+${ACC_MAX}。${P.job==='neet'?'<span class="mir">無職は限界突破で+'+ACC_LIMIT+'まで</span>':''}</div>`;
-    ACC.forEach(([k,n,t])=>{ const lv=accLv(k), pr=accPrice(lv), on=eq.includes(k), max=lv>=cap;
-      h+=`<div class="row"><div>${n}${lv?` +${lv}`:''}${on?' <span class="y">(装備中)</span>':''}<div class="small">${lv?accDesc(t,lv):''}${max?'　<span class="y">MAX</span>':`${lv?' → ':''}${accDesc(t,lv+1)}　${lv>=ACC_MAX?'<span class="mir">限界突破</span> ':''}${fmt(pr)}G`}</div></div>
-      <div style="white-space:nowrap"><button ${max||P.gold<pr?'disabled':''} onclick="buyAcc('${k}')">${max?'MAX':lv?'強化':'買う'}</button> <button ${!lv||(!on&&eq.length>=slots)?'disabled':''} onclick="eqAcc('${k}')">${on?'外す':'装備'}</button></div></div>`; });
+    const eq=accEqList(), cap=accCap();
+    h=shopTabs('acc')+`<h2>装飾品屋</h2><div class="small">カテゴリごとに装備枠がある（上位の職業ほど多い）。買うたびに+1強化、最大+${ACC_MAX}。${P.job==='neet'?'<span class="mir">無職は限界突破で+'+ACC_LIMIT+'まで</span>':''}</div>`;
+    const here=areaAils(P.maxArea);
+    { const n=accEqCount(), sl=accSlots();
+      h+=`<div class="small" style="margin-top:4px">装備枠：<b class="y">${n}/${accFree()?'∞':sl}</b>（どの職業でも同じ）　`+(accFree()?'<span class="mir">無職への道が開かれ、すべて付けられる</span>':ACC_UNLOCKS.map(([nm,v,f])=>`<span class="${f()?'g':''}" style="${f()?'':'color:#789'}">${f()?'✓':'・'}${nm}+${v}</span>`).join(' '))+`</div>`; }
+    ACC_CATS.forEach(([cat,cn])=>{ const n=accEqCount(), sl=accSlots();
+      h+=`<div class="y" style="margin-top:8px">${cn}</div>`;
+      (P.amu||[]).forEach((a,ai)=>{ if(!a||accCatOf(a.parts[0])!==cat) return; const id='am'+ai, on=eq.includes(id);
+        h+=`<div class="row"><div><span class="mir">${amuName(a)}</span> +${amuLv(a)}${on?' <span class="y">(装備中)</span>':''}<div class="small">${a.parts.map(k=>accDesc(ACC.find(x=>x[0]===k)[2],amuLv(a))).join('／')}</div></div><div style="white-space:nowrap"><button style="font-size:11px" onclick="amuBreak(${ai})">ばらす</button> <button ${!on&&n>=sl?'disabled':''} onclick="eqAcc('${id}')">${on?'外す':'装備'}</button></div></div>`; });
+      ACC.filter(a=>accCatOfT(a[2])===cat).forEach(([k,nm,t])=>{ const lv=accLv(k), pr=accPrice(lv), on=eq.includes(k), max=lv>=cap, inA=inAmu(k);
+        const rec=cat==='res'&&here.some(x=>AILMENTS[x].acc===t)?' <span class="tag" style="background:#363">おすすめ</span>':'';
+        h+=`<div class="row"><div>${nm}${rec}${lv?` +${lv}`:''}${on?' <span class="y">(装備中)</span>':''}${inA?' <span class="small c">（護符の中）</span>':''}<div class="small">${lv?accDesc(t,lv):''}${max?'　<span class="y">MAX</span>':`${lv?' → ':''}${accDesc(t,lv+1)}　${lv>=ACC_MAX?'<span class="mir">限界突破</span> ':''}${fmt(pr)}G`}</div></div>
+        <div style="white-space:nowrap"><button ${max||P.gold<pr?'disabled':''} onclick="buyAcc('${k}')">${max?'MAX':lv?'強化':'買う'}</button> <button ${!lv||inA||(!on&&n>=sl)?'disabled':''} onclick="eqAcc('${k}')">${on?'外す':'装備'}</button></div></div>`; }); });
+    h+=amuHTML();
     if(P.unlocked.neet){
       h+=`<div class="mir" style="margin-top:10px">伝説の装飾品（無職専用）</div><div class="small">装備枠とは別。持っていれば、無職のときだけ効果が出る。${P.job!=='neet'?'<span class="o">今は無職ではないので買えない</span>':''}</div>`;
       LACC.forEach(([k,n,pr,d,fl,hint])=>{ const own=P.lacc&&P.lacc[k];
@@ -1286,8 +1332,8 @@ function maxTier(isW){ const base=isW?100:80, cur=isW?P.wpn:P.arm; if(cur>=SHOP_
 function gearHTML(isW){ if(isW?neetW():neetA()) return `<span class="mir">【無職専用】${isW?NEET_W:NEET_A}</span>`; const i=isW?P.wpn:P.arm; return i>=GEAR_MAX?`<span class="mir">【伝説】${itemName(isW?WPN:ARM,i)}</span>`:itemName(isW?WPN:ARM,i); }
 function buy(p,i){ if(i>SHOP_MAX) return; const wasW=legW(), wasA=legA();const pr=p==='wpn'?wpnPrice(i):armPrice(i); if(P.gold<pr)return; P.gold-=pr; if(p==='wpn')P.wpn=i; else P.arm=i; if(i>=SHOP_MAX) synthIntro(); save(); renderStatus(); panel(p);}
 
-function buyAcc(k){const lv=accLv(k), pr=accPrice(lv); if(lv>=accCap()||P.gold<pr) return; P.gold-=pr; P.acc=P.acc||{}; accEqList(); P.acc[k]=lv+1; const l=accEqList(); if(!l.includes(k)&&l.length<accSlots()) l.push(k); save(); renderStatus(); panel('acc');}
-function eqAcc(k){ if(!accLv(k)) return; const l=accEqList(), i=l.indexOf(k); if(i>=0) l.splice(i,1); else if(l.length<accSlots()) l.push(k); save(); renderStatus(); panel('acc');}
+function buyAcc(k){const lv=accLv(k), pr=accPrice(lv); if(lv>=accCap()||P.gold<pr) return; P.gold-=pr; P.acc=P.acc||{}; accEqList(); P.acc[k]=lv+1; const l=accEqList(); if(!l.includes(k)&&!inAmu(k)&&accEqCount(accCatOf(k))<accSlotsC(accCatOf(k))) l.push(k); save(); renderStatus(); panel('acc');}
+function eqAcc(k){ const am=String(k).startsWith('am'); if(am?!amuOf(k):(!accLv(k)||inAmu(k))) return; const l=accEqList(), i=l.indexOf(k); if(i>=0) l.splice(i,1); else if(accEqCount(accCatOf(k))<accSlotsC(accCatOf(k))) l.push(k); save(); renderStatus(); panel('acc');}
 function changeJob(k){if(!canJob(k))return; if(P.job!==k) P.casBeg=null; P.job=k; trimAcc(); save(); renderStatus(); panel('job');}
 function addPt(k,n){n=Math.min(n,P.pts); if(n>0) P.ptsUsed=true; P.base[k]+=n; P.pts-=n; save(); renderStatus(); panel('stat');}
 // 転生した直後に出す「何がどれだけ上がったか」
@@ -2402,8 +2448,8 @@ function bacchusHint(){
   // 3) 得意な武器
   if(JOB_WT[P.job]&&prefMul()===1) return `「${JOBS[P.job].n}の得意は${JOB_WT[P.job]}じゃ。持ち替えれば×1.5。今の${myWType()}では本領が出ぬ。」`;
   // 3b) 状態異常を使う敵がいるのに、防ぐ装飾品がない（#44）
-  { const ail=sp.map(([nm,s])=>Object.values(AILMENTS).find(a=>a.sp===s)).filter(Boolean).find(a=>!accT(a.acc));
-    if(ail) return `「${areaName(t)}には${ail.n}を使う敵がおる。装飾品屋の${ail.res}を付けておくがよい（気付けの酒でも防げる）。」`; }
+  { const ak=areaAils(t).find(k=>!accT(AILMENTS[k].acc)); if(ak){ const A=AILMENTS[ak], nm=ACC.find(x=>x[2]===A.acc)[1];
+    return `「${areaName(t)}の敵は${A.n}を使ってくる。装飾品屋の${nm}を付けておくがよい（気付けの酒でも防げる）。」`; } }
   // 3c) 合成の素材が足りない（#44）
   if(P.wpn>=SHOP_MAX&&P.wpn<GEAR_MAX){ const need=synthNeed(true,P.wpn+1).find(([k,n])=>gmN(k)<n);
     if(need){ const g=gmSp(need[0].split('_')[0]); return need[0].includes('_s')?`「次の合成には${gmName(need[0])}がいる。${g.n}の巣、第${g.nest}層でしか出ぬ。運を上げて通うがよい。」`:`「次の合成には${gmName(need[0])}が${need[1]}個いる（いま${gmN(need[0])}個）。${g.n}系の敵を倒して集めるのじゃ。」`; } }
@@ -2587,26 +2633,75 @@ function mpPay(c,s){ const cost=mpCost(s,c); if(c.mp<cost){ if(!c.mpWarn){ c.mpW
 const mpTag=c=>`MP ${fmt(Math.max(0,c.mp))}/${fmt(c.mmp)}`;
 
 // 状態異常：麻痺（1〜2ターン動けない）・遅延（3ターン、自分の攻撃が1ターンおき）・即死（その場で敗北）
+// ============ 状態異常（#65 #66）：9種類。層ごとに決まり、戦闘の最初に先手で仕掛けてくる ============
 const AILMENTS={
-  para:{n:'麻痺',sp:'eye',  p:.04, acc:'rPara', how:'にらみつけた',  res:'麻痺よけの指輪'},
-  slow:{n:'遅延',sp:'bat',  p:.05, acc:'rSlow', how:'超音波を放った',res:'時の砂時計'},
-  death:{n:'即死',sp:'skull',p:.005,acc:'rDeath',how:'死の宣告を放った',res:'身代わり人形'},
+  para:   {n:'麻痺',acc:'rPara',   p:.5, how:'にらみつけた'},
+  slow:   {n:'遅延',acc:'rSlow',   p:.5, how:'超音波を放った'},
+  poison: {n:'毒',  acc:'rPoison', p:.5, how:'毒の霧を吐いた'},
+  blind:  {n:'暗闇',acc:'rBlind',  p:.5, how:'墨を吹きかけた'},
+  silence:{n:'沈黙',acc:'rSilence',p:.5, how:'呪文を封じる歌をうたった'},
+  curse:  {n:'呪い',acc:'rCurse',  p:.5, how:'呪いの言葉をささやいた'},
+  charm:  {n:'魅了',acc:'rCharm',  p:.5, how:'妖しく見つめてきた'},
+  stone:  {n:'石化',acc:'rStone',  p:.1, how:'石化の光を放った'},
+  death:  {n:'即死',acc:'rDeath',  p:.1, how:'死の宣告を放った'},
 };
+const AIL_KEYS=Object.keys(AILMENTS);
+// 最初の12エリアは1種類ずつ覚える。砂漠（4つ目）から
+const AREA_AIL={3:['para'],4:['poison'],5:['blind'],6:['slow'],7:['silence'],8:['charm'],9:['curse'],10:['stone'],11:['death']};
+// 次元の彼方：層ごとに「なし／1種類／2種類／3種類（混沌）」。浅い層は少なく、石化・即死は第30層から
+function areaAils(t){ if(t<0) return []; if(t<AREAS.length) return AREA_AIL[t]||[];
+  const n=layerOf(t), h=(n*37+11)%100, maxK=n<=20?1:n<=60?2:3, k=Math.min(maxK,h<25?0:h<60?1:h<85?2:3);
+  const pool=AIL_KEYS.filter(a=>n>=30||(a!=='stone'&&a!=='death')), out=[]; let x=n*7+3;
+  while(out.length<k){ const a=pool[x%pool.length]; if(!out.includes(a)) out.push(a); x=x*13+5; } return out; }
+const ailNames=l=>l.map(k=>AILMENTS[k].n).join('・');
 // 状態異常は4つ目のエリア（砂塵の砂漠）から。同じときに装飾品屋が開く（#48）
 const AIL_START=3;
 const accOpen=()=>P.maxArea>=AIL_START||Object.keys(P.acc||{}).length>0||!!(P.unlocked&&P.unlocked.neet);
 function accIntro(){ if(P.pops&&P.pops.acc) return; P.pops=P.pops||{}; P.pops.acc=true;
-  showPopup({title:'<span class="y">状態異常と装飾品屋</span>',body:`<div class="small">ここから先の敵は、<b>麻痺</b>（目玉）・<b>遅延</b>（コウモリ）・<b>即死</b>（骸骨）を使ってくる。<br><br>ショップに<b>装飾品屋</b>が開いた。状態異常を防ぐ品や、能力・MPを伸ばす品がそろっている。職業の格で付けられる数が変わる。</div>`}); }
-const ailmentOf=e=>e.flat||e.train||e.final?null:Object.keys(AILMENTS).find(k=>AILMENTS[k].sp===e.sp)||null;
-// 敵の攻撃のときに、状態異常を仕掛けてくるか。深い層ほど確率が上がり（最大2倍）、番人・王者は2倍
-function tryAilment(c,e){ const k=ailmentOf(e); if(!k) return null; if((c.depth||0)<AIL_START&&!e.guard&&!e.champ) return null; if((k==='para'&&c.para>0)||(k==='slow'&&c.slow>0)) return null; const A=AILMENTS[k];  // かかっている間は重ねてかけない
-  const p=A.p*(1+Math.min(1,(c.depth||0)/150))*((e.guard||e.champ)?2:1); if(!chance(p)) return null;
-  if(drinkOn('nostat')){ c.L.push(`${e.name}は${A.how}！ …しかし<span class="g">気付けの酒</span>で正気を保った！`); return 'resist'; }
-  if(chance(Math.min(1,.1*accT(A.acc)))){ c.L.push(`${e.name}は${A.how}！ …しかし<span class="g">${A.res}</span>が防いだ！`); return 'resist'; }
-  if(k==='para'){ c.para=1+(chance(.5)?1:0); c.L.push(`<span class="r">${e.name}は${A.how}！ ${esc(P.name)}は麻痺した！（${c.para}ターン動けない）</span>`); }
-  if(k==='slow'){ c.slow=3; c.L.push(`<span class="r">${e.name}は${A.how}！ ${esc(P.name)}の動きが遅くなった！</span>`); }
-  if(k==='death'){ c.php=0; P.deathN=(P.deathN||0)+1; c.L.push(`<span class="r">${e.name}は${A.how}！ ${esc(P.name)}は倒れた…</span>`); }
-  return k; }
+  showPopup({title:'<span class="y">状態異常と装飾品屋</span>',body:`<div class="small">ここから先の敵は、戦闘の最初に<b>状態異常</b>を仕掛けてくる（麻痺・毒・暗闇など全9種類）。どの状態異常を使うかは、エリア一覧に出る。<br><br>ショップに<b>装飾品屋</b>が開いた。状態異常を防ぐ品（+1で50%）や、能力・戦闘・お金を伸ばす品がそろっている。</div>`}); }
+const resRate=k=>{ const A=AILMENTS[k]; return drinkOn('nostat')?1:accT(A.acc)?accVal(A.acc,accT(A.acc)):0; };
+// 1つの状態異常をかけてみる（防げたら false）
+function applyAil(c,e,k){ const A=AILMENTS[k], nm=esc(P.name); if(!chance(A.p)) return false;
+  if(chance(resRate(k))){ c.L.push(`${e.name}は${A.how}！ …しかし<span class="g">${drinkOn('nostat')?'気付けの酒':'装飾品'}</span>が防いだ！`); return false; }
+  c.ails=c.ails||{}; c.ailHit=c.ailHit||[]; c.ailHit.push(k);
+  const T={para:'麻痺した！（2ターン動けない）',slow:'動きが遅くなった！（手番が1ターンおき）',poison:'毒におかされた！',blind:'目が見えない！（攻撃が外れやすい）',silence:'声が出ない！（魔法が使えない）',curse:'呪われた！（技が出ない）',charm:'魅了された！',stone:'体が石になりはじめた！（3ターン後に石になる）',death:'倒れた…'};
+  if(k==='para') c.para=2; else if(k==='charm') c.charm=1; else if(k==='stone') c.stone=3; else if(k==='death'){ c.php=0; P.deathN=(P.deathN||0)+1; } else c.ails[k]=true;
+  c.L.push(`<span class="r">${e.name}は${A.how}！ ${nm}は${T[k]}</span>`); return true; }
+// 戦闘の最初：状態異常を使う敵の先手。先制の鈴で防げることがある。番人はその層の全部を使う
+function ailFirstStrike(c,e,t){ if(e.flat||e.final) return; const l=e.guard?areaAils(e.gt):areaAils(t); if(!l.length) return;
+  if(accT('first')&&chance(accVal('first',accT('first')))){ c.L.push(`<span class="g">先制の鈴が鳴った！ ${e.name}より先に動いた</span>`); return; }
+  (e.guard?l:[l[Math.floor(Math.random()*l.length)]]).forEach(k=>{ if(c.php>0) applyAil(c,e,k); }); }
+// ============ 装飾品の合成（護符）#65：同じカテゴリの装飾品を1つにまとめて、枠を空ける ============
+// 段階で広がる：武器屋・防具屋を買い切ったら2つ、第100層で3つ、第200層で4つ、桁の神を倒したらいくつでも
+function amuMax(){ if(!(P.wpn>=SHOP_MAX||P.arm>=SHOP_MAX||(P.amu||[]).some(Boolean))) return 0;
+  if(P.final&&P.final.cleared) return 99; const n=maxLayer(); return n>=200?4:n>=100?3:2; }
+let amuSel=[];
+const amuRareTotal=()=>GM_SP.reduce((a,g)=>a+gmN(g.sp+'_r'),0);
+const amuCost=l=>({gold:Math.floor(l.reduce((a,k)=>a+accPrice(Math.max(0,accLv(k)-1)),0)),rare:Math.max(1,l.length-1)});
+function amuPick(k){ const i=amuSel.indexOf(k); if(i>=0) amuSel.splice(i,1); else { if(amuSel.length&&accCatOf(amuSel[0])!==accCatOf(k)) amuSel=[]; if(amuSel.length<amuMax()) amuSel.push(k); } panel('acc'); }
+function amuMake(){ const l=amuSel.filter(k=>accLv(k)>0&&!inAmu(k)); if(l.length<2||l.length>amuMax()) return; const c=amuCost(l);
+  if(P.gold<c.gold||amuRareTotal()<c.rare) return;
+  P.gold-=c.gold; let r=c.rare; while(r>0){ const g=GM_SP.slice().sort((a,b)=>gmN(b.sp+'_r')-gmN(a.sp+'_r'))[0]; P.gm[g.sp+'_r']--; r--; }
+  P.amu=P.amu||[]; P.amu.push({parts:l}); const id='am'+(P.amu.length-1);
+  P.accEq=accEqList().filter(k=>!l.includes(k)); if(accEqCount(accCatOf(l[0]))<accSlotsC(accCatOf(l[0]))) P.accEq.push(id);
+  amuSel=[]; P.amuN=(P.amuN||0)+1; save(); renderStatus(); panel('acc'); }
+function amuBreak(i){ if(!P.amu||!P.amu[i]) return; P.accEq=accEqList().filter(k=>k!=='am'+i); P.amu[i]=null; save(); renderStatus(); panel('acc'); }
+function amuHTML(){ const mx=amuMax();
+  if(!mx) return `<div class="small" style="margin-top:10px;color:#9ab">🔒 装飾品の合成（護符）：武器屋か防具屋を買い切ると、鍛冶屋で装飾品をまとめられるようになる。</div>`;
+  let h=`<div class="y" style="margin-top:12px">装飾品の合成（護符づくり）</div><div class="small">同じカテゴリの装飾品を<b>${mx>=99?'いくつでも':mx+'つまで'}</b>1つにまとめて、枠を空ける。Lvは中身のいちばん低いものになる。いつでもばらせる（使った素材とお金は戻らない）。${mx<99?`<span style="color:#9ab">（${mx===2?'第100層で3つ':mx===3?'第200層で4つ':'桁の神を倒すといくつでも'}まとめられるようになる）</span>`:''}</div>`;
+  const own=ACC.filter(a=>accLv(a[0])>0&&!inAmu(a[0]));
+  h+=`<div style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0">`+own.map(([k,n])=>`<button style="font-size:11px" class="${amuSel.includes(k)?'sel':''}" onclick="amuPick('${k}')">${n}+${accLv(k)}</button>`).join('')+`</div>`;
+  if(amuSel.length>=2){ const c=amuCost(amuSel), ok=P.gold>=c.gold&&amuRareTotal()>=c.rare;
+    h+=`<div class="small">${amuName({parts:amuSel})}（+${Math.min(...amuSel.map(accLv))}）：${fmt(c.gold)}G・レア素材${c.rare}個（いま${amuRareTotal()}個）</div><button style="width:100%" ${ok?'':'disabled'} onclick="amuMake()">まとめる</button>`; }
+  else h+=`<div class="small" style="color:#9ab">まとめたい装飾品を、同じカテゴリから2つ以上選ぶ。</div>`;
+  return h; }
+
+// 装飾品の枠が増えたら知らせる（#73）
+function accSlotCheck(){ if(!P) return; const n=accSlots(); if(P.accSlotsSeen===undefined||P.accSlotsSeen===null){ P.accSlotsSeen=n; return; }
+  if(n<=P.accSlotsSeen) { P.accSlotsSeen=n; return; } const was=P.accSlotsSeen; P.accSlotsSeen=n; save(); if(!accOpen()) return;
+  const why=accFree()?'無職への道が開かれた':ACC_UNLOCKS.filter(([nm,v,f])=>f()).map(x=>x[0]).slice(-1)[0];
+  if(typeof holdEnd==='function') holdEnd();
+  showPopup({title:'<span class="y">装飾品の枠が増えた！</span>',body:`<div class="small">${why}ので、装飾品を付けられる数が <b>${was}</b> → <b class="y">${accFree()?'すべて':n}</b> になった。<br><br>装飾品屋で付けてみよう。</div>`}); }
 // ============ 戦闘 ============
 let last=null;
 function fightArea(t,f){ if(takashiLock()) return;last={type:'area',t}; runBattle(makeEnemy(t),t,f)}
@@ -2643,7 +2738,10 @@ function playerHit(c){
   if(chance(Math.min(.25,e.agi/(e.agi+st('agi'))*.12))){L.push(`${e.name}は攻撃をかわした！`);return;}
   let mult=1, sure=false, flat=0, pierce=false, drain=false;
   if(c.L&&!c.work&&!c.final) secretDyn(c);
-  let s0=null; if(c.secSkill||chance(J.skill.p+luk/(luk+2000)*.1+(jl(P.job).lv-1)*.01)){ s0=pickSkill(); if(!mpPay(c,s0)) s0=null; }
+  // 暗闇：50%外れる。呪い：技が出ない。沈黙：魔法職は技が出ず、攻撃が半分（#66）
+  const ai=c.ails||{}, magicish=isMagicJob(P.job)||P.job==='spellblade';
+  if(ai.blind&&chance(.5)){ L.push(`${nm}の攻撃は外れた！（暗闇）`); return; }
+  let s0=null; if(!ai.curse&&!(ai.silence&&magicish)&&(c.secSkill||chance(J.skill.p+luk/(luk+2000)*.1+(jl(P.job).lv-1)*.01))){ s0=pickSkill(); if(!mpPay(c,s0)) s0=null; }
   if(s0){const s=s0; pierce=!!s.pierce; drain=!!s.drain;
     if(s.heal){const h=Math.floor(c.mhp*.5); c.php=Math.min(c.mhp,c.php+h); L.push(`<span class="sk">${nm}は${s.n}を唱えた！</span> HPが<span class="heal">${fmt(h)}</span>回復！`);}
     else if(s.gamble){mult=pickGamble(); L.push(`<span class="sk">${nm}の${s.n}！ ルーレットは… <b>×${mult}</b>！</span>`); if(mult===0){L.push('…しかし何も起きなかった。');return;}}
@@ -2660,7 +2758,7 @@ function playerHit(c){
   if(chance(mirP)){mult*=100; P.miracles=(P.miracles||0)+1; c.php=c.mhp; c.mp=c.mmp; L.push(`<span class="mir">★☆ 奇跡が起きた！ ☆★ HPとMPが全快した！</span>`);}
   else if(!sure&&(c.secCrit||chance(.04+luk/(luk+300)*.25+ps('crit',0)))){mult*=neetW()?neetWCrit():legW()?30:3; L.push(neetW()?`<span class="crit">会心の一撃！ 辞表が叩きつけられた！</span>`:legW()?`<span class="crit">会心の一撃！ オーバーフローが桁をあふれさせる！</span>`:`<span class="crit">会心の一撃！</span>`);}
   const pl=c.plan||{at:'斬',base:atk(),edef:e.def,aff:1}, aff=(c.work)?1:pl.aff;
-  const a=(pl.base*c.buff*rnd(1.3,1.7)*mult+flat)*aff;
+  const a=(pl.base*c.buff*rnd(1.3,1.7)*mult+flat)*aff*(c.ails&&c.ails.silence&&(isMagicJob(P.job)||P.job==='spellblade')?.5:1);
   const d=aff===0?0:Math.floor(pierce?Math.max(a,1):Math.max(a-pl.edef*.5,a*.08,1));
   if(c.final){ const cd=Math.floor(Math.log10(Math.min(d,Number.MAX_VALUE)+1)*c.M); c.ehp-=cd; c.dealt+=cd; if(d>P.maxDmg) P.maxDmg=d;
     L.push(`${nm}の攻撃！ <span class="small">${fmt(d)}</span> → <span class="dmg">${fmt(cd)}</span>桁のダメージ！`); return; }
@@ -2676,7 +2774,8 @@ function enemyHit(c){
   if(c.stun){c.stun=false; L.push(`${e.name}は見とれて動けない！`); return;}
   if(c.secZero>0){ c.secZero--; if(!c.secZeroShown){ c.secZeroShown=true; markSecret(c); } L.push(`${e.name}の攻撃！ …しかし盾がすべて受け止めた！ ダメージ0`); return; }
   if(chance(Math.min(.95,ag/(ag+e.agi)*.15+lk/(lk+3000)*.05+ps('eva',0)+(c.secEva||0)))){L.push(`${nm}は身をかわした！`);return;}
-  { const ak=tryAilment(c,e); if(ak==='death'||ak==='para'||ak==='slow') return; }
+  // 番人は攻撃のたびにも20%で状態異常（#66）
+  if(e.guard&&chance(.2)){ const l=areaAils(e.gt); if(l.length&&applyAil(c,e,l[Math.floor(Math.random()*l.length)])&&c.php<=0) return; }
   let m=1; if(chance(.04)){m=2.5; L.push(`<span class="crit">${e.name}の痛恨の一撃！</span>`);}
   const dp=c.dplan||{mul:1,d:def()}; const a=e.atk*rnd(1.3,1.7)*m*ps('taken',1)*(c.kaji?.1:1)*(neetA()?.001:legA()?.1:1)*(c.secTaken||1)*dp.mul; const d=Math.floor(Math.max(a-dp.d*.5,a*.08,1));
   c.php-=d; L.push(`${e.name}の攻撃！ ${nm}は<span class="edmg">${fmt(d)}</span>のダメージ！`);
@@ -2697,15 +2796,19 @@ function simulate(e,t,fast){
   L.push(`<b class="y">${e.champ?'チャンピオン ':''}${e.name}</b>が現れた！（HP ${fmt(e.hp)}）`);
   if(c.kaji){L.push(`<span class="mir">所持金わずか1G…！ 追い詰められた${nm}の中で何かが弾けた！</span>`); L.push(`<span class="mir">🔥 火事場のクソ力 発動！ 攻撃力×1万・被ダメージ1/10 🔥</span>`);}
   let res=null;
+  ailFirstStrike(c,e,t); if(c.php<=0) res='lose';
   for(let turn=1;turn<=40&&res===null;turn++){
     L.push(`<span class="hpl">― ターン${turn} ―</span>`);
+    if(c.ails&&c.ails.poison){ const d=Math.floor(c.mhp*.1); c.php-=d; L.push(`<span class="o">毒が回る… ${fmt(d)}のダメージ</span>`); if(c.php<=0){ res='lose'; break; } }
+    if(c.stone>0){ c.stone--; if(c.stone===0){ c.php=0; L.push(`<span class="r">${nm}は石になってしまった…</span>`); res='lose'; break; } L.push(`<span class="o">石化が進む…（あと${c.stone}ターン）</span>`); }
     if(accT('mpregen')) c.mp=Math.min(c.mmp,c.mp+c.mmp*.01*accT('mpregen'));
-    const pFirst=c.forceMiracle||st('agi')*rnd(.8,1.2)>=e.agi*rnd(.8,1.2);
+    const pFirst=c.forceMiracle||accT('first')>0||st('agi')*rnd(.8,1.2)>=e.agi*rnd(.8,1.2);
     for(const a of (pFirst?['p','e']:['e','p'])){
       if(a==='p'){
         if(c.para>0){ c.para--; L.push(`${nm}はしびれて動けない！`); continue; }
-        if(c.slow>0){ c.slow--; if(turn%2===1){ L.push(`${nm}は体が重く、動きが遅れた…`); continue; } }
-        const dbl=(P.job==='thief'&&chance(.35))||(st('agi')>e.agi*2&&chance(.25));
+        if(c.ails&&c.ails.slow&&turn%2===1){ L.push(`${nm}は体が重く、動きが遅れた…`); continue; }
+        if(c.charm>0){ c.charm--; const d=Math.floor(c.mhp*.2); c.php-=d; L.push(`<span class="r">${nm}は魅了されて、自分を攻撃した！ ${fmt(d)}のダメージ</span>`); if(c.php<=0){ res='lose'; break; } continue; }
+        const dbl=(P.job==='thief'&&chance(.35))||(st('agi')>e.agi*2&&chance(.25))||(accT('dbl')>0&&chance(accVal('dbl',accT('dbl'))));
         playerHit(c);
         if(dbl&&c.ehp>0){L.push(`<span class="sk">連続攻撃！</span>`); playerHit(c);}
         for(let x=0;x<(c.secMulti||0)&&c.ehp>0;x++){ L.push(`<span class="sk">影の追撃！</span>`); playerHit(c); }
@@ -2801,6 +2904,10 @@ function runBattle(e,t,fast){
   if(t>=0){ const an=arenaNotice(); if(an) $('#result').insertAdjacentHTML('beforeend',an); }
   const box=$('#log'); box.innerHTML=L.map(x=>`<p>${x}</p>`).join(''); box.scrollTop=box.scrollHeight;
   if(R.guardWarn!==undefined) guardWarnPopup(R.guardWarn);
+  // 状態異常で負けたら、連戦を止めて案内（#66）
+  if(R.c&&R.c.ailHit&&R.c.ailHit.length&&$('#result').dataset.res==='lose'){ holdEnd(); const k=R.c.ailHit[0]; P.pops=P.pops||{};
+    if(!P.pops['ail_'+k]){ P.pops['ail_'+k]=true; const A=AILMENTS[k], nm=(ACC.find(x=>x[2]===A.acc)||[])[1];
+      showPopup({title:`<span class="r">${A.n}にやられた…</span>`,body:`<div class="small">この先の敵は${A.n}を使ってくる。装飾品屋の<b>${nm}</b>を付けると防げる（+1で50%）。気付けの酒なら全部防げる。<br><br>どの状態異常を使ってくるかは、エリア一覧に出る。</div>`}); } }
   gPopShow();
   if(newArea!==undefined && (t>=0||e.guard)){ holdEnd(); showAreaModal(newArea); if(newArea>=1) elementIntro(); if(newArea>=AIL_START) accIntro(); nestIntro(newArea); if(newArea===1) guildIntro(); }
   if(trainMile){ holdEnd(); }

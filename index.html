@@ -349,6 +349,9 @@ const kiwamiLeft=k=>(P.kiwami&&P.kiwami[k])?0:Math.max(0,KIWAMI_N-jobBN(k));
 // ============ 更新ログ（#42）：プレイヤーに見える。隠し要素の名前は書かない ============
 // 配布版に出すときに、いちばん上に1版足す（新しい順）
 const CHANGELOG=[
+  {v:'1.10',d:'2026/11/20',items:[
+    'はじめての一杯では酔わないように（効き目はそのまま）',
+  ]},
   {v:'1.9',d:'2026/11/20',items:[
     '番人を倒したあとの連戦が空回りする不具合を直した。連戦中にお知らせが出たら連戦を止めるように',
   ]},
@@ -525,7 +528,7 @@ function sanitizeSave(o){
   ['drinks','personaN','yakeN','shukuhaiN','memLoss','contestTries','contestWins','loseStreak','hangover'].forEach(k=>r[k]=int(o[k]));
   // お酒：同時に効く分（P.dk）。古いセーブの P.drink は P.dk に移す
   const dk=Array.isArray(o.dk)?o.dk:(o.drink?[o.drink]:[]);
-  r.dk=dk.filter(d=>d&&DRINKS.some(D=>D.id===d.type)).slice(0,3).map(d=>({type:d.type,left:Math.min(9999,int(d.left)),pow:Math.min(2,Math.max(1,num(d.pow,1)))}));
+  r.dk=dk.filter(d=>d&&DRINKS.some(D=>D.id===d.type)).slice(0,3).map(d=>({type:d.type,left:Math.min(9999,int(d.left)),pow:Math.min(2,Math.max(1,num(d.pow,1))),...(d.mild===true?{mild:true}:{})}));
   r.cellar=(Array.isArray(o.cellar)?o.cellar:[]).filter(c=>c&&DRINKS.some(D=>D.id===c.type)).slice(0,3).map(c=>({type:c.type,t:Math.min(Date.now(),num(c.t,Date.now()))}));
   r.cocktails=boolMap(o.cocktails,k=>COCKTAILS.some(c=>c.id===k)); r.agedMax=Math.min(48,num(o.agedMax,0));
   r.forgeFree=bool(o.forgeFree);
@@ -2171,19 +2174,20 @@ function battleBuffs(L){ let m=drinkMul('atk'); const nm=esc(P.name);
   return m; }
 function buyDrink(id){ const D=DRINKS.find(x=>x.id===id); if(!D||!drinkOpen(D)) return; const pr=drinkPrice(D); if(P.gold<pr) return; P.drunk=P.drunk||{}; P.drunk[id]=true;
   P.gold-=pr; barMsg=applyDrink(D,1); save(); renderStatus(); panel('bar'); }
-function applyDrink(D,pow){ const id=D.id; P.drinks=(P.drinks||0)+1; let msg=''; const lv0=sakeLv(), ck0=activeCocktails().map(c=>c.id);
+function applyDrink(D,pow){ const id=D.id; const first=!P.drinks; P.drinks=(P.drinks||0)+1; let msg=''; const lv0=sakeLv(), ck0=activeCocktails().map(c=>c.id);
   if(isTakashi()&&['ale','wine','fire','miki'].includes(id)){ const mode=(id==='wine'||id==='miki')?'gamble':'battle'; msg=startPersona(mode,'bar') || `<div class="o">たかしは${D.n}を飲んだが、もう一人のたかしはすでに起きている…</div>`; }
   else if(D.k==='forge'){ P.forgeFree=true; msg=`<div class="g">${D.n}を飲んだ！ 精霊の加護で、次の1回は武器屋・防具屋の付け直しが無料になる。</div>`; }
   else { if(D.k==='nohang'&&P.hangover>0){ P.hangover=0; msg+=`<div class="g">頭痛がすっと引いた。二日酔いが治った！</div>`; }
     const n=Math.round(sakeLeft(D.left)*pow); P.dk=(P.dk||[]).filter(d=>d.left>0);
     const same=P.dk.find(d=>d.type===id);
-    if(same){ same.left=n; same.pow=pow; }
+    if(same){ same.left=n; same.pow=pow; delete same.mild; }
     else { if(P.dk.length>=drinkSlots()){ P.dk.sort((a,b)=>a.left-b.left); const old=P.dk.shift(), OD=DRINKS.find(x=>x.id===old.type); if(OD) msg+=`<div class="small o">${OD.n}の酔いが覚めた（同時に効くのは${drinkSlots()}杯まで）</div>`; }
-      P.dk.push({type:id,left:n,pow}); }
+      P.dk.push(first?{type:id,left:n,pow,mild:true}:{type:id,left:n,pow}); }
+    if(first) msg+=`<div class="small c">はじめての一杯。ほろ酔いで済んだので、頭ははっきりしている（この杯では酔わない）。</div>`;
     msg+=`<div class="g">${D.n}を飲んだ！ 次の${n}戦、${drinkEff(D)}${pow>1?`（熟成×${pow.toFixed(2)}）`:''}</div>`;
     for(const c of activeCocktails()) if(!ck0.includes(c.id)){ P.cocktails=P.cocktails||{}; const first=!P.cocktails[c.id]; P.cocktails[c.id]=true; msg+=`<div class="mir">★ カクテル「${c.n}」！ ${c.d}${first?'（はじめて作った）':''} ★</div>`; } }
   if(sakeLv()>lv0) msg+=`<div class="mir">★ 酒豪Lv${sakeLv()}「${SAKE_TITLE[sakeLv()]}」になった！ お酒がより強く・長く効く ★</div>`;
-  if(chance(Math.max(.005,.05*(1-sakeLv()*.09)))){ const lost=Math.floor(P.gold*.1); P.gold-=lost; P.memLoss=(P.memLoss||0)+1; msg+=`<div class="r">…気がつくと朝だった。記憶が飛んでいる。財布が軽い…（-${fmt(lost)}G）</div>`; }
+  if(!first&&chance(Math.max(.005,.05*(1-sakeLv()*.09)))){ const lost=Math.floor(P.gold*.1); P.gold-=lost; P.memLoss=(P.memLoss||0)+1; msg+=`<div class="r">…気がつくと朝だった。記憶が飛んでいる。財布が軽い…（-${fmt(lost)}G）</div>`; }
   return msg; }
 // 酒蔵（#10 案6）：お酒を預けて寝かせると、実際の時間で熟成する（48時間で最大。効き目が最大2乗・続く戦闘数が最大2倍）
 const CELLAR_MAX=3, AGE_FULL_H=48;
@@ -2579,7 +2583,8 @@ const isNight=()=>{ const h=new Date().getHours(); return h>=22||h<4; };
 const hpR=c=>c.php/c.mhp;
 // 相手の危険度（戦う前の見積もり）：無謀=2、強敵=1、それ以外=0
 const riskOf=e=>{ const d=danger(e); return /無謀/.test(d)?2:/強敵/.test(d)?1:0; };
-const drunkNow=()=>!!(activeDrinks().length||persona());
+// はじめての1杯（mild）では酔わない（#77）。効き目はそのまま
+const drunkNow=()=>!!(activeDrinks().some(x=>!x.d.mild)||persona());
 const digits777=()=>Math.floor(P.gold)%1000===777;
 const JOB_SECRETS={
  warrior:  {n:'背水の陣',      hint:'無謀な相手に挑むほど、追い詰められるほど強くなるらしい', type:'both', c:(c,e)=>riskOf(e)>=2, d:c=>hpR(c)<.1, fx:{atk:100}, msg:'背水の陣！ 攻撃力×100'},

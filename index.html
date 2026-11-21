@@ -163,37 +163,38 @@ rt{font-size:9px;color:#bcd}
 
 <script>
 // ============ データ ============
-const KEYS=['str','int','agi','vit','luk'];
-const KN={str:'力',int:'知力',agi:'素早さ',vit:'体力',luk:'運'};
+// 能力はラグナロクオンライン式の6つ（DEXを追加）
+const KEYS=['str','agi','vit','int','dex','luk'];
+const KN={str:'STR',agi:'AGI',vit:'VIT',int:'INT',dex:'DEX',luk:'LUK'};
 const RANKS=['下位職','中位職','上位職','？？？'];
 // pass: crit(会心率+), eva(回避率+), taken(被ダメ倍率), gold, exp, drop(倍率)
 const JOBS={
   apprentice:{rank:0,hidden:true,n:'見習い？',hue:30,main:'str',g:{str:1,int:1,agi:1,vit:1,luk:1},skill:{n:'がむしゃら',p:.15,m:2},pass:{exp:1.5},d:'何もかも普通…に見える。経験値が1.5倍。'},
   // はじめの職業（#58）：得意も苦手もない。ギルドの最初の依頼で転職所を知る
   adventurer:{rank:0,n:'冒険者',hue:35,main:'best',g:{str:1.1,int:1.1,agi:1.1,vit:1.1,luk:1.1},skill:{n:'冒険の一撃',p:.15,m:2.5},d:'得意も苦手もない、冒険の基本の職業。ギルドで経験を積み、転職所で道を選ぼう。'},
-  warrior:{rank:0,n:'戦士',hue:210,main:'str',g:{str:1.5,int:.5,agi:.9,vit:1.4,luk:.8},skill:{n:'渾身斬り',p:.18,m:3},d:'力と体力がよく伸びる。攻撃は力依存。'},
-  mage:{rank:0,n:'魔導士',hue:280,main:'int',g:{str:.4,int:1.7,agi:.9,vit:.8,luk:1},skill:{n:'メテオストライク',p:.15,m:5},d:'知力で攻撃。たまに出る大魔法が強烈。'},
-  thief:{rank:0,n:'盗賊',hue:120,main:'agi',g:{str:.9,int:.7,agi:1.7,vit:.8,luk:1.3},skill:{n:'盗む',p:.22,steal:true},d:'素早さで攻撃。連続攻撃しやすく、お金を盗む。'},
-  priest:{rank:0,n:'僧侶',hue:50,main:'int',g:{str:.8,int:1.2,agi:.8,vit:1.6,luk:1.1},skill:{n:'ヒール',p:.2,heal:true},d:'体力が高く、戦闘中にHPを回復する。'},
-  gambler:{rank:0,n:'ギャンブラー',hue:330,main:'luk',g:{str:.8,int:.8,agi:1,vit:.9,luk:2.2},skill:{n:'イチかバチか',p:.25,gamble:true},pass:{casino:1.5},d:'運で攻撃。ルーレットで×0〜×777。ギャンブル場の儲け1.5倍。'},
-  fighter:{rank:0,n:'格闘家',hue:15,main:'str',g:{str:1.3,int:.4,agi:1.3,vit:1.1,luk:.8},skill:{n:'百裂拳',p:.18,multi:true},d:'力と素早さが伸びる。2〜5回の連打を叩き込む。…追い詰められると何かが目覚めるらしい。'},
-  hunter:{rank:0,n:'狩人',hue:90,main:'agi',g:{str:1,int:.7,agi:1.3,vit:.8,luk:1.3},skill:{n:'急所撃ち',p:.15,sure:true},pass:{crit:.08},d:'会心が出やすい。急所撃ちは必ず会心。'},
-  knight:{rank:0,n:'騎士',hue:190,main:'vit',g:{str:1.2,int:.6,agi:.6,vit:1.7,luk:.8},skill:{n:'シールドバッシュ',p:.15,m:2.5},pass:{taken:.7},d:'体力で攻撃。受けるダメージが3割減る。'},
+  warrior:{rank:0,n:'戦士',hue:210,main:'str',g:{str:1.5,int:.5,agi:.9,vit:1.4,luk:.8},skill:{n:'渾身斬り',p:.18,m:3},d:'STRとVITがよく伸びる。攻撃はSTR依存。'},
+  mage:{rank:0,n:'魔導士',hue:280,main:'int',g:{str:.4,int:1.7,agi:.9,vit:.8,luk:1},skill:{n:'メテオストライク',p:.15,m:5},d:'INTで攻撃。たまに出る大魔法が強烈。'},
+  thief:{rank:0,n:'盗賊',hue:120,main:'agi',g:{str:.9,int:.7,agi:1.7,vit:.8,luk:1.3},skill:{n:'盗む',p:.22,steal:true},d:'AGIで攻撃。お金を盗む。倒すと、ときどきお金や素材を余分に手に入れる。'},
+  priest:{rank:0,n:'僧侶',hue:50,main:'int',g:{str:.8,int:1.2,agi:.8,vit:1.6,luk:1.1},skill:{n:'ヒール',p:.2,heal:true},d:'VITが高く、戦闘中にHPを回復する。'},
+  gambler:{rank:0,n:'ギャンブラー',hue:330,main:'luk',g:{str:.8,int:.8,agi:1,vit:.9,luk:2.2},skill:{n:'イチかバチか',p:.25,gamble:true},pass:{casino:1.5},d:'LUKで攻撃。ルーレットで×0〜×777。ギャンブル場の儲け1.5倍。'},
+  fighter:{rank:0,n:'格闘家',hue:15,main:'str',g:{str:1.3,int:.4,agi:1.3,vit:1.1,luk:.8},skill:{n:'百裂拳',p:.18,multi:true},d:'STRとAGIが伸びる。2〜5回の連打を叩き込む。…追い詰められると何かが目覚めるらしい。'},
+  hunter:{rank:0,n:'狩人',hue:90,main:'dex',g:{str:1,int:.7,agi:1.1,vit:.8,luk:1.3,dex:1.6},skill:{n:'急所撃ち',p:.15,sure:true},pass:{crit:.08},d:'会心が出やすい。急所撃ちは必ず会心。'},
+  knight:{rank:0,n:'騎士',hue:190,main:'vit',g:{str:1.2,int:.6,agi:.6,vit:1.7,luk:.8},skill:{n:'シールドバッシュ',p:.15,m:2.5},pass:{taken:.7},d:'VITで攻撃。受けるダメージが3割減る。'},
   dancer:{rank:0,n:'踊り子',hue:310,main:'agi',g:{str:.7,int:1,agi:1.5,vit:.8,luk:1.2},skill:{n:'魅惑の舞',p:.2,stun:true},pass:{eva:.1},d:'よく避ける。舞で敵の動きを1回止める。'},
-  bard:{rank:0,n:'吟遊詩人',hue:160,main:'int',g:{str:.6,int:1.3,agi:1,vit:.9,luk:1.3},skill:{n:'勇気の歌',p:.2,buff:true},d:'歌うたびに攻撃力×1.5（戦闘中ずっと重なる）。'},
+  bard:{rank:0,n:'吟遊詩人',hue:160,main:'int',g:{str:.6,int:1.3,agi:1,vit:.9,luk:1.3},skill:{n:'勇気の歌',p:.2,buff:true},d:'歌うたびにATK×1.5（戦闘中ずっと重なる）。'},
   merchant:{rank:0,n:'商人',hue:45,main:'luk',g:{str:.8,int:1.1,agi:.8,vit:1,luk:1.6},skill:{n:'銭投げ',p:.18,coin:true},pass:{gold:2},d:'お金が2倍手に入る。銭投げは所持金が多いほど痛い。'},
 
   // ---- 中位職（対応する下位職をマスターで解放）----
   berserker:{rank:1,base:'warrior',n:'狂戦士',hue:0,main:'str',g:{str:2.1,int:.4,agi:1,vit:1.5,luk:.8},skill:{n:'狂乱斬り',p:.22,m:5},pass:{taken:1.2},d:'すべてを力に。被ダメージ1.2倍だが技が強烈。'},
-  archmage:{rank:1,base:'mage',n:'大魔導士',hue:270,main:'int',g:{str:.4,int:2.3,agi:1,vit:.9,luk:1.1},skill:{n:'星砕き',p:.18,m:8},d:'知力が爆発的に伸びる。星を砕く大魔法。'},
+  archmage:{rank:1,base:'mage',n:'大魔導士',hue:270,main:'int',g:{str:.4,int:2.3,agi:1,vit:.9,luk:1.1},skill:{n:'星砕き',p:.18,m:8},d:'INTが爆発的に伸びる。星を砕く大魔法。'},
   ninja:{rank:1,base:'thief',n:'忍者',hue:240,main:'agi',g:{str:1,int:.8,agi:2.3,vit:.9,luk:1.4},skill:{n:'影分身',p:.22,multi:1},pass:{eva:.12},d:'分身で連打。よく避ける。'},
   bishop:{rank:1,base:'priest',n:'神官',hue:55,main:'int',g:{str:.8,int:1.6,agi:.9,vit:2.1,luk:1.2},skill:{n:'ハイヒール',p:.25,heal:true},pass:{taken:.8},d:'高い回復力と守り。'},
   shark:{rank:1,base:'gambler',n:'勝負師',hue:340,main:'luk',g:{str:.9,int:.9,agi:1.1,vit:1,luk:2.9},skill:{n:'大勝負',p:.3,gamble:true},pass:{crit:.05,casino:2},d:'ルーレットの発動率アップ。会心も出やすい。ギャンブル場の儲け2倍。'},
   kenou:{rank:1,base:'fighter',n:'拳王',hue:20,main:'str',g:{str:1.9,int:.4,agi:1.8,vit:1.3,luk:.9},skill:{n:'百裂拳・極',p:.25,multi:2},d:'3〜8発の連打を叩き込む。'},
-  sniper:{rank:1,base:'hunter',n:'狙撃手',hue:100,main:'agi',g:{str:1.1,int:.8,agi:1.9,vit:.9,luk:1.6},skill:{n:'一撃必殺',p:.2,sure:true,m:1.5},pass:{crit:.15},d:'会心率がさらに上がる。必中の狙撃。'},
+  sniper:{rank:1,base:'hunter',n:'狙撃手',hue:100,main:'dex',g:{str:1.1,int:.8,agi:1.4,vit:.9,luk:1.6,dex:2.1},skill:{n:'一撃必殺',p:.2,sure:true,m:1.5},pass:{crit:.15},d:'会心率がさらに上がる。必中の狙撃。'},
   paladin:{rank:1,base:'knight',n:'聖騎士',hue:200,main:'vit',g:{str:1.4,int:.9,agi:.7,vit:2.3,luk:.9},skill:{n:'聖盾撃',p:.2,m:3,drain:true},pass:{taken:.55},d:'鉄壁。技で与えたダメージの一部を回復。'},
   maiden:{rank:1,base:'dancer',n:'舞姫',hue:320,main:'agi',g:{str:.8,int:1.2,agi:2,vit:.9,luk:1.4},skill:{n:'幻惑の舞',p:.28,stun:true},pass:{eva:.18},d:'敵を止めて、ひらりとかわす。'},
-  maestro:{rank:1,base:'bard',n:'楽聖',hue:170,main:'int',g:{str:.7,int:1.8,agi:1.1,vit:1,luk:1.5},skill:{n:'英雄の歌',p:.22,buff:true,bm:2},d:'歌うたびに攻撃力×2（戦闘中ずっと重なる）。'},
+  maestro:{rank:1,base:'bard',n:'楽聖',hue:170,main:'int',g:{str:.7,int:1.8,agi:1.1,vit:1,luk:1.5},skill:{n:'英雄の歌',p:.22,buff:true,bm:2},d:'歌うたびにATK×2（戦闘中ずっと重なる）。'},
   tycoon:{rank:1,base:'merchant',n:'大富豪',hue:48,main:'luk',g:{str:.9,int:1.3,agi:.9,vit:1.1,luk:2.1},skill:{n:'札束ビンタ',p:.22,coin:true,cm:3},pass:{gold:4},d:'お金が4倍。札束で殴る。'},
   grandalch:{rank:1,base:'alchemist',n:'大錬金術師',hue:280,main:'int',g:{str:.5,int:2,agi:.9,vit:1,luk:1.5},skill:{n:'賢者の石',p:.16,m:6},pass:{drop:6},d:'能力の実を6倍拾いやすい。'},
   // ---- 上位職（中位＋下位、または中位＋中位をマスターで解放）----
@@ -204,18 +205,20 @@ const JOBS={
   swordsaint:{rank:2,req:['berserker','kenou'],n:'剣聖',hue:10,main:'str',g:{str:2.8,int:.6,agi:2.2,vit:1.6,luk:1},skill:{n:'無双乱舞',p:.25,multi:2,m:2},d:'無数の斬撃。'},
   dragoon:{rank:2,req:['paladin','hunter'],n:'竜騎士',hue:150,main:'str',g:{str:2.3,int:.8,agi:1.9,vit:2.2,luk:1.1},skill:{n:'ドラゴンダイブ',p:.2,m:10,pierce:true},pass:{taken:.75},d:'天から降り、防御ごと貫く。'},
   phantom:{rank:2,req:['ninja','tycoon'],n:'大怪盗',hue:300,main:'agi',g:{str:1.2,int:1.4,agi:2.6,vit:1.1,luk:2.2},skill:{n:'怪盗の一閃',p:.3,steal:true,sm:5},pass:{gold:5,eva:.15},d:'お金が5倍。盗みも5倍。'},
-  luckking:{rank:2,req:['shark','merchant'],n:'豪運王',hue:50,main:'luk',g:{str:1,int:1.1,agi:1.3,vit:1.2,luk:3.6},skill:{n:'天運',p:.35,gamble:true},pass:{crit:.1,gold:3,casino:3},d:'運だけで世界を獲る。ギャンブル場の儲け3倍。'},
-  tennyo:{rank:2,req:['maiden','maestro'],n:'天女',hue:190,main:'int',g:{str:.8,int:2.4,agi:2.2,vit:1.1,luk:1.8},skill:{n:'天の調べ',p:.25,buff:true,bm:2.5},pass:{eva:.2},d:'舞と歌で攻撃力×2.5ずつ高まっていく。'},
+  luckking:{rank:2,req:['shark','merchant'],n:'豪運王',hue:50,main:'luk',g:{str:1,int:1.1,agi:1.3,vit:1.2,luk:3.6},skill:{n:'天運',p:.35,gamble:true},pass:{crit:.1,gold:3,casino:3},d:'LUKだけで世界を獲る。ギャンブル場の儲け3倍。'},
+  tennyo:{rank:2,req:['maiden','maestro'],n:'天女',hue:190,main:'int',g:{str:.8,int:2.4,agi:2.2,vit:1.1,luk:1.8},skill:{n:'天の調べ',p:.25,buff:true,bm:2.5},pass:{eva:.2},d:'舞と歌でATK×2.5ずつ高まっていく。'},
   chrono:{rank:2,req:['grandalch','bard'],n:'時空術師',hue:230,main:'int',g:{str:.6,int:2.7,agi:1.6,vit:1.2,luk:1.7},skill:{n:'時間停止',p:.3,stun:true},pass:{exp:2,drop:3},d:'時を止める。経験値2倍。'},
   saint:{rank:2,req:['bishop','dancer'],n:'聖女',hue:330,main:'int',g:{str:.7,int:2.2,agi:1.4,vit:2.4,luk:1.6},skill:{n:'女神の祝福',p:.3,heal:true},pass:{taken:.45},d:'ほぼ倒れない。'},
-  overlord:{rank:2,req:['kenou','knight'],n:'覇王',hue:0,main:'str',g:{str:2.7,int:.8,agi:1.8,vit:2.3,luk:1.2},skill:{n:'覇王拳',p:.2,m:10},pass:{taken:.6},d:'力でねじ伏せる。'},
+  overlord:{rank:2,req:['kenou','knight'],n:'覇王',hue:0,main:'str',g:{str:2.7,int:.8,agi:1.8,vit:2.3,luk:1.2},skill:{n:'覇王拳',p:.2,m:10},pass:{taken:.6},d:'STRでねじ伏せる。'},
   neet:{rank:3,hidden:true,byMaster:true,n:'無職',hue:0,main:'best',g:{str:1.3,int:1.3,agi:1.3,vit:1.3,luk:1.3},skill:{n:'本気を出す',p:.1,m:10},d:'働かずして、すべてを極めた者。一番高い能力で攻撃し、マスターした全職業の特性と技を使いこなす。'},
   alchemist:{rank:0,n:'錬金術師',hue:260,main:'int',g:{str:.5,int:1.5,agi:.8,vit:.9,luk:1.2},skill:{n:'爆薬調合',p:.13,m:4},pass:{drop:3},d:'能力の実を3倍拾いやすい。'},
 };
+// DEXの伸び：決めていない職業は、STRとAGIの間くらい
+Object.values(JOBS).forEach(J=>{ if(J.g.dex===undefined) J.g.dex=Math.round((J.g.str+J.g.agi)/2*10)/10; });
 // ============ 装飾品（#65 #66）：4つのカテゴリ。買うたびに+1強化。カテゴリごとに枠がある ============
 const ACC=[
  // ステータスUP
- ['ring','力の指輪','str'],['brace','知恵の腕輪','int'],['boots','疾風のブーツ','agi'],['charm','守りのお守り','vit'],['coin','幸運のコイン','luk'],['mporb','魔力の宝珠','mpmax'],
+ ['ring','STRの指輪','str'],['brace','知恵の腕輪','int'],['boots','疾風のブーツ','agi'],['charm','守りのお守り','vit'],['coin','幸運のコイン','luk'],['glove','精密の手袋','dex'],['mporb','魔力の宝珠','mpmax'],
  // 状態耐性（+1で50%、+10で95%）
  ['paral','麻痺よけの指輪','rPara'],['hourglass','時の砂時計','rSlow'],['antidote','解毒のペンダント','rPoison'],['nightglass','暗視のメガネ','rBlind'],['kotodama','言霊の耳飾り','rSilence'],
  ['juzu','聖なる数珠','rCurse'],['ribbon','魅了よけのリボン','rCharm'],['mirror','石化よけの鏡','rStone'],['doll','身代わり人形','rDeath'],
@@ -256,7 +259,7 @@ function accVal(t,lv){ if(KEYS.includes(t)||t==='mpmax') return Math.pow(1.5,lv)
   if(t==='mpsave') return Math.min(.5,.05*lv); if(t==='mpregen') return .01*lv; if(t==='mprage') return 1.5+.1*lv; if(t==='crit') return Math.min(.6,.02*lv); if(t==='mir') return Math.min(.3,.004*lv); return 1+.5*lv; }
 function accDesc(t,lv){ if(KEYS.includes(t)) return `${KN[t]}×${fmtMul(accVal(t,lv))}`;
   if(t==='mpmax') return `最大MP×${fmtMul(accVal(t,lv))}`; if(t==='mpsave') return `技のMP消費−${Math.round(accVal(t,lv)*100)}%`; if(t==='mpregen') return `毎ターン MP+${Math.round(accVal(t,lv)*100)}%`;
-  if(t==='mprage') return `技のMP消費×2・技のダメージ×${accVal(t,lv).toFixed(1)}`; if(RES_T.includes(t)) return `${AILMENTS[AIL_KEYS[RES_T.indexOf(t)]].n}を${Math.round(accVal(t,lv)*100)}%防ぐ`; if(t==='dbl') return `${Math.round(accVal(t,lv)*100)}%で2回行動`; if(t==='first') return `必ず先制。状態異常の先手を${Math.round(accVal(t,lv)*100)}%防ぐ`; if(t==='crit') return `会心率+${Math.round(accVal(t,lv)*100)}%`; if(t==='mir') return `奇跡率+${(accVal(t,lv)*100).toFixed(1)}%`;
+  if(t==='mprage') return `技のMP消費×2・技のダメージ×${accVal(t,lv).toFixed(1)}`; if(RES_T.includes(t)) return `${AILMENTS[AIL_KEYS[RES_T.indexOf(t)]].n}を${Math.round(accVal(t,lv)*100)}%防ぐ`; if(t==='dbl') return `${Math.round(accVal(t,lv)*100)}%で2回行動`; if(t==='first') return `先制攻撃+${Math.round(Math.min(.15,.1+.01*lv)*100)}%（最大65%）・バックアタック-2%・状態異常の先手を${Math.round(accVal(t,lv)*100)}%防ぐ`; if(t==='crit') return `会心率+${Math.round(accVal(t,lv)*100)}%`; if(t==='mir') return `奇跡率+${(accVal(t,lv)*100).toFixed(1)}%`;
   return `${({gold:'お金',exp:'経験値',drop:'実の入手率'})[t]}×${accVal(t,lv).toFixed(1)}`; }
 const accStat=k=>accEqs().reduce((m,a)=>a.t===k?m*accVal(k,a.lv):m,1);
 const accMir=()=>accEqs().reduce((m,a)=>a.t==='mir'?m+accVal('mir',a.lv):m,0);
@@ -351,15 +354,25 @@ const kiwamiLeft=k=>(P.kiwami&&P.kiwami[k])?0:Math.max(0,KIWAMI_N-jobBN(k));
 const TK_CATCH={lv:70,reb:3,mul:16.5,gold:3.5e12,gpts:70};
 function takashiCatchup(L){ if(P.tkCatch) return; P.tkCatch=true; const C=TK_CATCH, lv0=P.lv;
   P.reb=Math.max(P.reb,C.reb); P.rebMul=Math.max(P.rebMul,C.mul);
-  if(P.lv<C.lv){ P.pts+=3*(C.lv-P.lv); P.lv=C.lv; P.exp=0; }
+  if(P.lv<C.lv){ P.pts+=PT_PER_LV*(C.lv-P.lv); P.lv=C.lv; P.exp=0; }
   const g0=P.gold; P.gold=Math.max(P.gold,C.gold); if(P.gold>g0) P.earned=(P.earned||0)+(P.gold-g0);
   const g=gState(); g.pts=Math.max(g.pts,C.gpts); P.tutDone=true; P.jobOpen=true;
   if(L) L.push(`<span class="mir">★ ギャンブラーを極めたたかしは、ついに冒険に出る…！ ★</span>`);
   if(typeof showPopup==='function') showPopup({title:'<span class="mir">たかし、冒険に出る！</span>',body:`<div class="small">ギャンブラーを極めたたかしに、ほかの道が開けた。賭場で積んだ経験が、冒険者としての力になる。<br><br>
-    ・レベル ${lv0} → <b class="y">${P.lv}</b>（能力ポイント+${3*Math.max(0,C.lv-lv0)}）<br>・転生 <b class="y">${P.reb}回</b>（転生倍率×${+P.rebMul.toFixed(1)}）<br>・所持金 <b class="y">${fmt(P.gold)}G</b><br>・冒険者ギルド <b class="y">ランク${G_RANKS[gRank()]}</b><br><br>武器屋・防具屋で装備を整えて、冒険に出よう。</div>`}); }
+    ・レベル ${lv0} → <b class="y">${P.lv}</b>（能力ポイント+${PT_PER_LV*Math.max(0,C.lv-lv0)}）<br>・転生 <b class="y">${P.reb}回</b>（転生倍率×${+P.rebMul.toFixed(1)}）<br>・所持金 <b class="y">${fmt(P.gold)}G</b><br>・冒険者ギルド <b class="y">ランク${G_RANKS[gRank()]}</b><br><br>武器屋・防具屋で装備を整えて、冒険に出よう。</div>`}); }
 // ============ 更新ログ（#42）：プレイヤーに見える。隠し要素の名前は書かない ============
 // 配布版に出すときに、いちばん上に1版足す（新しい順）
 const CHANGELOG=[
+  {v:'1.14',d:'2026/11/21',items:[
+    '能力をSTR・AGI・VIT・INT・DEX・LUKの6つに（DEXを追加）。DEXは命中と弓の攻撃に効く。レベルアップで4ptに',
+    '攻撃力・防御力・魔法攻撃・魔法防御の表記をATK・DEF・MATK・MDEFに。くわしいステータスにMATK・MDEFを表示',
+    '能力の計算を見直した。攻撃力・防御力・HPに能力が掛け算で効くように',
+    '能力ポイントは掛け算に（振った数で ×(1＋数÷100)²）。極振り・万能のボーナス、転生の祭壇で振り直し',
+    '運は会心・奇跡・能力の実・技の出やすさに、素早さは命中・回避に効くように。ステータス欄に命中・回避・会心を表示',
+    '戦闘のはじめに「先制攻撃」と「バックアタック」が起きるように',
+    '2回攻撃は装飾品だけに。盗賊は、倒すとお金や素材を余分に手に入れるように',
+    '終盤の要素を追加',
+  ]},
   {v:'1.13',d:'2026/11/20',items:[
     'はじめてのピンチで必ず「奇跡」が起き、どんなものかを知らせるように',
     '転生の祭壇に、まだ知らない「奇跡の加護」の注意書きが出ないように',
@@ -527,10 +540,11 @@ function sanitizeSave(o){
    'jackpots','j777','jpin','jrou','setHits','oinori','hlBest','allInWins','kajiN','miracles','deathN','hwCd','hwBreaks','coins','coinsAll','casWinRun','casBestRun','bigWins','casRing','accSlotsSeen'].forEach(k=>r[k]=num(o[k],0));
   r.lv=Math.max(1,int(o.lv,1)); r.wpn=Math.min(GEAR_MAX,int(o.wpn)); r.arm=Math.min(GEAR_MAX,int(o.arm)); r.reb=int(o.reb); r.pts=int(o.pts);
   r.maxArea=Math.min(AREA_MAX,int(o.maxArea)); r.areaWins=int(o.areaWins); r.champ=int(o.champ);
-  r.rebMul=Math.max(1,num(o.rebMul,1)); r.rebMul=Math.min(r.rebMul,Math.pow(12,r.reb||0)); /* #11：1回×12までの式に合わせて、古いセーブの倍率を丸める */ r.oneG=bool(o.oneG); r.mirIntro=o.mirIntro===1||o.mirIntro===2?o.mirIntro:((o.miracles||0)>0?2:0); r.casAccSlot=bool(o.casAccSlot); r.ketaCoin=bool(o.ketaCoin); r.prizeN=numMap(o.prizeN,k=>PRIZES.some(p=>p.id===k)||/^s5_[a-z]+$/.test(k)); r.frAuto=bool(o.frAuto); r.frTrades=num(o.frTrades,0); r.fr={}; KEYS.forEach(k=>{ const f=o.fr&&o.fr[k]; if(f) r.fr[k]={n:Math.max(0,int(f.n)),v:Math.max(0,num(f.v,0))}; }); r.tkCatch=bool(o.tkCatch); r.ptsUsed=bool(o.ptsUsed); r.casPlayed=bool(o.casPlayed); r.tutDone=bool(o.tutDone)||(num(o.maxArea,0)>0); r.jobOpen=o.jobOpen===false?false:true; r.drunk=boolMap(o.drunk,k=>DRINKS.some(D=>D.id===k)); if(o.accSlotsSeen===undefined||o.accSlotsSeen===null) r.accSlotsSeen=null; { const AK=new Set(ACC.map(x=>x[0])); r.amu=(Array.isArray(o.amu)?o.amu:[]).slice(0,40).map(a=>a&&Array.isArray(a.parts)?{parts:a.parts.filter(k=>AK.has(k)).slice(0,30)}:null).map(a=>a&&a.parts.length>=2?a:null); r.amuN=int(o.amuN); } r.shobu=['good','hidden'].includes(o.shobu)?o.shobu:null; { const TT=PRIZES.filter(p=>p.title).map(p=>p.title).concat(['ギルドの英雄']); r.titles={}; if(o.titles&&typeof o.titles==='object') TT.forEach(k=>{ if(o.titles[k]===true) r.titles[k]=true; }); /* 称号は日本語のキーなので boolMap を通さない */ r.title=TT.includes(o.title)&&r.titles[o.title]?o.title:''; } r.tutWarn=bool(o.tutWarn); r.areaDone=bool(o.areaDone); if(o.guideHeard!==undefined&&o.guideHeard!==null) r.guideHeard=Math.floor(num(o.guideHeard,-1)); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA); r.jsec=boolMap(o.jsec,isJob); r.lastFruit=bool(o.lastFruit); r.endingSeen=bool(o.endingSeen); r.everTakashi=bool(o.everTakashi);
+  r.rebMul=Math.max(1,num(o.rebMul,1)); r.rebMul=Math.min(r.rebMul,Math.pow(12,r.reb||0)); /* #11：1回×12までの式に合わせて、古いセーブの倍率を丸める */ r.oneG=bool(o.oneG); r.limitBreak=bool(o.limitBreak); r.alloc={}; KEYS.forEach(k=>{ const n=o.alloc&&o.alloc[k]; if(n>0) r.alloc[k]=Math.floor(num(n,0)); }); r.mirIntro=o.mirIntro===1||o.mirIntro===2?o.mirIntro:((o.miracles||0)>0?2:0); r.casAccSlot=bool(o.casAccSlot); r.ketaCoin=bool(o.ketaCoin); r.prizeN=numMap(o.prizeN,k=>PRIZES.some(p=>p.id===k)||/^s5_[a-z]+$/.test(k)); r.frAuto=bool(o.frAuto); r.frTrades=num(o.frTrades,0); r.fr={}; KEYS.forEach(k=>{ const f=o.fr&&o.fr[k]; if(f) r.fr[k]={n:Math.max(0,int(f.n)),v:Math.max(0,num(f.v,0))}; }); r.tkCatch=bool(o.tkCatch); r.ptsUsed=bool(o.ptsUsed); r.casPlayed=bool(o.casPlayed); r.tutDone=bool(o.tutDone)||(num(o.maxArea,0)>0); r.jobOpen=o.jobOpen===false?false:true; r.drunk=boolMap(o.drunk,k=>DRINKS.some(D=>D.id===k)); if(o.accSlotsSeen===undefined||o.accSlotsSeen===null) r.accSlotsSeen=null; { const AK=new Set(ACC.map(x=>x[0])); r.amu=(Array.isArray(o.amu)?o.amu:[]).slice(0,40).map(a=>a&&Array.isArray(a.parts)?{parts:a.parts.filter(k=>AK.has(k)).slice(0,30)}:null).map(a=>a&&a.parts.length>=2?a:null); r.amuN=int(o.amuN); } r.shobu=['good','hidden'].includes(o.shobu)?o.shobu:null; { const TT=PRIZES.filter(p=>p.title).map(p=>p.title).concat(['ギルドの英雄']); r.titles={}; if(o.titles&&typeof o.titles==='object') TT.forEach(k=>{ if(o.titles[k]===true) r.titles[k]=true; }); /* 称号は日本語のキーなので boolMap を通さない */ r.title=TT.includes(o.title)&&r.titles[o.title]?o.title:''; } r.tutWarn=bool(o.tutWarn); r.areaDone=bool(o.areaDone); if(o.guideHeard!==undefined&&o.guideHeard!==null) r.guideHeard=Math.floor(num(o.guideHeard,-1)); r.neetW=bool(o.neetW); r.neetA=bool(o.neetA); r.jsec=boolMap(o.jsec,isJob); r.lastFruit=bool(o.lastFruit); r.endingSeen=bool(o.endingSeen); r.everTakashi=bool(o.everTakashi);
   r.playMs=int(o.playMs); r.startedAt=int(o.startedAt); if(o.pops&&typeof o.pops==='object') r.pops=boolMap(o.pops);
   if(o.final&&typeof o.final==='object') r.final={hp:Math.min(finalHP(FINAL_FORMS),Math.max(0,num(o.final.hp,FINAL_HP))),cleared:bool(o.final.cleared),seen:bool(o.final.seen),dmg:num(o.final.dmg),form:Math.min(FINAL_FORMS,Math.max(1,int(o.final.form,1))),best:Math.min(FINAL_FORMS,int(o.final.best))};
   r.base={}; KEYS.forEach(k=>r.base[k]=Math.max(0,num(o.base&&o.base[k],1)));
+  if(!(o.base&&o.base.dex>0)){ const ks=KEYS.filter(k=>k!=='dex'); r.base.dex=Math.round(ks.reduce((a,k)=>a+r.base[k],0)/ks.length); } // DEX追加前のセーブ
   r.jlv={}; if(o.jlv&&typeof o.jlv==='object') for(const k of Object.keys(o.jlv)) if(isJob(k)&&o.jlv[k]) r.jlv[k]={lv:Math.min(JMAX,Math.max(1,int(o.jlv[k].lv,1))),exp:int(o.jlv[k].exp)};
   r.acc=numMap(o.acc,k=>ACC.some(a=>a[0]===k)); Object.keys(r.acc).forEach(k=>r.acc[k]=Math.min(ACC_LIMIT,int(r.acc[k])));
   const eq=Array.isArray(o.accEq)?o.accEq:(o.accEq?[o.accEq]:[]); r.accEq=eq.filter(k=>ACC.some(a=>a[0]===k)||/^am\d{1,2}$/.test(k)).slice(0,ACC.length);
@@ -638,7 +652,11 @@ const LACC=[
 const hasL=k=>P.job==='neet'&&!!(P.lacc&&P.lacc[k]);
 function grantLacc(L){ const w=P.work; if(!w) return; const fl=w.cleared?99:(w.stage||0); LACC.forEach(a=>{ if(a[4]&&fl>=a[4]&&!(P.lacc&&P.lacc[a[0]])){ P.lacc=P.lacc||{}; P.lacc[a[0]]=true; if(L) L.push(`<span class="mir">★ 伝説の装飾品「${a[1]}」を贈られた！（${a[3]}） ★</span>`); } }); }
 function buyLacc(k){ const a=LACC.find(x=>x[0]===k); if(!a||a[2]===null||P.job!=='neet'||(P.lacc&&P.lacc[k])||P.gold<a[2]) return; P.gold-=a[2]; P.lacc=P.lacc||{}; P.lacc[k]=true; save(); renderStatus(); panel('acc'); }
-const st=k=>P.base[k]*P.rebMul*masterMul()*accStat(k)*jobBonusC(k)*(hasL('shoes')?10:1)*matMul(k)*drinkMul('all')*jobMod(k);
+// 転生倍率を除いた能力（係数・配分に使う）。実際の能力 st はこれ×転生倍率
+const stB=k=>P.base[k]*masterMul()*accStat(k)*jobBonusC(k)*(hasL('shoes')?10:1)*matMul(k)*drinkMul('all')*jobMod(k)*ptMul(k);
+const st=k=>capN(stB(k)*P.rebMul);
+// 能力の係数（#43）：ATKなどは「土台（武器・防具×転生倍率）×能力の係数」。係数＝能力÷10（はじめの能力9で0.9）
+const coefK=k=>Math.max(.01,stB(k)/10);
 const RMUL=[1,3,10,10]; const rmul=()=>RMUL[JOBS[P.job].rank];
 // +99（20種＋99段＝119段目）に到達すると伝説の装備に置き換わる
 const GEAR_MAX=119;
@@ -652,7 +670,7 @@ const naiteiN=()=>{ const w=P.work||{}; return Math.min(NAITEI_MAX,Math.max(w.na
 const neetWAtk=()=>neetW()?NEET_W_ATK[naiteiN()]:1, neetWCrit=()=>NEET_W_CRIT[naiteiN()];
 const neetW=()=>P.job==='neet'&&!!P.neetW, neetA=()=>P.job==='neet'&&!!P.neetA;
 function grantNeetGear(L){ let t='';
-  if(!P.neetW&&P.work&&P.work.cleared){ P.neetW=true; t+=`<div class="mir">★ 内定祝いに「${NEET_W}」を授かった！（無職専用：攻撃力×${NEET_W_ATK[naiteiN()]}。内定をもらうほど強くなる） ★</div>`; }
+  if(!P.neetW&&P.work&&P.work.cleared){ P.neetW=true; t+=`<div class="mir">★ 内定祝いに「${NEET_W}」を授かった！（無職専用：ATK×${NEET_W_ATK[naiteiN()]}。内定をもらうほど強くなる） ★</div>`; }
   if(!P.neetA&&P.areaDone){ P.neetA=true; t+=`<div class="mir">★ 次元の果てで「${NEET_A}」を見つけた！（無職専用：受けるダメージ1/1000・HP×100） ★</div>`; }
   if(t&&L) L.push(t); return t; }
 const wpnPow=w=>w>=GEAR_MAX?12*Math.pow(5,GEAR_MAX)*1e4:w?12*Math.pow(5,w):0;
@@ -666,9 +684,9 @@ const REB_STEP_MAX=12;
 const rebStep=(lv=P.lv)=>Math.min(REB_STEP_MAX,1+lv/20);
 const lvB=()=>Math.max(P.lv,P.maxLv||0);
 const capN=x=>Math.min(Number.MAX_VALUE,x);
-function atk(){return capN((st(mainKey())+wpnPow(P.wpn)*P.rebMul)*(1+lvB()*0.08)*(1+0.05*(jl(P.job).lv-1))*rmul()*neetWAtk()*matMul('atk'))}
-function def(){return capN((st('vit')*0.5+armPow(P.arm)*P.rebMul)*rmul()*matMul('def'))}
-function maxhp(){return Math.floor(capN((st('vit')*12+lvB()*10*P.rebMul+armPow(P.arm)*3*P.rebMul)*rmul()*(neetA()?100:1)*matMul('hp')))}
+function atk(){return capN((wpnPow(P.wpn)+10)*P.rebMul*coefK(mainKey())*(1+lvB()*0.08)*(1+0.05*(jl(P.job).lv-1))*rmul()*neetWAtk()*matMul('atk'))}
+function def(){return capN((armPow(P.arm)+5)*P.rebMul*coefK('vit')*rmul()*matMul('def'))}
+function maxhp(){return Math.floor(capN((armPow(P.arm)*3+lvB()*10+120)*P.rebMul*coefK('vit')*rmul()*(neetA()?100:1)*matMul('hp')))}
 const need=lv=>Math.floor(15*Math.pow(1.3,lv-1));
 // 転生に必要なLv。暫定で最大Lv1700（第300層の敵で届くのはLv1750前後。上限がないと転生170回あたりで詰む：#14）
 const REB_LV_MAX=1700;
@@ -727,7 +745,7 @@ const SP_MDEF={slime:.8,bat:.6,eye:1.5,skull:.3,dragon:1.5,knight:1};
 // 通常のダンジョン（最初の12エリア・次元の彼方）では使わない（#74）。エンドコンテンツ（#63）で敵に e.res='phys'／'魔' を付けると効く
 const IMMUNE={};
 const magicAttacker=e=>e.sp==='eye'||e.base==='坑道の亡霊'||e.base==='船幽霊'||resKind(e)==='phys';
-// 敵に属性・魔法防御などを付ける（makeEnemy などから呼ぶ）。flat：最後の敵（相性はすべて等倍）
+// 敵に属性・MDEFなどを付ける（makeEnemy などから呼ぶ）。flat：最後の敵（相性はすべて等倍）
 function elemize(e,el,flat){ e.el=el; e.flat=!!flat; if(e.mdef===undefined) e.mdef=(e.def||0)*(SP_MDEF[e.sp]||1); return e; }
 // 物理に強い／魔法に強い（#62 #69）：効かない（×0）はなくし、効きにくい（×0.5）だけ
 // 最初の12エリアは敵ごと（坑道の亡霊・船幽霊は物理に強い、鉱石スライムは魔法に強い）、次元の彼方は層ごとに決まる
@@ -736,10 +754,10 @@ function resKind(e){ if(e.flat) return null; return e.res||IMMUNE[e.base]||null;
 const tendName=k=>k==='phys'?'物理に強い':k==='魔'?'魔法に強い':'';
 function typeMul(at,e){ const k=resKind(e); if(!k) return 1; return (k==='魔')===(at==='魔')?RES_MUL:1; }
 
-// 魔法攻撃・魔法防御（#27）
-function matk(){ return capN((st('int')+wpnPow(P.wpn)*.5*P.rebMul)*(1+lvB()*0.08)*(1+0.05*(jl(P.job).lv-1))*rmul()*neetWAtk()*matMul('atk')); }
-function mdef(){ return capN((st('int')*.3+st('vit')*.2+armPow(P.arm)*.5*P.rebMul)*rmul()*matMul('def')); }
-// この敵にどう攻撃するか：攻撃の種類・相性の倍率・元の攻撃力・敵の防御（魔法剣士は効くほうを選ぶ）
+// MATK・MDEF（#27）
+function matk(){ return capN((wpnPow(P.wpn)*.5+10)*P.rebMul*coefK('int')*(1+lvB()*0.08)*(1+0.05*(jl(P.job).lv-1))*rmul()*neetWAtk()*matMul('atk')); }
+function mdef(){ return capN((armPow(P.arm)*.5+5)*P.rebMul*(coefK('int')+coefK('vit'))/2*rmul()*matMul('def')); }
+// この敵にどう攻撃するか：攻撃の種類・相性の倍率・元のATK・敵の防御（魔法剣士は効くほうを選ぶ）
 function attackPlan(e){
   const el=myAtkEl(), em=e.flat?1:elMul(el,e.el);
   const pm=prefMul(), w=myWType(), phys={at:WTYPES[w],base:atk()*(isMagicJob(P.job)?1:pm),edef:e.def||0}, mag={at:'魔',base:matk()*(w==='杖'?pm:1),edef:e.mdef!==undefined?e.mdef:(e.def||0)};
@@ -774,7 +792,7 @@ function forgeHTML(isW){ if(!elemOpen()) return '';
   if(isW){ h+=`<div class="small y" style="margin-top:6px">武器の種類（${fmt(pr)}G）：今は ${myWType()}（${atName(WTYPES[myWType()])}）${prefMul()>1?' <span class="g">得意な武器×1.5</span>':JOB_WT[P.job]?` <span class="small">（${JOBS[P.job].n}の得意は${JOB_WT[P.job]}）</span>`:''}</div>`;
     if(neetW()) h+=`<div class="small o">${NEET_W}は叩きつける（体術・打）。変えられない。</div>`;
     else h+=`<div class="grid" style="grid-template-columns:repeat(4,1fr);margin-top:4px">`+WTYPE_LIST.map(t=>`<button style="font-size:12px;padding:5px 0" ${t===myWType()||P.gold<pr?'disabled':''} onclick="forgeType('${t}')">${t}<span class="small">（${WTYPES[t]}）</span></button>`).join('')+`</div>`;
-    if(isMagicJob(P.job)) h+=`<div class="small c">${JOBS[P.job].n}は魔法で戦う（魔法攻撃＝知力＋武器×0.5）。杖を持つと魔法×1.5。武器の属性は乗る。</div>`; }
+    if(isMagicJob(P.job)) h+=`<div class="small c">${JOBS[P.job].n}は魔法で戦う（MATKはINTと武器で決まる）。杖を持つと魔法×1.5。武器の属性は乗る。</div>`; }
   return h+`</div>`; }
 
 // エリアの一覧の相性表示（#28）
@@ -795,7 +813,7 @@ const TIER_KATA=new Set(['ミスリル','ドラゴン','インフレ']), TIER_ON
 // 種類ごとの名前：[ふつう, カタカナ, 1字つなぎ]
 const WNOUN={剣:['剣','ソード','剣'],大剣:['大剣','グレートソード','大剣'],斧:['斧','アックス','斧'],小剣:['短剣','ダガー','短剣'],槍:['槍','スピア','槍'],
   弓:['弓','ボウ','弓'],棍棒:['棍棒','メイス','棍'],体術:['籠手','ナックル','拳'],杖:['杖','ロッド','杖']};
-// 防具の型：魔法職はローブ、素早さが得意な職業は軽装、それ以外は鎧
+// 防具の型：魔法職はローブ、AGIが得意な職業は軽装、それ以外は鎧
 const ANOUN={鎧:['鎧','アーマー','鎧'],軽装:['胸当て','ベスト','衣'],ローブ:['ローブ','ローブ','法衣']};
 const armStyle=()=>isMagicJob(P.job)?'ローブ':(JOBS[P.job]&&JOBS[P.job].main==='agi')?'軽装':'鎧';
 function tierName(i,noun){ const p=TIER_N[Math.min(i,20)-1];
@@ -808,13 +826,71 @@ function aName(i,style){ style=style||armStyle(); const n=ANOUN[style]||ANOUN.�
   if(i<=0) return 'なし'; if(i>=GEAR_MAX) return `桁あふれの${n[0]} アンダーフロー`;
   if(i===1) return style==='ローブ'?'布のローブ':style==='軽装'?'布の服':'布の服';
   return tierName(i,n)+(i>20?'+'+(i-20):''); }
+// ============ 能力と効き目の計算（#43 #9 #72） ============
+// 能力ポイントは基礎値に足さず、能力ごとに数える（P.alloc）。その能力に ×(1＋振った数÷100)²
+// 限界突破（P.limitBreak）の前は、1つの能力につき PT_CAP まで
+const PT_CAP=1e4, PT_BONUS_MIN=1000, PT_PER_LV=4; // 1レベルで4pt（能力が6つになったので）
+const limitOn=()=>!!(P&&P.limitBreak);
+const allocN=k=>(P.alloc&&P.alloc[k])||0;
+const allocSum=()=>KEYS.reduce((a,k)=>a+allocN(k),0);
+// 振り方のボーナス：合計 PT_BONUS_MIN 以上振ってから。極振り＝1つに6割以上、万能＝6つとも12%以上
+function allocStyle(){ const s=allocSum(); if(s<PT_BONUS_MIN) return {}; const top=KEYS.find(k=>allocN(k)/s>=.6);
+  if(top) return {extreme:top}; if(KEYS.every(k=>allocN(k)/s>=.12)) return {allround:true}; return {}; }
+const ptMul=k=>{ const n=limitOn()?allocN(k):Math.min(PT_CAP,allocN(k)); return Math.pow(1+n/100,2)*(allocStyle().allround?1.5:1); };
+const ptCapped=k=>!limitOn()&&allocN(k)>=PT_CAP;
+// 配分ボーナス：x＝その能力÷6つの平均、効き目＝最大×x²/(x²+1)（均等で半分）
+// 6つの能力の割合（あふれないよう、足す前に÷6する）。能力が変わらない間は計算し直さない
+let _shKey='', _sh=null;
+function shareAll(){ const key=KEYS.map(k=>P.base[k]+':'+allocN(k)).join(',')+'|'+P.job+'|'+P.lv+'|'+JSON.stringify(P.accEq||[])+'|'+(P.dk||[]).length+'|'+(P.kiwami?Object.keys(P.kiwami).length:0)+'|'+masterCount();
+  if(key===_shKey&&_sh) return _sh; const v={}; KEYS.forEach(k=>v[k]=Math.min(Number.MAX_VALUE,stB(k)||0)); const avg=KEYS.reduce((a,k)=>a+v[k]/KEYS.length,0); _sh={}; KEYS.forEach(k=>_sh[k]=avg>0?v[k]/avg:1); _shKey=key; return _sh; }
+const shareOf=k=>shareAll()[k];
+const shapeX=x=>x*x/(x*x+1);
+function abBonus(k,max){ const s=allocStyle(); return max*shapeX(shareOf(k))*(s.allround?1.2:1)*(s.extreme===k?1.5:1); }
+// LUK
+const critRate=()=>Math.min(1,.1*(1+abBonus('luk',limitOn()?3:2))+ps('crit',0));
+const mirRate=()=>.004*(1+abBonus('luk',1))+(P.blessed&&P.blessed[P.job]?.12:0)+accMir()+drinkMul('mir');
+const fruitRate=()=>.04+abBonus('luk',.16);
+const skillRate=()=>Math.min(.9,JOBS[P.job].skill.p+abBonus('luk',.1)+(jl(P.job).lv-1)*.01);
+// AGI：敵との「速さの比」r（1で互角）。いちばん奥のエリア（と番人）の敵と互角、そこより浅い敵ほど遅い（1エリアで約1.4倍）
+// AGIの配分で ×0.75〜×1.25（振らなくても大きくは外さない）。e.spd は敵の速さ係数（桁の神の第4形態以降など）
+const SPD_STEP=.1;
+const agiG=()=>.75+.5*shapeX(shareOf('agi'));
+function spdRatio(e){ const d=e.t!==undefined?e.t:e.gt; let p=1;
+  if(d!==undefined&&d>=0&&d!==P.maxArea){ const a=enemyStats(P.maxArea), b=enemyStats(d); p=Math.pow((a.atk*a.hp)/(b.atk*b.hp),SPD_STEP); }
+  return Math.max(.05,Math.min(20,agiG()*Math.min(5,Math.max(.2,p))/(e.spd||1))); }
+const lerpT=(x,T)=>{ if(x<=T[0][0]) return T[0][1]; for(let i=1;i<T.length;i++) if(x<=T[i][0]){ const [a,va]=T[i-1],[b,vb]=T[i]; return va+(vb-va)*(x-a)/(b-a); } return T[T.length-1][1]; };
+// こちらの回避：比 0.5で0%／1で10%／1.5で30%／2で50%／3で90%
+const EVA_T=[[.5,0],[1,.1],[1.5,.3],[2,.5],[3,.9]];
+const evaRate=r=>Math.min(1,lerpT(r,EVA_T)+ps('eva',0));
+// こちらの命中：命中値−敵の回避値（互角で5%、敵が2倍速いと50%）（5〜100%）。命中値＝85%＋DEXの配分 最大+30%＋転生1回+0.5%（最大+100%）。上限 200%（限界突破で255%）
+// 限界突破のあとは、DEXに振ったポイントでさらに伸びる（10万ptで+40%）
+const hitVal=()=>Math.min(limitOn()?2.55:2,.85+abBonus('dex',.3)+Math.min(1,(P.reb||0)*.005)+(limitOn()?Math.min(.4,allocN('dex')/1e5*.4):0));
+const EEVA_T=[[1,.05],[1.5,.25],[2,.5],[3,1],[5,1.5]];
+const hitRate=r=>Math.max(.05,Math.min(1,hitVal()-lerpT(1/r,EEVA_T)));
+// 先制攻撃（はじめにただで1回攻撃）10〜50%、先制の鈴で+10〜15%（最大65%）。バックアタック3〜12%（鈴で-2%）
+const bellB=()=>accT('first')>0?Math.min(.15,.1+.01*accT('first')):0;
+const firstRate=r=>Math.min(.65,lerpT(r,[[.5,.1],[3,.5]])+bellB());
+const backRate=r=>Math.max(.01,lerpT(r,[[.5,.12],[3,.03]])-(accT('first')>0?.02:0));
+
+// 限界突破：桁の神の第3形態を倒すと開く。★5を6系統×10個
+const LB_FORM=3, LB_COST=10;
+const lbOpen=()=>!!(P.final&&(P.final.best||0)>=LB_FORM);
+const lbReady=()=>GM_SP.every(g=>gmN(g.sp+'_s5')>=LB_COST);
+function limitBreak(){ if(limitOn()||!lbOpen()||!lbReady()) return; GM_SP.forEach(g=>{ P.gm[g.sp+'_s5']-=LB_COST; }); P.limitBreak=true; save(); renderStatus(); panel('reb');
+  showPopup({title:'<span class="mir">★ 限界突破 ★</span>',body:`<div class="small">${esc(P.name)}は、限界を越えた！<br><br>・能力ポイントの上限がなくなった<br>・命中の上限が255%に<br>・会心のLUKボーナスが最大+300%に<br><br>桁の神の第${LB_FORM+1}形態からは、敵の速さもさらに増していく。</div>`}); }
+function lbHTML(){ if(limitOn()) return `<div class="small mir" style="margin-top:8px">★ 限界突破済み ★</div>`; if(!lbOpen()) return '';
+  return `<div class="win" style="margin-top:8px;padding:6px 8px"><div class="y">限界突破</div><div class="small">能力ポイント・命中・会心の上限を外す。★5の素材を6系統それぞれ${LB_COST}個ささげる。</div>`+
+    `<div class="small">`+GM_SP.map(g=>`${g.n} ${Math.min(gmN(g.sp+'_s5'),LB_COST)}/${LB_COST}`).join('・')+`</div><button style="width:100%;margin-top:4px" ${lbReady()?'':'disabled'} onclick="limitBreak()">限界突破する</button></div>`; }
+// ステータス欄の命中・回避・会心（いちばん奥のエリアの敵が相手）
+function battleRatesHTML(){ const r=spdRatio({t:P.maxArea}), pc=x=>Math.round(x*100)+'%';
+  return `<div class="small">命中 ${pc(hitRate(r))}・回避 ${pc(evaRate(r))}・会心 ${pc(critRate())} <span style="color:#9ab">（${areaName(P.maxArea)}の敵に）</span></div>`; }
 // ============ 冒険：固有ドロップ・図鑑・番人（#8） ============
 // 固有品：エリアの系統（12種。次元の彼方も同じ系統をくり返す）ごとに1つ。1個ごとに対応する値が×1.01（複利・最大999個）
 const MATS=[
-  {n:'四つ葉のクローバー',k:'luk',t:'運'},{n:'森のどんぐり',k:'exp',t:'経験値'},{n:'古代の鉱石',k:'atk',t:'攻撃力'},
-  {n:'砂漠の砂時計',k:'agi',t:'素早さ'},{n:'溶けない氷',k:'def',t:'防御力'},{n:'火竜のうろこ',k:'str',t:'力'},
-  {n:'幽霊船の羅針盤',k:'gold',t:'お金'},{n:'天使の羽根',k:'hp',t:'最大HP'},{n:'魔界の角',k:'int',t:'知力'},
-  {n:'混沌のかけら',k:'drop',t:'能力の実の出やすさ'},{n:'虚無の砂',k:'vit',t:'体力'},{n:'時の歯車',k:'jexp',t:'熟練度'}];
+  {n:'四つ葉のクローバー',k:'luk',t:'LUK'},{n:'森のどんぐり',k:'exp',t:'経験値'},{n:'古代の鉱石',k:'atk',t:'ATK'},
+  {n:'砂漠の砂時計',k:'agi',t:'AGI'},{n:'溶けない氷',k:'def',t:'DEF'},{n:'火竜のうろこ',k:'str',t:'STR'},
+  {n:'幽霊船の羅針盤',k:'dex',t:'DEX'},{n:'天使の羽根',k:'hp',t:'最大HP'},{n:'魔界の角',k:'int',t:'INT'},
+  {n:'混沌のかけら',k:'drop',t:'能力の実の出やすさ'},{n:'虚無の砂',k:'vit',t:'VIT'},{n:'時の歯車',k:'jexp',t:'熟練度'}];
 const MAT_MAX=999, MAT_RATE=.03;
 const matN=i=>(P&&P.mats&&P.mats[i])||0;
 const matMul=k=>{ const i=MATS.findIndex(m=>m.k===k); return i<0?1:Math.pow(1.01,matN(i)); };
@@ -929,7 +1005,7 @@ const gmN=k=>(P.gm&&P.gm[k])||0;
 function gmAdd(k,n,L){ P.gm=P.gm||{}; P.gmF=P.gmF||{}; const first=!P.gmF[k]; P.gm[k]=gmN(k)+n; P.gmF[k]=(P.gmF[k]||0)+n;
   gCollectCheck(L);
   const star=k.includes('_s'); if(L) L.push(`<span class="${star?'mir':k.endsWith('_r')?'c':'g'}">${star?'★ ':''}素材「${gmName(k)}」を手に入れた！${first?'（初めて）':''}</span>`); }
-// 出やすさ：運・実りの首飾り・果実酒・職業（盗賊系など）・固有品。最大×4
+// 出やすさ：LUK・実りの首飾り・果実酒・職業（盗賊系など）・固有品。最大×4
 const gmMul=()=>{ const lk=st('luk'); return Math.min(GM_MUL_MAX,(1+lk/(lk+1000))*ps('drop',1)*matMul('drop')*drinkMul('drop'))*gDropMul(); };
 // 節目の層（第50・100・…・300層）は、その系統だけが出る「巣」
 const nestOf=t=>{ if(t<AREAS.length) return null; const n=layerOf(t); return n%50===0?GM_SP.find(g=>g.nest===n)||null:null; };
@@ -965,7 +1041,7 @@ function synth(p){ const isW=p==='wpn', cur=isW?P.wpn:P.arm, i=cur+1; if(cur<SHO
 function synthHTML(isW){ const cur=isW?P.wpn:P.arm, i=cur+1; if(cur<SHOP_MAX||i>GEAR_MAX) return '';
   const need=synthNeed(isW,i), pr=synthPrice(isW,i), ok=synthOk(isW,i)&&P.gold>=pr, g=gmSp(synthSp(isW));
   return `<div class="win" style="margin:6px 0;padding:6px 8px"><div class="y">鍛冶屋：合成で強化</div><div class="small">ここから先は、素材とお金で1段ずつ鍛える。${isW?`武器の種類（${synthWType()}）`:`防具の型（${armStyle()}）`}では<b>${g.n}</b>の素材を使う${i>=GEAR_MAX?'（伝説は6系統の★5を1つずつ）':''}。</div>`+
-    `<div class="row"><div>${i>=GEAR_MAX?'<span class="mir">？？？</span>':itemName(isW?WPN:ARM,i)}<div class="small">${isW?'攻撃':'防御'}+${fmt(isW?wpnPow(i):armPow(i))}　${fmt(pr)}G<br>`+
+    `<div class="row"><div>${i>=GEAR_MAX?'<span class="mir">？？？</span>':itemName(isW?WPN:ARM,i)}<div class="small">${isW?'ATK':'DEF'}+${fmt(isW?wpnPow(i):armPow(i))}　${fmt(pr)}G<br>`+
     need.map(([k,n])=>`<span class="${gmN(k)>=n?'g':'o'}">${gmName(k)} ${gmN(k)}/${n}</span>`).join('　')+`</div></div><button ${ok?'':'disabled'} onclick="synth('${isW?'wpn':'arm'}')">合成</button></div></div>`; }
 
 // ---- ギルド（#21） ----
@@ -1021,7 +1097,7 @@ function gReward(q){ const m=(q.ty==='firstjob'?3:q.ty==='appraise'?10:q.ty==='d
   return {gold:Math.floor(enemyStats(P.maxArea).gold*20*M), jexp:Math.floor(50*M*gJexpMul()), fruit:Math.max(1,Math.floor(rnd(1,4)*(P.maxArea+1)*M)), pts:Math.round((1+q.rk)*(q.ty==='appraise'?3:1)*(q.sp?2:1))}; }
 function gReport(i){ const g=gState(), q=g.board[i]; if(!q||!gDoneQ(q)||P.job==='neet') return; const R=gReward(q), L=[];
   if(q.ty==='deliver') P.gm[q.k]-=q.goal;
-  const r0=gRank(); P.gold+=R.gold; P.earned=(P.earned||0)+R.gold; gainJob(R.jexp,L); const k=KEYS[Math.floor(Math.random()*5)]; fruitGet(k,R.fruit); g.pts+=R.pts; g.done=(g.done||0)+1; gBonusMat(q,L); if(gRank()>r0) gRankUp(L);
+  const r0=gRank(); P.gold+=R.gold; P.earned=(P.earned||0)+R.gold; gainJob(R.jexp,L); const k=KEYS[Math.floor(Math.random()*KEYS.length)]; fruitGet(k,R.fruit); g.pts+=R.pts; g.done=(g.done||0)+1; gBonusMat(q,L); if(gRank()>r0) gRankUp(L);
   g.board.splice(i,1); gFill();
   gMsg=`<div class="g">依頼を達成した！ ${fmt(R.gold)}G・熟練度+${fmt(R.jexp)}・${KN[k]}の実（+${fmt(R.fruit)}）・ギルドポイント+${R.pts}</div>`+(gRank()>r0?`<div class="mir">★ ギルドランクが${G_RANKS[gRank()]}に上がった！ ★</div>`:'')+L.join('');
   save(); renderStatus(); panel('area','guild'); }
@@ -1096,7 +1172,7 @@ const gmUse=k=>{ const [sp,t]=k.split('_'), ws=Object.keys(W_SP).filter(w=>W_SP[
   return `合成：${who}（${rng}）／ギルドへの${t.startsWith('s')?'鑑定':'納品'}`; };
 const gmDesc=k=>{ const [sp,t]=k.split('_'); const d=GM_DESC[sp]; return d?d[t==='n'?0:t==='r'?1:2]+(t.startsWith('s')?`（★${t.slice(1)}：${['かすかに','ほのかに','はっきりと','まばゆく','目もくらむほど'][+t.slice(1)-1]}輝いている）`:''):''; };
 const gmHint=k=>{ const [sp,t]=k.split('_'), g=gmSp(sp); return t.startsWith('s')?`${g.n}の巣（50層ごとの節目の層）で見つかるらしい`:`${g.n}系の敵が${t==='r'?'まれに':''}落とすらしい`; };
-const MAT_DESC=['四つ葉のクローバー。拾うたびに、少しずつ運が向いてくる','森のどんぐり。かじると、なぜか経験がにじみ出す','古代の鉱石。武器に混ぜると攻撃が鋭くなる','砂漠の砂時計。落ちる砂がゆっくりになり、身のこなしが軽くなる','溶けない氷。身にまとえば守りが固くなる','火竜のうろこ。握ると力がみなぎる','幽霊船の羅針盤。なぜか金目のものの方角を指す','天使の羽根。そばにあるだけで体が丈夫になる','魔界の角。知恵が冴えわたる','混沌のかけら。能力の実が、よく実るようになる','虚無の砂。体の芯が強くなる','時の歯車。修行の時間が、少しだけ長くなる'];
+const MAT_DESC=['四つ葉のクローバー。拾うたびに、少しずつ運が向いてくる','森のどんぐり。かじると、なぜか経験がにじみ出す','古代の鉱石。武器に混ぜると攻撃が鋭くなる','砂漠の砂時計。落ちる砂がゆっくりになり、身のこなしが軽くなる','溶けない氷。身にまとえば守りが固くなる','火竜のうろこ。握るとSTRがみなぎる','幽霊船の羅針盤。なぜか金目のものの方角を指す','天使の羽根。そばにあるだけで体が丈夫になる','魔界の角。知恵が冴えわたる','混沌のかけら。能力の実が、よく実るようになる','虚無の砂。体の芯が強くなる','時の歯車。修行の時間が、少しだけ長くなる'];
 let itemTab='mat', bookTab='mon';
 function itemRow(found,name,count,desc,use,hint){ return found?`<div class="row"><div style="flex:1;min-width:0">${name}${count!==''?` <span class="small y">${count}</span>`:''}<div class="small">${desc}</div>${use?`<div class="small c">${use}</div>`:''}</div></div>`
   :`<div class="row"><div style="opacity:.55">？？？<div class="small">${hint||'まだ見つけていない'}</div></div></div>`; }
@@ -1117,7 +1193,7 @@ function synthIntro(){ if(P.pops&&P.pops.synth) return; P.pops=P.pops||{}; P.pop
   showPopup({title:'<span class="y">ここから先は鍛冶屋の仕事</span>',body:`<div class="small">武器屋・防具屋で買えるのはここまで。この先は、<b>敵が落とす素材</b>とお金を使って、<b>鍛冶屋で合成</b>して1段ずつ鍛える。<br><br>今の${myWType()}には<b>${g.n}系</b>の素材がいる（武器の種類で変わる）。${g.n}系の敵を倒して「${gmName(g.sp+'_n')}」を集めよう。<br><br>合成は武器屋・防具屋の画面に出る。集まり具合は冒険の画面と、アイテム図鑑で見られる。</div>`}); }
 // 節目の層（巣）に初めて着いたら（#67）
 function nestIntro(t){ const ne=nestOf(t); if(!ne) return; P.pops=P.pops||{}; const k='nest'+ne.nest; if(P.pops[k]) return; P.pops[k]=true;
-  showPopup({title:`<span class="y">${ne.n}の巣</span>`,body:`<div class="small">この層には${ne.n}系の魔物しかいない。ここでしか拾えない<b>★の素材</b>（★1〜★5）が眠っている。<br><br>★の素材は合成の上の段で必要になる。運・実りの首飾り・果実酒・ギルドランクで見つかりやすくなる。しばらく出なくても、いつかは必ず出る（天井）。</div>`}); }
+  showPopup({title:`<span class="y">${ne.n}の巣</span>`,body:`<div class="small">この層には${ne.n}系の魔物しかいない。ここでしか拾えない<b>★の素材</b>（★1〜★5）が眠っている。<br><br>★の素材は合成の上の段で必要になる。LUK・実りの首飾り・果実酒・ギルドランクで見つかりやすくなる。しばらく出なくても、いつかは必ず出る（天井）。</div>`}); }
 // ギルドが開いたら（#67）
 function guildIntro(){ if(P.pops&&P.pops.guild) return; P.pops=P.pops||{}; P.pops.guild=true;
   showPopup({title:'<span class="y">冒険者ギルドが開いた！</span>',body:'<div class="small">冒険の画面に「ギルド」ができた。依頼をこなすと、お金・熟練度・能力の実がもらえ、ランクが上がる。ランクが上がるほど恩恵が増える（ギルドの画面の「ランクの恩恵」）。<br><br>まずは最初の依頼を受けてみよう。</div>'}); }
@@ -1243,12 +1319,14 @@ function renderStatus(){
        : `<div><div class="small">JLv${j.lv}/${JMAX}　${j.exp}/${jneed(j.lv)}</div><div class="bar"><i style="width:${j.exp/jneed(j.lv)*100}%;background:linear-gradient(90deg,#7de0ff,#a5f)"></i></div></div>`;
     h+=`</div>`; }
   h+=`<div class="grid2 small"><div>HP <span class="g">${fmt(maxhp())}</span>　MP <span class="c">${fmt(maxmp())}</span></div><div>所持金 <span class="y">${fmt(P.gold)}G</span></div>`;
-  h+=`<div>攻撃 <span class="r">${fmt(atk())}</span></div><div>防御 <span class="c">${fmt(def())}</span></div></div>`;
+  h+=`<div>ATK <span class="r">${fmt(atk())}</span></div><div>DEF <span class="c">${fmt(def())}</span></div></div>`;
   if(P.pts>0) h+=`<button class="y" style="width:100%;margin:4px 0;padding:5px" onclick="panel('stat')">能力を振る（残り ${fmt(P.pts)} pt）</button>`;
   // くわしいステータスは、押すと開く（#46）。開いたかどうかは覚えておく
   h+=`<details ${stOpen?'open':''} ontoggle="stOpen=this.open" style="margin-top:2px"><summary class="small" style="color:#9ab">くわしいステータス（能力・装備・装飾品）</summary>`;
   // 能力は「基礎値（+上乗せ）」（#54）。計算式はヘルプに
   h+=`<div class="grid small" style="margin-top:4px">`+KEYS.map(k=>{ const b=P.base[k], v=st(k); return `<div>${KN[k]} ${fmt(b)}<span class="g">（+${fmt(Math.max(0,v-b))}）</span></div>`; }).join('')+`</div>`;
+  h+=`<div class="small">MATK <span class="r">${fmt(matk())}</span>　MDEF <span class="c">${fmt(mdef())}</span></div>`;
+  h+=battleRatesHTML();
   h+=`<div class="small">武器：${gearHTML(true)}　防具：${gearHTML(false)}</div>`;
   if(elemOpen()) h+=`<div class="small">攻撃 ${elTag(myAtkEl())}・${isMagicJob(P.job)?'魔法':P.job==='spellblade'?myWType()+'＋魔法':myWType()+'（'+WTYPES[myWType()]+'）'}${prefMul()>1?' <span class="g">得意×1.5</span>':''}　守り ${elTag(myArmEl())}　魔攻 ${fmt(matk())}　魔防 ${fmt(mdef())}</div>`;
   { const l=accEqs(); let txt;
@@ -1261,7 +1339,7 @@ function renderStatus(){
   if(P.blessed[P.job]) h+=`<div class="small mir">★ 奇跡の加護を受けている ★</div>`;
   if(persona()) h+=`<div class="small mir">🍶 ${PERSONA[P.persona.mode].n}：${PERSONA[P.persona.mode].d}（あと${P.persona.left}回）</div>`;
   else if(activeDrinks().length){ activeDrinks().forEach(({d,D})=>h+=`<div class="small o">🍺 ${D.n}：${D.d}（あと${d.left}戦）</div>`); activeCocktails().forEach(c=>h+=`<div class="small mir">🍸 ${c.n}</div>`); }
-  if(P.hangover>0) h+=`<div class="small r">二日酔い：攻撃力半分（あと${P.hangover}戦）</div>`;
+  if(P.hangover>0) h+=`<div class="small r">二日酔い：ATK半分（あと${P.hangover}戦）</div>`;
   $('#status').innerHTML=h;
   setTimeout(accSlotCheck,0);
   if(P.maxArea===0&&!P.tutDone) setTimeout(tutCheck,0);
@@ -1320,14 +1398,14 @@ function panel(p,arg){
     h+=`<div class="small">目安Lv${c.lv} / 危険度 ${danger(c)}</div><div class="small">HP ${fmt(c.hp)}　攻撃 ${fmt(c.atk)}　防御 ${fmt(c.def)}</div><div class="small">撃破した王者：${P.champ}人</div>`;
   } else if(p==='wpn'||p==='arm'){
     const isW=p==='wpn', cur=isW?P.wpn:P.arm;
-    h=shopTabs(p)+`<h2>${isW?'武器屋':'防具屋'}</h2><div class="small">装備中：${gearHTML(isW)}（${(isW?neetW():neetA())?(isW?'攻撃力×'+fmt(neetWAtk()):'被ダメージ1/1000'):(isW?'攻撃':'防御')+'+'+fmt(isW?wpnPow(cur):armPow(cur))}）</div>`+forgeHTML(isW);
-    if(isW?neetW():neetA()){ h+=`<div class="mir" style="margin:8px 0">★ 無職専用の${isW?'武器':'防具'}を装備中 ★</div><div class="small">${isW?NEET_W+`：攻撃力×${NEET_W_ATK[naiteiN()]}、会心の一撃のダメージ×${neetWCrit()}（内定${naiteiN()}回${naiteiN()<NAITEI_MAX?`。次の内定で攻撃力×${NEET_W_ATK[naiteiN()+1]}・会心×${NEET_W_CRIT[naiteiN()+1]}`:'・最大'}）。`:NEET_A+'：受けるダメージ1/1000、HP×100。'}無職でいる間だけ、伝説装備の上位版として働く。</div>`+synthHTML(isW); el.innerHTML=h; return; }
-    if(cur>=GEAR_MAX){ h+=`<div class="mir" style="margin:8px 0">★ 伝説の${isW?(WNOUN[myWType()]||WNOUN.剣)[0]:(ANOUN[armStyle()]||ANOUN.鎧)[0]}を装備中 ★</div><div class="small">${isW?'攻撃力×1万、会心の一撃のダメージがさらに×10。':'防御力×1万、受けるダメージ1/10。'}この先に、もう装備は存在しない。</div>`; el.innerHTML=h; return; }
+    h=shopTabs(p)+`<h2>${isW?'武器屋':'防具屋'}</h2><div class="small">装備中：${gearHTML(isW)}（${(isW?neetW():neetA())?(isW?'ATK×'+fmt(neetWAtk()):'被ダメージ1/1000'):(isW?'ATK':'DEF')+'+'+fmt(isW?wpnPow(cur):armPow(cur))}）</div>`+forgeHTML(isW);
+    if(isW?neetW():neetA()){ h+=`<div class="mir" style="margin:8px 0">★ 無職専用の${isW?'武器':'防具'}を装備中 ★</div><div class="small">${isW?NEET_W+`：ATK×${NEET_W_ATK[naiteiN()]}、会心の一撃のダメージ×${neetWCrit()}（内定${naiteiN()}回${naiteiN()<NAITEI_MAX?`。次の内定でATK×${NEET_W_ATK[naiteiN()+1]}・会心×${NEET_W_CRIT[naiteiN()+1]}`:'・最大'}）。`:NEET_A+'：受けるダメージ1/1000、HP×100。'}無職でいる間だけ、伝説装備の上位版として働く。</div>`+synthHTML(isW); el.innerHTML=h; return; }
+    if(cur>=GEAR_MAX){ h+=`<div class="mir" style="margin:8px 0">★ 伝説の${isW?(WNOUN[myWType()]||WNOUN.剣)[0]:(ANOUN[armStyle()]||ANOUN.鎧)[0]}を装備中 ★</div><div class="small">${isW?'ATK×1万、会心の一撃のダメージがさらに×10。':'DEF×1万、受けるダメージ1/10。'}この先に、もう装備は存在しない。</div>`; el.innerHTML=h; return; }
     { const mx=maxTier(isW); if(mx>cur) h+=`<button class="y" style="width:100%;margin:6px 0" onclick="buy('${p}',${mx})">買えるだけ買う → ${mx>=GEAR_MAX?(isW?wName(20):aName(20))+'+99 → ？？？':itemName(isW?WPN:ARM,mx)}（${fmt(isW?wpnPrice(mx):armPrice(mx))}G）</button>`; }
     h+=synthHTML(isW);
     if(cur<SHOP_MAX) h+=`<div class="small" style="color:#9ab">武器屋・防具屋で買えるのは${isW?wName(SHOP_MAX):aName(SHOP_MAX)}まで。その先は鍛冶屋で素材と合成する。</div>`;
     for(let i=cur+1;i<=Math.min(cur+3,SHOP_MAX);i++){const pr=isW?wpnPrice(i):armPrice(i);
-      h+=`<div class="row"><div>${i>=GEAR_MAX?`${isW?wName(20):aName(20)}+99 <span class="mir">→ ？？？</span>`:itemName(isW?WPN:ARM,i)}<div class="small">${isW?'攻撃':'防御'}+${fmt(isW?wpnPow(i):armPow(i))}　${fmt(pr)}G</div></div><button ${P.gold<pr?'disabled':''} onclick="buy('${p}',${i})">買う</button></div>`;}
+      h+=`<div class="row"><div>${i>=GEAR_MAX?`${isW?wName(20):aName(20)}+99 <span class="mir">→ ？？？</span>`:itemName(isW?WPN:ARM,i)}<div class="small">${isW?'ATK':'DEF'}+${fmt(isW?wpnPow(i):armPow(i))}　${fmt(pr)}G</div></div><button ${P.gold<pr?'disabled':''} onclick="buy('${p}',${i})">買う</button></div>`;}
   } else if(p==='acc'){
     const eq=accEqList(), cap=accCap();
     h=shopTabs('acc')+`<h2>装飾品屋</h2><div class="small">装備枠は進み具合で増える（どの職業でも同じ）。買うたびに+1強化、最大+${ACC_MAX}。${P.job==='neet'?'<span class="mir">無職は限界突破で+'+ACC_LIMIT+'まで</span>':''}</div>`;
@@ -1353,7 +1431,7 @@ function panel(p,arg){
     h=`<h2>転職所</h2><div class="o">まだ転職所は開いていない。</div><div class="small" style="margin-top:6px">${tutDone()?'冒険の画面の「ギルド」で、最初の依頼を受けてみよう。':'まずは隠居じいさんの「はじまりの手ほどき」をこなそう。'}</div>`;
   } else if(p==='job'){
     if(takashiLock()){ h=`<h2>転職所</h2><div class="o">「たかし、お前はギャンブラーだ。ギャンブラーを極めるまでは、ほかの道はない」</div><div class="small" style="margin-top:6px">ギャンブラーをマスターすると転職できるようになる。（現在 JLv${jl('gambler').lv}/${JMAX}）</div>`; el.innerHTML=h; return; }
-    h=`<h2>転職所</h2><div class="small">ステータスはそのままで、条件を満たした職業ならいつでも転職できます（無料）。中位職は対応する下位職のマスター、上位職は2つの職業のマスターが条件。ジョブレベルは勝つたびに上がり、JLv${JMAX}でマスター。マスターするたびに全能力×1.05（永続）。</div><div class="small">マスター数：${masterCount()}</div><div class="small" style="margin-top:4px">${atkKindTag('warrior')} 武器で攻撃（力などで威力が決まる）。魔法に強い敵には半分　${atkKindTag('mage')} 魔法で攻撃（知力で威力が決まる）。物理に強い敵には半分　${atkKindTag('spellblade')} 両方</div>`;
+    h=`<h2>転職所</h2><div class="small">ステータスはそのままで、条件を満たした職業ならいつでも転職できます（無料）。中位職は対応する下位職のマスター、上位職は2つの職業のマスターが条件。ジョブレベルは勝つたびに上がり、JLv${JMAX}でマスター。マスターするたびに全能力×1.05（永続）。</div><div class="small">マスター数：${masterCount()}</div><div class="small" style="margin-top:4px">${atkKindTag('warrior')} 武器で攻撃（STRなどで威力が決まる）。魔法に強い敵には半分　${atkKindTag('mage')} 魔法で攻撃（INTで威力が決まる）。物理に強い敵には半分　${atkKindTag('spellblade')} 両方</div>`;
     // 格ごとのタブ（#30）。開いたときは今の職業の格。行は短くして、詳しい中身は折りたたむ
     const jobDetail=(k,j)=>`${j.d}${jobModText(k)?`<br><span class="c">補正：${jobModText(k)}</span>`:''}<br>攻撃：${isMagicJob(k)?'魔法':k==='spellblade'?'物理＋魔法':'物理'}${JOB_WT[k]?'・得意な武器 '+JOB_WT[k]:''}${JOB_SECRETS[k]&&JOB_SECRETS[k].hint?`<br><span class="o">…${JOB_SECRETS[k].hint}</span>`:''}${jobSecretFound(k)?` <span class="mir">【秘密：${JOB_SECRETS[k].n}】</span>`:''}<br>メイン：${j.main==='best'?'一番高い能力':KN[j.main]}／技：${j.skill.n}<br><span class="y">マスター報酬：${j.main==='best'?'全能力×1.1':KN[j.main]+'×1.2'}</span>　<span class="c">${P.kiwami&&P.kiwami[k]?'極意':`極意まで あと${fmt(kiwamiLeft(k))}戦`}</span>${j.rank>0&&j.rank<3?`<br><span class="o">攻撃・防御・HP ×${RMUL[j.rank]}</span>`:''}`;
     const jlvTag=k=>isMaster(k)?'<span class="mir">MASTER</span>':'JLv'+jl(k).lv;
@@ -1377,15 +1455,20 @@ function panel(p,arg){
       ・この倍率は、転生のたびに<b>掛け算で重なる</b>（×6で3回転生すると6×6×6＝×216）。今は ×${fmtMul(P.rebMul)}、次の転生で ×${fmtMul(P.rebMul*mul)} になる。<br>
       ・「1.10e157」のような表記は「1.10×10の157乗」（1.10のあとにゼロが157個）。無量大数より大きい数はこの書き方になる。<br>
       ・能力振りの画面に出る数字は、倍率を掛ける前の<b>基礎値</b>なので、転生しても変わらない。実際の能力は「基礎値×転生倍率×…」で、ステータス欄に出ている（今の${KN[mainKey()]}：基礎 ${fmt(P.base[mainKey()])} → 実際 ${fmt(st(mainKey()))}）。<br>
-      ・転生倍率は能力だけでなく、<b>武器・防具の強さにも掛かる</b>。攻撃力の「Lvの補正」は、これまでの最高Lv（Lv${fmt(lvB())}）で計算するので、転生してLv1に戻っても弱くならない。
+      ・転生倍率は能力だけでなく、<b>武器・防具の強さにも掛かる</b>。ATKの「Lvの補正」は、これまでの最高Lv（Lv${fmt(lvB())}）で計算するので、転生してLv1に戻っても弱くならない。
       </div></details>`;
     if(rebNote){ h=`<div class="mir" style="margin:6px 0">★ 転生した！（${P.reb}回目） ★</div>${rebTable(rebNote)}${rebGift?`<div class="mir small">★ ${rebGift}</div>`:''}`+h; rebNote=null; rebGift=''; }
     h+=`<div class="small" style="margin-top:8px">転生すると、こう変わる：</div>${rebTable(rebPreview())}`;
     h+=`<button style="width:100%;margin-top:8px" ${P.lv<rebReq()?'disabled':''} onclick="rebirth()">転生する</button>`;
+    h+=lbHTML();
+    if(allocSum()) h+=`<div class="row" style="margin-top:8px"><div class="small">能力ポイントの振り直し（振った${fmt(allocSum())}ptをすべて戻す）</div><button ${P.gold<respecPrice()?'disabled':''} onclick="respec()">${fmt(respecPrice())}G</button></div>`;
   } else if(p==='stat'){
     h=`<h2>能力振り（残り ${P.pts}pt）</h2><button class="y" style="width:100%;margin-bottom:6px" ${P.pts<1?'disabled':''} onclick="addPt(mainKey(),P.pts)">おまかせ：${KN[mainKey()]}（${JOBS[P.job].n}の得意な能力）に全部振る</button>`;
-    KEYS.forEach(k=>{h+=`<div class="row"><div>${KN[k]} <span class="small">基礎 ${fmt(P.base[k])}</span></div><div><button ${P.pts<1?'disabled':''} onclick="addPt('${k}',1)">+1</button> <button ${P.pts<1?'disabled':''} onclick="addPt('${k}',${P.pts})">+全部</button></div></div>`});
-    h+=`<div class="small" style="margin-top:6px">レベルが上がるたびに3pt。メイン能力：<span class="y">${KN[mainKey()]}</span>（攻撃力に直結）</div><div class="small" style="color:#9ab">ここの数字は、転生倍率などを掛ける前の基礎値。転生しても変わらない（実際の能力はステータス欄）。</div>`+frHTML();
+    const sty=allocStyle();
+    KEYS.forEach(k=>{ const n=allocN(k), cap=ptCapped(k); h+=`<div class="row"><div>${KN[k]} <span class="small">振った ${fmt(n)}pt → <span class="g">×${fmtMul(ptMul(k))}</span>${cap?' <span class="o">（限界）</span>':''}</span><div class="small" style="color:#9ab">基礎 ${fmt(P.base[k])}</div></div><div><button ${P.pts<1||cap?'disabled':''} onclick="addPt('${k}',1)">+1</button> <button ${P.pts<1||cap?'disabled':''} onclick="addPt('${k}',${P.pts})">+全部</button></div></div>`});
+    h+=`<div class="small" style="margin-top:6px">レベルが上がるたびに3pt。振ったポイントで、その能力が ×(1＋振った数÷100)² になる${limitOn()?'':`（1つの能力につき${fmt(PT_CAP)}ptまで）`}。</div>`;
+    h+=`<div class="small">振り方のボーナス（合計${fmt(PT_BONUS_MIN)}pt以上）：${sty.extreme?`<span class="mir">${KN[sty.extreme]}の極振り</span>（${KN[sty.extreme]}の効き目×1.5）`:sty.allround?'<span class="mir">万能</span>（全能力×1.5・効き目+20%）':'<span style="color:#9ab">1つに6割以上で「極振り」、6つとも12%以上で「万能」</span>'}</div>`;
+    h+=`<div class="small" style="color:#9ab">メイン能力：<span class="y">${KN[mainKey()]}</span>（ATKに掛かる）。LUK・AGI・DEXは、6つの能力の中での割合で効く。</div>`+frHTML();
   } else if(p==='log'){
     if(arg!==undefined && LOGS[arg]){
       const l=LOGS[arg];
@@ -1433,10 +1516,17 @@ function buy(p,i){ if(i>SHOP_MAX) return; const wasW=legW(), wasA=legA();const p
 function buyAcc(k){const lv=accLv(k), pr=accPrice(lv); if(lv>=accCap()||P.gold<pr) return; P.gold-=pr; P.acc=P.acc||{}; accEqList(); P.acc[k]=lv+1; const l=accEqList(); if(!l.includes(k)&&!inAmu(k)&&accEqCount(accCatOf(k))<accSlotsC(accCatOf(k))) l.push(k); save(); renderStatus(); panel('acc');}
 function eqAcc(k){ const am=String(k).startsWith('am'); if(am?!amuOf(k):(!accLv(k)||inAmu(k))) return; const l=accEqList(), i=l.indexOf(k); if(i>=0) l.splice(i,1); else if(accEqCount(accCatOf(k))<accSlotsC(accCatOf(k))) l.push(k); save(); renderStatus(); panel('acc');}
 function changeJob(k){if(!canJob(k))return; if(P.job!==k) P.casBeg=null; P.job=k; trimAcc(); save(); renderStatus(); panel('job');}
-function addPt(k,n){n=Math.min(n,P.pts); if(n>0) P.ptsUsed=true; P.base[k]+=n; P.pts-=n; save(); renderStatus(); panel('stat');}
+// 能力ポイント（#9）：基礎値には足さず、能力ごとに数える。上限（限界突破の前）に届いたら知らせる
+function addPt(k,n){ if(!limitOn()) n=Math.min(n,PT_CAP-allocN(k)); n=Math.min(n,P.pts); if(n<=0){ if(ptCapped(k)) ptCapPopup(k); return; }
+  P.ptsUsed=true; P.alloc=P.alloc||{}; P.alloc[k]=allocN(k)+n; P.pts-=n; save(); renderStatus(); panel('stat'); if(ptCapped(k)) ptCapPopup(k); }
+function ptCapPopup(k){ P.pops=P.pops||{}; if(P.pops['cap_'+k]) return; P.pops['cap_'+k]=true; save();
+  showPopup({title:'<span class="o">これ以上は伸ばせない…</span>',body:`<div class="small">${KN[k]}は限界まで鍛えられた（${fmt(PT_CAP)}pt）。今のままでは、これ以上は伸ばせないようだ。<br><br>…酒場で、限界を越える方法を知っている人がいるかもしれない。</div>`}); }
+// 振り直し（#9）：転生の祭壇で。最深エリアの敵のお金×100戦分
+const respecPrice=()=>Math.floor(enemyStats(P.maxArea).gold*100);
+function respec(){ const s=allocSum(); if(!s||P.gold<respecPrice()) return; P.gold-=respecPrice(); P.pts+=s; P.alloc={}; save(); renderStatus(); panel('stat'); }
 // 転生した直後に出す「何がどれだけ上がったか」
 let rebNote=null, rebGift='';
-const rebRows=()=>[[KN[mainKey()],st(mainKey())],['攻撃力',isMagicJob(P.job)?matk():atk()],['防御力',def()],['最大HP',maxhp()]];
+const rebRows=()=>[[KN[mainKey()],st(mainKey())],['ATK',isMagicJob(P.job)?matk():atk()],['DEF',def()],['最大HP',maxhp()]];
 function rebPreview(){ const m=P.rebMul, lv=P.lv; P.maxLv=Math.max(P.maxLv||0,P.lv); const a=rebRows(); P.rebMul=capN(m*rebStep(lv)); const b=rebRows(); P.rebMul=m; return a.map((r,i)=>[r[0],r[1],b[i][1]]); }
 const rebTable=rows=>rows.map(([n,a,b])=>`<div class="row small"><div>${n}</div><div>${fmt(a)} → <span class="g">${fmt(b)}</span>${a>0&&isFinite(b/a)?`（×${fmtMul(b/a)}）`:''}</div></div>`).join('');
 function rebirth(){if(P.lv<rebReq())return; const rows=rebPreview(); P.rebMul=capN(P.rebMul*rebStep()); rebNote=rows; P.reb++; P.lv=1; P.exp=0; P.secret={}; P.blessed={}; rebGift=gRebirthGift(); save(); renderStatus(); panel('reb');}
@@ -1839,7 +1929,7 @@ const PRIZES=[
   {id:'npack', tier:'cheap', n:'ふつう素材の詰め合わせ', c:20, d:'選んだ系統のふつうの素材を5個', sel:'sp', give:()=>{ gmAdd(prSp+'_n',5); return `${gmName(prSp+'_n')}×5`; }},
   {id:'free',  tier:'cheap', n:'一杯無料券',          c:25,  d:'酒場の好きなお酒を1杯（選んでから交換）', sel:'drink', give:()=>prizeDrink(prDrink)},
   {id:'wine',  tier:'cheap', n:'赤ワインの引換券',    c:30,  d:'その場で赤ワインを1杯',   give:()=>prizeDrink('wine')},
-  {id:'fbag',  tier:'cheap', n:'実の福袋',            c:30,  d:'ランダムな能力の実を3個', give:()=>{ const t=[0,1,2].map(()=>{ const k=KEYS[Math.floor(Math.random()*5)], v=frV(); fruitGet(k,v); return `${KN[k]}の実(+${v})`; }); return t.join('・'); }},
+  {id:'fbag',  tier:'cheap', n:'実の福袋',            c:30,  d:'ランダムな能力の実を3個', give:()=>{ const t=[0,1,2].map(()=>{ const k=KEYS[Math.floor(Math.random()*KEYS.length)], v=frV(); fruitGet(k,v); return `${KN[k]}の実(+${v})`; }); return t.join('・'); }},
   {id:'forge', tier:'cheap', n:'付け直し無料券',      c:40,  d:'次の1回、属性・武器の種類の付け直しが無料', ok:()=>!P.forgeFree, give:()=>{ P.forgeFree=true; return '次の付け直しが無料になった'; }},
   {id:'t1',    tier:'cheap', n:'称号「ギャンブル好き」', c:50,   d:'名前の横に出る称号', title:'ギャンブル好き'},
   {id:'fire',  tier:'cheap', n:'火酒の引換券',        c:60,  d:'その場で火酒を1杯',       give:()=>prizeDrink('fire')},
@@ -2138,6 +2228,7 @@ function buildAch(){
   [5,10].forEach(v=>A.push(T('run'+v,'ギャンブル',`${v}連勝`,`ギャンブルで${v}連勝した`,()=>(P.casBestRun||0)>=v)));
   A.push(T('title3','ギャンブル','賭場の主','称号「賭場の主」を手に入れた',()=>!!(P.titles&&P.titles['賭場の主'])));
   A.push(T('final','冒険','インフレの果て','桁の神を倒した',()=>!!(P.final&&P.final.cleared)));
+  A.push(T('limit','冒険','限界突破','★5の素材をささげて、限界を越えた',()=>!!P.limitBreak));
   [[2,'桁の向こう側'],[5,'桁の神殺し'],[10,'桁を超えた者']].forEach(([v,n])=>A.push(T('fin'+v,'冒険',n,`桁の神の第${v}形態を倒した`,()=>!!(P.final&&(P.final.best||0)>=v))));
   A.push(T('neetWA','装備','最強の無職','無職専用の武器と防具をそろえた',()=>!!(P.neetW&&P.neetA)));
   A.push(T('areaDone','冒険','完全踏破','次元の果て（第300層）を踏破した',()=>!!P.areaDone));
@@ -2217,7 +2308,7 @@ function achHTML(){
 const DRINKS=[
  {id:'ale', n:'エール',   d:'経験値×1.5', left:500, k:'exp',  v:1.5, price:20},
  {id:'wine',n:'赤ワイン', d:'お金×2',     left:500, k:'gold', v:2,   price:20},
- {id:'fire',n:'火酒',     d:'攻撃力×3',   left:400, k:'atk',  v:3,   price:30},
+ {id:'fire',n:'火酒',     d:'ATK×3',   left:400, k:'atk',  v:3,   price:30},
  {id:'miki',n:'神酒',     d:'奇跡率+10%', left:200, k:'mir',  v:.1,  price:400},
  // お酒でしか得られない効果（#10 案3）
  {id:'shoku',n:'職人の地酒', d:'熟練度（ジョブ経験値）×2', left:500, k:'jexp', v:2, price:60, when:()=>P.maxArea>=4, hint:'4つ目のエリアに着くと'},
@@ -2232,7 +2323,7 @@ const DRINKS=[
  // 後半向けのお酒（#10 案2）
  {id:'koshu',n:'古酒',       d:'経験値×10', left:300, k:'exp',  v:10,  price:300, when:()=>P.maxArea>=12, hint:'次元の彼方に着くと'},
  {id:'ougon',n:'黄金酒',     d:'お金×100',  left:300, k:'gold', v:100, price:300, when:()=>P.maxArea>=40, hint:'次元の彼方 第29層に着くと'},
- {id:'ryu',  n:'竜殺し',     d:'攻撃力×100', left:200, k:'atk',  v:100, price:500, when:()=>P.maxArea>=60, hint:'次元の彼方 第49層に着くと'},
+ {id:'ryu',  n:'竜殺し',     d:'ATK×100', left:200, k:'atk',  v:100, price:500, when:()=>P.maxArea>=60, hint:'次元の彼方 第49層に着くと'},
  {id:'keta', n:'桁の酒',     d:'全能力×1000。ただし切れたあと20戦、ひどい二日酔い', left:100, k:'all', v:1000, price:3000, hang:20, when:()=>P.reb>=30, hint:'転生30回で'},
 ];
 // 酒豪Lv：飲んだ杯数で上がる。効き目が強く・長くなり、二日酔いと記憶が飛ぶのが減る（#10 案4）
@@ -2252,7 +2343,7 @@ const drinkOn=k=>{ const a=activeDrinks().find(x=>x.D.k===k); return a?a.D:null;
 const drinkLeft=k=>{ const a=activeDrinks().find(x=>x.D.k===k); return a?a.d.left:0; };
 const COCKTAILS=[
  {id:'hh',  n:'ハーフ＆ハーフ',   a:'ale',   b:'wine',  k:{exp:2,gold:2},   d:'経験値・お金がさらに×2'},
- {id:'df',  n:'ドラゴンファイア', a:'fire',  b:'ryu',   k:{atk:10},        d:'攻撃力がさらに×10'},
+ {id:'df',  n:'ドラゴンファイア', a:'fire',  b:'ryu',   k:{atk:10},        d:'ATKがさらに×10'},
  {id:'sk',  n:'職人魂',           a:'shoku', b:'shuren',k:{jexp:2},        d:'熟練度がさらに×2'},
  {id:'tk',  n:'天の果実',         a:'kaji',  b:'miki',  k:{drop:2,mir:.05},d:'能力の実がさらに×2・奇跡率+5%'},
  {id:'cj',  n:'長者の宴',         a:'koshu', b:'ougon', k:{exp:10,gold:10},d:'経験値・お金がさらに×10'},
@@ -2267,7 +2358,7 @@ function drinkMul(k){ let m=k==='mir'?0:1;
 function drinkEff(D){ if(D.k==='mir') return D.d; if(D.k==='cas'||D.k==='train'||D.k==='forge'||D.k==='nohang'||D.k==='nostat') return D.d;
   const v=sakePow(D.v), lv=sakeLv(); return lv?D.d.replace(/×[\d.]+/,'×'+fmtMul(v))+`（酒豪Lv${lv}）`:D.d; }
 // 酔いどれたかし（第二人格）
-const PERSONA={battle:{n:'酔いどれたかし（戦闘）',left:50,d:'攻撃力×10'},gamble:{n:'酔いどれたかし（博打）',left:30,d:'スロットは設定6、ハイ&ローの引き分けも勝ち'}};
+const PERSONA={battle:{n:'酔いどれたかし（戦闘）',left:50,d:'ATK×10'},gamble:{n:'酔いどれたかし（博打）',left:30,d:'スロットは設定6、ハイ&ローの引き分けも勝ち'}};
 const persona=m=>!!(P.persona&&P.persona.left>0&&(!m||P.persona.mode===m));
 const DRUNK_LINES=['「おぉ？ やんのかコラァ！」','「ひっく…まとめてかかってこいやぁ！」','「たかし様をなめんなよぉ～」','「今日の俺は、ちょっと違うぜぇ…ひっく」'];
 function startPersona(mode,why){ if(!isTakashi()||persona()) return ''; P.persona={mode,left:PERSONA[mode].left}; P.personaN=(P.personaN||0)+1;
@@ -2276,12 +2367,12 @@ function startPersona(mode,why){ if(!isTakashi()||persona()) return ''; P.person
   return `<div class="mir">${head} もう一人のたかしが目を覚ます。【${PERSONA[mode].n}】${PERSONA[mode].d}・あと${PERSONA[mode].left}回</div>`; }
 function personaTick(L,isGamble){ // 戦闘1回・ギャンブル1回ごとに減らす
   let t='';
-  if(P.persona&&P.persona.left>0&&(P.persona.mode==='gamble')===!!isGamble){ P.persona.left--; if(P.persona.left<=0){ P.persona=null; if(drinkOn('nohang')) t='<div class="o">…酔いが覚めた。迎え酒のおかげで頭は痛くない。</div>'; else { P.hangover=5; t='<div class="o">…酔いが覚めた。頭が痛い。二日酔いで次の5戦は攻撃力が半分。</div>'; } } }
+  if(P.persona&&P.persona.left>0&&(P.persona.mode==='gamble')===!!isGamble){ P.persona.left--; if(P.persona.left<=0){ P.persona=null; if(drinkOn('nohang')) t='<div class="o">…酔いが覚めた。迎え酒のおかげで頭は痛くない。</div>'; else { P.hangover=5; t='<div class="o">…酔いが覚めた。頭が痛い。二日酔いで次の5戦はATKが半分。</div>'; } } }
   if(L&&t) L.push(t); return t; }
 function drinkTick(L){
   if(P.hangover>0){ P.hangover--; if(!P.hangover) L.push('<span class="small">二日酔いが治った。</span>'); }
   for(const d of (P.dk||[])){ if(d.left<=0) continue; d.left--; if(d.left<=0){ const D=DRINKS.find(x=>x.id===d.type); L.push(`<span class="small">${D?D.n:'お酒'}の効き目が切れた。</span>`);
-    if(D&&D.hang&&!drinkOn('nohang')){ P.hangover=Math.max(P.hangover||0,Math.max(1,D.hang-sakeLv()*2)); L.push(`<span class="o">…ひどい二日酔いだ。次の${P.hangover}戦は攻撃力が半分。</span>`); } } }
+    if(D&&D.hang&&!drinkOn('nohang')){ P.hangover=Math.max(P.hangover||0,Math.max(1,D.hang-sakeLv()*2)); L.push(`<span class="o">…ひどい二日酔いだ。次の${P.hangover}戦はATKが半分。</span>`); } } }
   if(P.dk) P.dk=P.dk.filter(d=>d.left>0);
   personaTick(L,false);
 }
@@ -2329,6 +2420,7 @@ const RUMORS=[
  {id:'guild',t:'「冒険者ギルドの依頼はこなしておくといいわ。ランクが上がると、酒もショップも安くなるし、素材も出やすくなるらしいわ」',when:()=>P.maxArea>=12,found:()=>P.guild&&gRank()>=4},
  {id:'nest',t:'「50層ごとに、同じ魔物ばかりが巣くう層があるらしいわ。そこでしか拾えない★の素材があるんですって」',when:()=>maxLayer()>=30,found:()=>Object.keys(P.gmF||{}).some(k=>k.includes('_s'))},
  {id:'synth',t:'「鍛冶屋で使う素材は、武器の種類で決まる。杖ならスライム、剣なら竜…剣使いは苦労するわね」',when:()=>P.wpn>=SHOP_MAX,found:()=>(P.synthN||0)>=10},
+ {id:'limit',t:'「どれだけ鍛えても、それ以上伸びない“限界”があるわ。桁の神を3度退けた者は、その先へ行けるって話よ」',when:()=>KEYS.some(k=>ptCapped(k)),found:()=>limitOn()},
  {id:'ailment',t:'「奥へ行くほど、しびれ・毒・石化…厄介な技を使う魔物が増えるわ。装飾品屋に、それぞれを防ぐ品があるって話よ」',when:()=>P.maxArea>=4,found:()=>RES_T.some(t=>accT(t)>0)},
  {id:'mp',t:'「技にはMPがいる。節約の指輪や魔力の泉があれば、長い戦いでも技が尽きないらしいわ」',when:()=>P.maxArea>=6,found:()=>accT('mpsave')+accT('mpregen')>0},
  {id:'forms',t:'「桁の神は、倒しても倒しても姿を変えてよみがえるらしい。十の姿をすべて越えた者がいるとか…」',when:()=>!!(P.final&&P.final.cleared),found:()=>finalDone()},
@@ -2360,11 +2452,11 @@ function buyRumor(){ const pr=rumorPrice(); P.rumors=P.rumors||{};
     save(); panel('bar','rumor'); return; }
   // 4) まだ話せる段階じゃない
   barMsg='<div class="small">マスター「お話ししたいことはあるのだけれど…今は、“まだ”ね…」（お金は取られなかった）</div>'; panel('bar','rumor'); }
-// 飲み比べ：体力と運で勝負。勝つと賞金
+// 飲み比べ：VITとLUKで勝負。勝つと賞金
 const RIVALS=[
  {id:'gen',n:'常連のゲン',t:2},{id:'oba',n:'酒豪のオババ',t:8},{id:'don',n:'樽男ドンゴ',t:20},{id:'uwa',n:'蟒蛇（うわばみ）の姐さん',t:45},{id:'bacchus',n:'酒神バッカス',t:90},
 ];
-// 酒の強さ：冒険の進み具合＋体力と運（桁数）。相手の強さ t とほぼ同じ物差し
+// 酒の強さ：冒険の進み具合＋VITと運（桁数）。相手の強さ t とほぼ同じ物差し
 const tolerance=()=>P.maxArea*.8+Math.log10(st('vit')+st('luk')+10)*1.5+P.lv/100;
 function rivalTol(R){ return R.t; }
 // 飲み比べの相手は順番に出る（#52）：前の相手に一度でも勝つと次が出る。一度勝った相手はずっと出る
@@ -2505,7 +2597,7 @@ function barHTML(){
     const pr=rumorPrice(); h+=`<div class="small">マスターにお金を払うと、まだ知らない噂を1つ教えてくれる。</div><button style="width:100%;margin:6px 0" onclick="buyRumor()">噂を聞く（${fmt(pr)}G）</button>`;
     const heard=RUMORS.filter(r=>P.rumors&&P.rumors[r.id]); if(heard.length) h+=`<div class="small y">これまでに聞いた噂</div>`+heard.map(r=>`<div class="small" style="margin:3px 0">${r.found()?'✓ ':'・'}${r.t}</div>`).join('');
   } else {
-    h+=`<div class="small">体力と運で勝負。参加費を払って、先に潰れたほうの負け。</div>`;
+    h+=`<div class="small">VITとLUKで勝負。参加費を払って、先に潰れたほうの負け。</div>`;
     RIVALS.forEach((R,i)=>{ if(!rivalOpen(i)) return; const fee=Math.max(50,Math.floor(enemyStats(Math.min(R.t,P.maxArea)).gold*goldRate(Math.min(R.t,P.maxArea))*5)), w=(P.contest&&P.contest[R.id])||0;
       const r=tolerance()/rivalTol(R); const tag=r>1.25?'<span class="g">余裕</span>':r>.95?'<span class="c">互角</span>':r>.7?'<span class="o">手強い</span>':'<span class="r">無謀</span>';
       h+=`<div class="row"><div>${R.n}${w?` <span class="small y">${w}勝</span>`:''}<div class="small">参加費 ${fmt(fee)}G　酒の強さ：${tag}</div></div><button ${P.gold<fee?'disabled':''} onclick="contest(${i})">勝負</button></div>`; });
@@ -2521,7 +2613,7 @@ const TIPS=[
  {id:'elgood',n:'弱点を突いた',     t:'敵の弱点の属性で攻めると×5。火→風→土→水→火、光⇄闇。'},
  {id:'pref', n:'得意な武器',       t:'職業には得意な武器がある。持ち替えると×1.5（魔法職は杖で魔法×1.5）。武器屋で武器の種類を変えられる。'},
  {id:'armbad',n:'守りが不利',       t:'防具の属性が敵に弱いと、受けるダメージ×5。防具屋で付け直そう。'},
- {id:'mir',  n:'奇跡',             t:'奇跡が起きると、その攻撃のダメージ×100・HPとMPが全快。運が高いほど起きやすく、奇跡のロザリオや神酒でも上がる。'},
+ {id:'mir',  n:'奇跡',             t:'奇跡が起きると、その攻撃のダメージ×100・HPとMPが全快。LUKが高いほど起きやすく、奇跡のロザリオや神酒でも上がる。'},
  {id:'bacchus',n:'酒神の助言',     t:'困ったら酒場の「攻略」で、酒神バッカスに今の場所の攻め方を聞ける（無料）。'},
 ];
 const tipN=id=>(P.tips&&P.tips[id])||0;
@@ -2553,16 +2645,22 @@ function helpHTML(){
   h+=row('弱点を突く','<span class="g">×5</span>')+row('相手に有利をとられている','<span class="o">×0.2</span>')+row('同じ属性','×0.5')+row('どちらかが無属性','×1');
   h+=`<div class="small" style="margin:4px 0 8px">攻撃の属性は武器の属性（どの職業でも同じ）。守りの属性は防具の属性で、敵の攻撃にも同じ相性が掛かる。武器屋・防具屋で付け直せる（次元の彼方に入るまでは無料、そのあとは最深エリアの敵のお金×5戦分）${P.neetW?`（${NEET_W}は無属性のまま）`:''}。</div>`;
   h+=`<div class="y">能力と強さの計算</div><div class="small" style="line-height:1.8;margin-bottom:8px">
-    ・能力 ＝ 基礎値 × 転生倍率 × マスターの数 × 装飾品 × 職業・極意 × 固有品 × お酒（ステータスの「（+○）」は、基礎値に上乗せされている分）<br>
-    ・攻撃力 ＝（得意な能力 ＋ 武器 × 転生倍率）× 最高Lvの補正 × 熟練度 × 職業の格 × 固有品<br>
-    ・魔法攻撃 ＝（知力 ＋ 武器の半分 × 転生倍率）× 同じ補正<br>
-    ・防御力 ＝（体力の半分 ＋ 防具 × 転生倍率）× 職業の格 × 固有品<br>
-    ・基礎値は、レベルアップ・能力の実・能力振りで上がり、転生しても減らない</div>`;
+    ・能力 ＝ 基礎値 × 能力ポイントの倍率 × 転生倍率 × マスターの数 × 装飾品 × 職業・極意 × 固有品 × お酒<br>
+    ・能力ポイントの倍率 ＝（1＋振った数÷100）²。限界突破の前は1つの能力につき${fmt(PT_CAP)}ptまで<br>
+    ・ATK ＝（武器＋10）× 転生倍率 × 得意な能力の係数 × 最高Lvの補正 × 熟練度 × 職業の格 × 固有品<br>
+    ・MATK ＝（武器の半分＋10）× 転生倍率 × INTの係数 × 同じ補正<br>
+    ・DEF ＝（防具＋5）× 転生倍率 × VITの係数、最大HPもVITの係数で決まる。MDEFはINTとVIT<br>
+    ・係数 ＝ 転生倍率を掛ける前の能力 ÷ 10<br>
+    ・LUK・AGI・DEXは「6つの能力の中での割合」で効く（DEXは命中、AGIは回避・先制、LUKは会心など）。均等なら効き目は半分、6割を振るとほぼ最大<br>
+    ・会心率 ＝ 10% ×（1＋LUKのボーナス 最大+200%）＋装飾品。奇跡・実・技の出やすさもLUKで上がる<br>
+    ・命中 ＝ 命中値 − 敵の回避。命中値はDEXの割合と転生の回数で伸びる（最大200%）。いちばん奥のエリアの敵と互角で、浅い敵ほど当てやすく避けやすい<br>
+    ・はじめに「先制攻撃」（1回ただで攻撃）や「バックアタック」（敵が2回先に動く）が起きることがある。AGIで変わる<br>
+    ・基礎値は、レベルアップと能力の実で上がり、転生しても減らない</div>`;
   h+=`<div class="y">武器の種類</div>`;
   h+=Object.entries(W_SP).map(([w,sp])=>row(w,`合成の素材：${gmSp(sp).n}`)).join('');
   h+=`<div class="small" style="margin:4px 0 8px">職業の得意な武器を持つと×1.5（転職所の「くわしく」に書いてある）。魔法職は杖で魔法×1.5。武器の種類は、得意な武器と合成の素材にだけ関わる（斬・突・射・打の相性はない）。</div>`;
-  h+=`<div class="y">物理と魔法</div><div class="small" style="margin:4px 0 8px">力が得意な職業は物理（攻撃力）、知力が得意な職業は魔法（魔法攻撃）で戦う。魔法剣士は効くほうを選ぶ。物理・魔法の効きにくい敵はいないので、どの職業でも戦える。敵の守りは、物理には防御、魔法には魔法防御（骸骨は魔法に弱く、目玉と竜は魔法に強め）。</div>`;
-  h+=`<div class="y">素材と合成</div><div class="small" style="margin:4px 0 8px">武器・防具は武器屋で段${SHOP_MAX}まで。その先は鍛冶屋で、素材とお金で1段ずつ鍛える。素材は敵の系統ごとに ふつう・レア・★1〜★5。★は50層ごとの「巣」の層でだけ出る。<br>しばらく出ないと、次で必ず出る（天井：ふつう${GM_PITY.n}体・レア${GM_PITY.r}体・★${GM_PITY.s}体）。運・装飾品・お酒・ギルドランクで出やすくなる。</div>`;
+  h+=`<div class="y">物理と魔法</div><div class="small" style="margin:4px 0 8px">STRが得意な職業は物理（ATK）、INTが得意な職業は魔法（MATK）で戦う。魔法剣士は効くほうを選ぶ。物理・魔法の効きにくい敵はいないので、どの職業でも戦える。敵の守りは、物理にはDEF、魔法にはMDEF（骸骨は魔法に弱く、目玉と竜は魔法に強め）。</div>`;
+  h+=`<div class="y">素材と合成</div><div class="small" style="margin:4px 0 8px">武器・防具は武器屋で段${SHOP_MAX}まで。その先は鍛冶屋で、素材とお金で1段ずつ鍛える。素材は敵の系統ごとに ふつう・レア・★1〜★5。★は50層ごとの「巣」の層でだけ出る。<br>しばらく出ないと、次で必ず出る（天井：ふつう${GM_PITY.n}体・レア${GM_PITY.r}体・★${GM_PITY.s}体）。LUK・装飾品・お酒・ギルドランクで出やすくなる。</div>`;
   h+=`<div class="y">能力の実</div><div class="small" style="margin:4px 0 8px">拾った実は持ち物に入る。「能力振り」の画面で使う（能力が上がる）か、合成の素材と交換する（実${FR_TRADE.n}個→ふつう1個、${FR_TRADE.r}個→レア1個）。「拾ったらすぐ使う」で、拾ったその場で使うこともできる。</div>`;
   h+=`<div class="y">TIPS集（${TIPS.filter(T=>tipN(T.id)>0).length}/${TIPS.length}）</div>`+TIPS.map(T=>tipN(T.id)>0?`<div class="small" style="margin:3px 0">💡 <b>${T.n}</b>：${T.t}</div>`:`<div class="small" style="margin:3px 0;color:#789">💡 ？？？（まだ出ていない）</div>`).join('');
   return h; }
@@ -2587,7 +2685,7 @@ function bacchusHint(){
     return `「${areaName(t)}の敵は${A.n}を使ってくる。装飾品屋の${nm}を付けておくがよい（気付けの酒でも防げる）。」`; } }
   // 3c) 合成の素材が足りない（#44）
   if(P.wpn>=SHOP_MAX&&P.wpn<GEAR_MAX){ const need=synthNeed(true,P.wpn+1).find(([k,n])=>gmN(k)<n);
-    if(need){ const g=gmSp(need[0].split('_')[0]); return need[0].includes('_s')?`「次の合成には${gmName(need[0])}がいる。${g.n}の巣、第${g.nest}層でしか出ぬ。運を上げて通うがよい。」`:`「次の合成には${gmName(need[0])}が${need[1]}個いる（いま${gmN(need[0])}個）。${g.n}系の敵を倒して集めるのじゃ。」`; } }
+    if(need){ const g=gmSp(need[0].split('_')[0]); return need[0].includes('_s')?`「次の合成には${gmName(need[0])}がいる。${g.n}の巣、第${g.nest}層でしか出ぬ。LUKを上げて通うがよい。」`:`「次の合成には${gmName(need[0])}が${need[1]}個いる（いま${gmN(need[0])}個）。${g.n}系の敵を倒して集めるのじゃ。」`; } }
   // 4) 番人
   if(isGuardT(t)&&!guardBeaten(t)){ const g=makeGuard(t), best=[];
     return `「この層には${g.name}が待っておる。${best.length?best.join('・')+'がよく効く。':''}${g.el!=='無'?`属性は${elTag(g.el)}、${elTag(EL_WEAK(g.el))}で攻めよ。`:'あやつは相性の通じぬ相手よ。'}」`; }
@@ -2658,6 +2756,8 @@ function simulateFinal(e,fast){
   const f=finalState(); f.seen=true; const nm=esc(P.name), M=Math.max(1,P.reb/FINAL_REB);
   const form=f.form, mmp=maxmp(); const c={e,L:[],php:maxhp(),mhp:maxhp(),mp:mmp,mmp,ehp:f.hp,gold:0,buff:1,stun:false,forceMiracle:false,kaji:false,final:true,M,dealt:0};
   const L=c.L; c.buff*=battleBuffs(L);
+  // 第4形態からは速さも増す（限界突破してAGIを育てないと、当てにくく避けにくい）
+  c.spd=Math.max(.01,agiG()/(form>LB_FORM?Math.pow(1.8,form-LB_FORM):1));
   L.push(`<b class="mir">${e.name}</b>（残り ${fmt(f.hp)} / ${fmt(finalHP(form))} 桁）`);
   const barrier=P.reb<FINAL_REB;
   if(barrier) L.push(`<span class="o">輪廻の結界が神を包んでいる… 転生を重ねた者でなければ破れない（転生 ${P.reb}/${FINAL_REB}回）</span>`);
@@ -2707,44 +2807,44 @@ const riskOf=e=>{ const d=danger(e); return /無謀/.test(d)?2:/強敵/.test(d)?
 const drunkNow=()=>!!(activeDrinks().some(x=>!x.d.mild)||persona());
 const digits777=()=>Math.floor(P.gold)%1000===777;
 const JOB_SECRETS={
- warrior:  {n:'背水の陣',      hint:'無謀な相手に挑むほど、追い詰められるほど強くなるらしい', type:'both', c:(c,e)=>riskOf(e)>=2, d:c=>hpR(c)<.1, fx:{atk:100}, msg:'背水の陣！ 攻撃力×100'},
- mage:     {n:'純粋魔力',      hint:'知力だけを極めると何かが起きるらしい',       type:'start', c:()=>st('int')>=st('str')*100,  fx:{skill:1},             msg:'力を捨てた魔力が満ちる…！ 大魔法が止まらない'},
+ warrior:  {n:'背水の陣',      hint:'無謀な相手に挑むほど、追い詰められるほど強くなるらしい', type:'both', c:(c,e)=>riskOf(e)>=2, d:c=>hpR(c)<.1, fx:{atk:100}, msg:'背水の陣！ ATK×100'},
+ mage:     {n:'純粋魔力',      hint:'INTだけを極めると何かが起きるらしい',       type:'start', c:()=>st('int')>=st('str')*100,  fx:{skill:1},             msg:'STRを捨てた魔力が満ちる…！ 大魔法が止まらない'},
  thief:    {n:'王冠泥棒',      hint:'王者の前では手癖が悪くなるらしい',           type:'start', c:(c,e)=>!!e.champ,               fx:{gold:10},             msg:'王者の王冠に手が伸びる…！ 賞金×10'},
  priest:   {n:'神の慈悲',      hint:'神の前では祈りが届くらしい',                 type:'start', c:(c,e)=>!!e.secret,              fx:{taken:.5},            msg:'祈りが神に届いた… 神竜の攻撃が半分に'},
- gambler:  {n:'フィーバー',    hint:'縁起のいい金額を握りしめると…',             type:'start', c:()=>P.gold===777,               fx:{atk:777},             msg:'所持金777G！ フィーバー突入！ 攻撃力×777'},
+ gambler:  {n:'フィーバー',    hint:'縁起のいい金額を握りしめると…',             type:'start', c:()=>P.gold===777,               fx:{atk:777},             msg:'所持金777G！ フィーバー突入！ ATK×777'},
  fighter:  {n:'火事場のクソ力', hint:'',                                          type:'start', c:(c)=>!!c.kaji,                  fx:{},                    msg:''},
  hunter:   {n:'狩りの極み',    hint:'同じ狩場に通い続けると…',                   type:'start', c:()=>curRun>=100,                fx:{crit:1},              msg:'この狩場は知り尽くした…！ 会心100%'},
  knight:   {n:'完全防御',      hint:'万全の状態なら、最初の一撃は…',             type:'start', c:()=>true,                       fx:{zero:1},              msg:'盾を構えた… 最初の一撃は通さない', silentUntil:'zero'},
  dancer:   {n:'月下の舞',      hint:'夜になると…',                               type:'start', c:()=>isNight(),                  fx:{eva:.5},              msg:'月明かりの下で舞う… 回避+50%'},
- bard:     {n:'酔いどれの歌',  hint:'酒が入ると歌声が変わるらしい',               type:'start', c:()=>drunkNow(),                 fx:{atk:5},               msg:'酒が入って歌声が冴える…！ 攻撃力×5'},
+ bard:     {n:'酔いどれの歌',  hint:'酒が入ると歌声が変わるらしい',               type:'start', c:()=>drunkNow(),                 fx:{atk:5},               msg:'酒が入って歌声が冴える…！ ATK×5'},
  merchant: {n:'札束の壁',      hint:'金持ちになるほど…',                         type:'start', c:()=>P.gold>=1e16,               fx:{taken:.1},            msg:'札束を積み上げて壁にした！ 受けるダメージ1/10'},
  alchemist:{n:'賢者の閃き',    hint:'実を拾った直後は冴えているらしい',           type:'start', c:(c)=>!!c.fruitFresh,            fx:{drop:1},              msg:'さっきの実の味がひらめきを呼ぶ… 実を必ず拾う'},
  apprentice:{n:'奇跡の加護',   hint:'',                                          type:'none'},
- berserker:{n:'狂乱の血',      hint:'格上の相手や、血を流すほど狂っていくらしい', type:'both', c:(c,e)=>riskOf(e)>=1, d:c=>hpR(c)<.3, fx:{atk:1000}, msg:'血が騒ぐ…！ 狂乱の血！ 攻撃力×1000'},
- archmage: {n:'魔の深淵',      hint:'知力だけを極めると何かが起きるらしい',       type:'start', c:()=>st('int')>=st('str')*100,  fx:{skill:1,atk:3},       msg:'魔の深淵をのぞいた… 大魔法が止まらず、威力×3'},
+ berserker:{n:'狂乱の血',      hint:'格上の相手や、血を流すほど狂っていくらしい', type:'both', c:(c,e)=>riskOf(e)>=1, d:c=>hpR(c)<.3, fx:{atk:1000}, msg:'血が騒ぐ…！ 狂乱の血！ ATK×1000'},
+ archmage: {n:'魔の深淵',      hint:'INTだけを極めると何かが起きるらしい',       type:'start', c:()=>st('int')>=st('str')*100,  fx:{skill:1,atk:3},       msg:'魔の深淵をのぞいた… 大魔法が止まらず、威力×3'},
  ninja:    {n:'夜影分身',      hint:'夜になると影が増えるらしい',                 type:'start', c:()=>isNight(),                  fx:{multi:2},             msg:'夜の闇に影が溶ける… 毎ターン3回攻撃'},
  bishop:   {n:'神域の加護',    hint:'神の前では祈りが届くらしい',                 type:'start', c:(c,e)=>!!e.secret,              fx:{taken:.25},           msg:'神域の加護… 神竜の攻撃が1/4に'},
- shark:    {n:'七の刻印',      hint:'財布の端数に縁起を担ぐと…',                 type:'start', c:()=>digits777(),                fx:{atk:7777},            msg:'所持金の下3桁が777！ 七の刻印！ 攻撃力×7777'},
- kenou:    {n:'火事場・極',    hint:'追い詰められると、拳王の何かが目覚めるらしい', type:'start', c:()=>P.gold===1,               fx:{atk:10,taken:.5},     msg:'所持金1G…！ 拳王の火事場が極まる！ さらに攻撃力×10・被ダメ半分'},
- sniper:   {n:'千里眼',        hint:'同じ狩場に通い続けると…',                   type:'start', c:()=>curRun>=200,                fx:{crit:1,atk:10},       msg:'獲物の動きがすべて見える…！ 会心100%・攻撃力×10'},
+ shark:    {n:'七の刻印',      hint:'財布の端数に縁起を担ぐと…',                 type:'start', c:()=>digits777(),                fx:{atk:7777},            msg:'所持金の下3桁が777！ 七の刻印！ ATK×7777'},
+ kenou:    {n:'火事場・極',    hint:'追い詰められると、拳王の何かが目覚めるらしい', type:'start', c:()=>P.gold===1,               fx:{atk:10,taken:.5},     msg:'所持金1G…！ 拳王の火事場が極まる！ さらにATK×10・被ダメ半分'},
+ sniper:   {n:'千里眼',        hint:'同じ狩場に通い続けると…',                   type:'start', c:()=>curRun>=200,                fx:{crit:1,atk:10},       msg:'獲物の動きがすべて見える…！ 会心100%・ATK×10'},
  paladin:  {n:'聖なる三重盾',  hint:'万全の状態なら、最初の攻撃は…',             type:'start', c:()=>true,                       fx:{zero:3},              msg:'聖なる盾が三重に輝く… 最初の3回の攻撃を通さない', silentUntil:'zero'},
  maiden:   {n:'月影の舞',      hint:'夜になると…',                               type:'start', c:()=>isNight(),                  fx:{eva:.8},              msg:'月影の中で舞う… 回避+80%'},
- maestro:  {n:'酩酊の交響曲',  hint:'酒が入ると歌声が変わるらしい',               type:'start', c:()=>drunkNow(),                 fx:{atk:20},              msg:'酔いが旋律を狂わせる…！ 攻撃力×20'},
+ maestro:  {n:'酩酊の交響曲',  hint:'酒が入ると歌声が変わるらしい',               type:'start', c:()=>drunkNow(),                 fx:{atk:20},              msg:'酔いが旋律を狂わせる…！ ATK×20'},
  tycoon:   {n:'金城鉄壁',      hint:'金持ちになるほど…',                         type:'start', c:()=>P.gold>=1e20,               fx:{taken:.01,gold:3},    msg:'財力で城を築いた！ 受けるダメージ1/100・お金×3'},
  grandalch:{n:'錬成の連鎖',    hint:'実を拾った直後は冴えているらしい',           type:'start', c:(c)=>!!c.fruitFresh,            fx:{drop:1,fruitX:10},    msg:'錬成が連鎖する… 実を必ず拾い、効果×10'},
- hero:     {n:'勇者の覚醒',    hint:'格上の王者に挑むと…',                       type:'both', c:(c,e)=>!!e.champ&&riskOf(e)>=1, d:c=>!!c.e.champ&&hpR(c)<.1, fx:{atk:10000}, msg:'ここで退くわけにはいかない…！ 勇者が覚醒する！ 攻撃力×1万'},
+ hero:     {n:'勇者の覚醒',    hint:'格上の王者に挑むと…',                       type:'both', c:(c,e)=>!!e.champ&&riskOf(e)>=1, d:c=>!!c.e.champ&&hpR(c)<.1, fx:{atk:10000}, msg:'ここで退くわけにはいかない…！ 勇者が覚醒する！ ATK×1万'},
  sage:     {n:'森羅の悟り',    hint:'神の前で知恵を極めると…',                   type:'start', c:(c,e)=>!!e.secret&&st('int')>=st('str')*100, fx:{skill:1,taken:.25}, msg:'森羅万象を悟った… 技が止まらず、被ダメ1/4'},
- spellblade:{n:'魔剣解放',     hint:'格上の相手に挑むと剣が魔を帯びるらしい',     type:'both', c:(c,e)=>riskOf(e)>=1, d:c=>hpR(c)<.3, fx:{skill:1,atk:100}, msg:'魔剣が解き放たれた…！ 魔法剣が止まらない・攻撃力×100'},
- assassin: {n:'闇夜の狩人',    hint:'夜、同じ狩場に通い続けると…',               type:'start', c:()=>isNight()&&curRun>=100,     fx:{crit:1,atk:100},      msg:'闇夜はすべて我が狩場… 会心100%・攻撃力×100'},
- swordsaint:{n:'無我の境地',   hint:'一文無し寸前で格上に挑むと…',               type:'both', c:(c,e)=>P.gold===1&&riskOf(e)>=1, d:c=>P.gold===1&&hpR(c)<.3, fx:{atk:1e6}, msg:'すべてを失い、無我の境地へ…！ 攻撃力×100万'},
- dragoon:  {n:'竜の目覚め',    hint:'同じ狩場に通い続け、万全で挑むと…',         type:'start', c:()=>curRun>=100,                fx:{zero:1,atk:100},      msg:'竜が目を覚ました…！ 最初の一撃を防ぎ、攻撃力×100'},
+ spellblade:{n:'魔剣解放',     hint:'格上の相手に挑むと剣が魔を帯びるらしい',     type:'both', c:(c,e)=>riskOf(e)>=1, d:c=>hpR(c)<.3, fx:{skill:1,atk:100}, msg:'魔剣が解き放たれた…！ 魔法剣が止まらない・ATK×100'},
+ assassin: {n:'闇夜の狩人',    hint:'夜、同じ狩場に通い続けると…',               type:'start', c:()=>isNight()&&curRun>=100,     fx:{crit:1,atk:100},      msg:'闇夜はすべて我が狩場… 会心100%・ATK×100'},
+ swordsaint:{n:'無我の境地',   hint:'一文無し寸前で格上に挑むと…',               type:'both', c:(c,e)=>P.gold===1&&riskOf(e)>=1, d:c=>P.gold===1&&hpR(c)<.3, fx:{atk:1e6}, msg:'すべてを失い、無我の境地へ…！ ATK×100万'},
+ dragoon:  {n:'竜の目覚め',    hint:'同じ狩場に通い続け、万全で挑むと…',         type:'start', c:()=>curRun>=100,                fx:{zero:1,atk:100},      msg:'竜が目を覚ました…！ 最初の一撃を防ぎ、ATK×100'},
  phantom:  {n:'月夜の大怪盗',  hint:'夜、王者の前では…',                         type:'start', c:(c,e)=>isNight()&&!!e.champ,     fx:{gold:100},            msg:'月夜に大怪盗参上！ 王者の財宝をいただく… 賞金×100'},
- luckking: {n:'天運の極み',    hint:'大金持ちが縁起を担ぐと…',                   type:'start', c:()=>digits777()&&P.gold>=1e10,   fx:{atk:77777,gold:7},    msg:'天運が極まった！ 攻撃力×77777・お金×7'},
- tennyo:   {n:'羽衣の月夜',    hint:'夜、酒が入ると…',                           type:'start', c:()=>isNight()&&drunkNow(),      fx:{eva:.9,atk:50},       msg:'月夜に羽衣が舞う… 回避+90%・攻撃力×50'},
+ luckking: {n:'天運の極み',    hint:'大金持ちが縁起を担ぐと…',                   type:'start', c:()=>digits777()&&P.gold>=1e10,   fx:{atk:77777,gold:7},    msg:'天運が極まった！ ATK×77777・お金×7'},
+ tennyo:   {n:'羽衣の月夜',    hint:'夜、酒が入ると…',                           type:'start', c:()=>isNight()&&drunkNow(),      fx:{eva:.9,atk:50},       msg:'月夜に羽衣が舞う… 回避+90%・ATK×50'},
  chrono:   {n:'時の酩酊',      hint:'酒と実の両方がそろうと…',                   type:'start', c:(c)=>drunkNow()&&!!c.fruitFresh, fx:{multi:1,drop:1},     msg:'時がゆがむ… 毎ターン2回攻撃・実を必ず拾う'},
  saint:    {n:'聖夜の祈り',    hint:'夜、神の前で祈ると…',                       type:'start', c:(c,e)=>isNight()&&!!e.secret,    fx:{taken:.01},           msg:'聖夜の祈りが神に届いた… 受けるダメージ1/100'},
- overlord: {n:'覇王の矜持',    hint:'一文無し寸前でも、万全なら…',               type:'start', c:()=>P.gold===1,                 fx:{atk:1e5,zero:1},      msg:'所持金1Gでも覇王は退かぬ…！ 攻撃力×10万・最初の一撃を防ぐ'},
- neet:     {n:'本気を出す',    hint:'一文無しになったとき、ようやく…',           type:'start', c:()=>P.gold===0,                 fx:{atk:1e6},             msg:'…所持金0G。ようやく、本気を出す時が来た。攻撃力×100万'},
+ overlord: {n:'覇王の矜持',    hint:'一文無し寸前でも、万全なら…',               type:'start', c:()=>P.gold===1,                 fx:{atk:1e5,zero:1},      msg:'所持金1Gでも覇王は退かぬ…！ ATK×10万・最初の一撃を防ぐ'},
+ neet:     {n:'本気を出す',    hint:'一文無しになったとき、ようやく…',           type:'start', c:()=>P.gold===0,                 fx:{atk:1e6},             msg:'…所持金0G。ようやく、本気を出す時が来た。ATK×100万'},
 };
 // 騎士・聖騎士の「万全」条件：戦闘開始時HP満タン（毎戦HP満タンで始まるので、実質いつでも。最初の被弾で判明）
 function applySecret(c,S){ const fx=S.fx||{}; c.secOn=true;
@@ -2876,13 +2976,13 @@ function playerHit(c){
     const d=Math.floor(c.ehp*rnd(3,30)); c.ehp-=d; if(d>P.maxDmg) P.maxDmg=d;
     L.push(`<span class="mir">奇跡の一撃！ ${e.name}に${fmt(d)}のダメージ！！</span>`); return;
   }
-  if(chance(Math.min(.25,e.agi/(e.agi+st('agi'))*.12))){L.push(`${e.name}は攻撃をかわした！`);return;}
+  if(!chance(c.hitP??hitRate(c.spd||1))){L.push(`${e.name}は攻撃をかわした！`);return;}
   let mult=1, sure=false, flat=0, pierce=false, drain=false;
   if(c.L&&!c.work&&!c.final) secretDyn(c);
   // 暗闇：50%外れる。呪い：技が出ない。沈黙：魔法職は技が出ず、攻撃が半分（#66）
   const ai=c.ails||{}, magicish=isMagicJob(P.job)||P.job==='spellblade';
   if(ai.blind&&chance(.5)){ L.push(`${nm}の攻撃は外れた！（暗闇）`); return; }
-  let s0=null; if(!ai.curse&&!(ai.silence&&magicish)&&(c.secSkill||chance(J.skill.p+luk/(luk+2000)*.1+(jl(P.job).lv-1)*.01))){ s0=pickSkill(); if(!mpPay(c,s0)) s0=null; }
+  let s0=null; if(!ai.curse&&!(ai.silence&&magicish)&&(c.secSkill||chance(c.skillP??skillRate()))){ s0=pickSkill(); if(!mpPay(c,s0)) s0=null; }
   if(s0){const s=s0; pierce=!!s.pierce; drain=!!s.drain;
     if(s.heal){const h=Math.floor(c.mhp*.5); c.php=Math.min(c.mhp,c.php+h); L.push(`<span class="sk">${nm}は${s.n}を唱えた！</span> HPが<span class="heal">${fmt(h)}</span>回復！`);}
     else if(s.gamble){mult=pickGamble(); L.push(`<span class="sk">${nm}の${s.n}！ ルーレットは… <b>×${mult}</b>！</span>`); if(mult===0){L.push('…しかし何も起きなかった。');return;}}
@@ -2890,16 +2990,16 @@ function playerHit(c){
     else if(s.multi){mult=(s.multi===2?3+Math.floor(Math.random()*6):2+Math.floor(Math.random()*4))*(s.m||1); L.push(`<span class="sk">${nm}の${s.n}！ ${mult}発叩き込んだ！</span>`);}
     else if(s.sure){mult=4.5*(s.m||1); sure=true; L.push(`<span class="sk">${nm}の${s.n}！</span> <span class="crit">急所を撃ち抜いた！</span>`);}
     else if(s.stun){c.stun=true; L.push(`<span class="sk">${nm}は${s.n}を踊った！ ${e.name}は見とれている！</span>`);}
-    else if(s.buff){c.buff*=(s.bm||1.5); L.push(`<span class="sk">${nm}は${s.n}を歌った！ 攻撃力が×${fmtMul(c.buff)}になった！</span>`);}
+    else if(s.buff){c.buff*=(s.bm||1.5); L.push(`<span class="sk">${nm}は${s.n}を歌った！ ATKが×${fmtMul(c.buff)}になった！</span>`);}
     else if(s.coin){flat=P.gold*rnd(.005,.02)*(s.cm||1); L.push(`<span class="sk">${nm}の${s.n}！ 小銭が宙を舞う！</span>`);}
     else {mult=s.m; L.push(`<span class="sk">${nm}の${s.n}！</span>`);}
   }
   if(s0&&!s0.heal&&mpRage()){ mult*=mpRage(); L.push(`<span class="small o">魔力暴走！ 技の威力×${mpRage().toFixed(1)}</span>`); }
-  const mirP=.004+luk/(luk+5000)*.02+(P.blessed[P.job]?.12:0)+accMir()+drinkMul('mir');
+  const mirP=c.mirP??mirRate();
   // はじめての奇跡（#82）：まだ一度も起きていなければ、HPが3割を切ったとき（200戦しても起きなければ次の戦闘で）必ず起こす
   const mirFirst=!P.miracles&&!c.final&&(c.php<c.mhp*.3||(P.battles||0)>=200);
   if(mirFirst||chance(mirP)){mult*=100; if(!P.miracles) P.mirIntro=1; P.miracles=(P.miracles||0)+1; c.php=c.mhp; c.mp=c.mmp; L.push(`<span class="mir">★☆ 奇跡が起きた！ ☆★ HPとMPが全快した！</span>`);}
-  else if(!sure&&(c.secCrit||chance(.04+luk/(luk+300)*.25+ps('crit',0)))){mult*=neetW()?neetWCrit():legW()?30:3; L.push(neetW()?`<span class="crit">会心の一撃！ 辞表が叩きつけられた！</span>`:legW()?`<span class="crit">会心の一撃！ オーバーフローが桁をあふれさせる！</span>`:`<span class="crit">会心の一撃！</span>`);}
+  else if(!sure&&(c.secCrit||chance(c.critP??critRate()))){mult*=neetW()?neetWCrit():legW()?30:3; L.push(neetW()?`<span class="crit">会心の一撃！ 辞表が叩きつけられた！</span>`:legW()?`<span class="crit">会心の一撃！ オーバーフローが桁をあふれさせる！</span>`:`<span class="crit">会心の一撃！</span>`);}
   const pl=c.plan||{at:'斬',base:atk(),edef:e.def,aff:1}, aff=(c.work)?1:pl.aff;
   const a=(pl.base*c.buff*rnd(1.3,1.7)*mult+flat)*aff*(c.ails&&c.ails.silence&&(isMagicJob(P.job)||P.job==='spellblade')?.5:1);
   const d=aff===0?0:Math.floor(pierce?Math.max(a,1):Math.max(a-pl.edef*.5,a*.08,1));
@@ -2916,11 +3016,11 @@ function enemyHit(c){
   const e=c.e,L=c.L,ag=st('agi'),lk=st('luk'),nm=esc(P.name);
   if(c.stun){c.stun=false; L.push(`${e.name}は見とれて動けない！`); return;}
   if(c.secZero>0){ c.secZero--; if(!c.secZeroShown){ c.secZeroShown=true; markSecret(c); } L.push(`${e.name}の攻撃！ …しかし盾がすべて受け止めた！ ダメージ0`); return; }
-  if(chance(Math.min(.95,ag/(ag+e.agi)*.15+lk/(lk+3000)*.05+ps('eva',0)+(c.secEva||0)))){L.push(`${nm}は身をかわした！`);return;}
+  if(!c.backTurn&&chance(Math.min(1,(c.evaP??evaRate(c.spd||1))+(c.secEva||0)))){L.push(`${nm}は身をかわした！`);return;}
   // 番人は攻撃のたびにも20%で状態異常（#66）
   if(e.guard&&chance(.2)){ const l=areaAils(e.gt); if(l.length&&applyAil(c,e,l[Math.floor(Math.random()*l.length)])&&c.php<=0) return; }
   let m=1; if(chance(.04)){m=2.5; L.push(`<span class="crit">${e.name}の痛恨の一撃！</span>`);}
-  const dp=c.dplan||{mul:1,d:def()}; const a=e.atk*rnd(1.3,1.7)*m*ps('taken',1)*(c.kaji?.1:1)*(neetA()?.001:legA()?.1:1)*(c.secTaken||1)*dp.mul; const d=Math.floor(Math.max(a-dp.d*.5,a*.08,1));
+  const dp0=c.dplan||{mul:1,d:def()}, dp=c.backTurn?Object.assign({},dp0,{d:dp0.d*.5}):dp0; const a=e.atk*rnd(1.3,1.7)*m*ps('taken',1)*(c.kaji?.1:1)*(neetA()?.001:legA()?.1:1)*(c.secTaken||1)*dp.mul; const d=Math.floor(Math.max(a-dp.d*.5,a*.08,1));
   c.php-=d; L.push(`${e.name}の攻撃！ ${nm}は<span class="edmg">${fmt(d)}</span>のダメージ！`);
 }
 function simulate(e,t,fast){
@@ -2937,21 +3037,27 @@ function simulate(e,t,fast){
     if(isSecretJob(P.job) && P.secret[P.job]===SECRET_TRIES && !P.blessed[P.job]) c.forceMiracle=true;
   }
   L.push(`<b class="y">${e.champ?'チャンピオン ':''}${e.name}</b>が現れた！（HP ${fmt(e.hp)}）`);
-  if(c.kaji){L.push(`<span class="mir">所持金わずか1G…！ 追い詰められた${nm}の中で何かが弾けた！</span>`); L.push(`<span class="mir">🔥 火事場のクソ力 発動！ 攻撃力×1万・被ダメージ1/10 🔥</span>`);}
+  if(c.kaji){L.push(`<span class="mir">所持金わずか1G…！ 追い詰められた${nm}の中で何かが弾けた！</span>`); L.push(`<span class="mir">🔥 火事場のクソ力 発動！ ATK×1万・被ダメージ1/10 🔥</span>`);}
   let res=null;
+  c.spd=spdRatio(e); c.critP=critRate(); c.mirP=mirRate(); c.skillP=skillRate(); c.hitP=hitRate(c.spd); c.evaP=evaRate(c.spd);
   ailFirstStrike(c,e,t); if(c.php<=0) res='lose';
+  // 先制攻撃・バックアタック（#72）：はじめに1回だけ
+  if(!res&&!c.final&&!c.work){ const r=c.spd;
+    if(c.forceMiracle||chance(firstRate(r))){ L.push(`<span class="g">先制攻撃！ ${e.name}はまだこちらに気づいていない</span>`); playerHit(c); if(c.ehp<=0) res='win'; }
+    else if(chance(backRate(r))){ L.push(`<span class="r">バックアタック！ ${e.name}に背後を取られた（守りが手薄になっている）</span>`); c.backTurn=true;
+      for(let i=0;i<2&&c.php>0;i++) enemyHit(c); c.backTurn=false; if(c.php<=0) res='lose'; } }
   for(let turn=1;turn<=40&&res===null;turn++){
     L.push(`<span class="hpl">― ターン${turn} ―</span>`);
     if(c.ails&&c.ails.poison){ const d=Math.floor(c.mhp*.1); c.php-=d; L.push(`<span class="o">毒が回る… ${fmt(d)}のダメージ</span>`); if(c.php<=0){ res='lose'; break; } }
     if(c.stone>0){ c.stone--; if(c.stone===0){ c.php=0; L.push(`<span class="r">${nm}は石になってしまった…</span>`); res='lose'; break; } L.push(`<span class="o">石化が進む…（あと${c.stone}ターン）</span>`); }
     if(accT('mpregen')) c.mp=Math.min(c.mmp,c.mp+c.mmp*.01*accT('mpregen'));
-    const pFirst=c.forceMiracle||accT('first')>0||st('agi')*rnd(.8,1.2)>=e.agi*rnd(.8,1.2);
+    const pFirst=c.forceMiracle||(c.spd||1)*rnd(.8,1.2)>=rnd(.8,1.2);
     for(const a of (pFirst?['p','e']:['e','p'])){
       if(a==='p'){
         if(c.para>0){ c.para--; L.push(`${nm}はしびれて動けない！`); continue; }
         if(c.ails&&c.ails.slow&&turn%2===1){ L.push(`${nm}は体が重く、動きが遅れた…`); continue; }
         if(c.charm>0){ c.charm--; const d=Math.floor(c.mhp*.2); c.php-=d; L.push(`<span class="r">${nm}は魅了されて、自分を攻撃した！ ${fmt(d)}のダメージ</span>`); if(c.php<=0){ res='lose'; break; } continue; }
-        const dbl=(P.job==='thief'&&chance(.35))||(st('agi')>e.agi*2&&chance(.25))||(accT('dbl')>0&&chance(accVal('dbl',accT('dbl'))));
+        const dbl=accT('dbl')>0&&chance(accVal('dbl',accT('dbl'))); // 2回攻撃は装飾品だけ（#43）
         playerHit(c);
         if(dbl&&c.ehp>0){L.push(`<span class="sk">連続攻撃！</span>`); playerHit(c);}
         for(let x=0;x<(c.secMulti||0)&&c.ehp>0;x++){ L.push(`<span class="sk">影の追撃！</span>`); playerHit(c); }
@@ -2972,9 +3078,12 @@ function simulate(e,t,fast){
     L.push(`<span class="y">${e.name}を倒した！</span>`);
     L.push(`<span class="rw">${fmt(exp)}の経験値と ${fmt(gold)}G を手に入れた！</span>`);
     P.gold+=gold; P.earned=(P.earned||0)+gold; if(t>=0) casDonateBack(L);
+    // 盗賊（#43）：倒すと30%でお金+50%、10%で素材をもう1個
+    if(P.job==='thief'){ if(chance(.3)){ const g2=Math.floor(gold*.5); P.gold+=g2; P.earned+=g2; L.push(`<span class="g">盗賊の手際！ さらに ${fmt(g2)}G 手に入れた</span>`); }
+      if(chance(.1)&&gmSp(e.sp)) gmAdd(e.sp+'_n',1,L); }
     const lv0=P.lv;
     let drop='';
-    if(c.secDrop||chance((.04+lk/(lk+1000)*.1)*ps('drop',1)*matMul('drop')*drinkMul('drop'))){const k=KEYS[Math.floor(Math.random()*5)]; const n=Math.max(1,Math.floor(rnd(1,4)*(Math.max(t,P.champ,P.maxArea*(e.train?1:0),0)+1)*(c.secFruitX||1))); P.lastFruit=true;
+    if(c.secDrop||chance(fruitRate()*ps('drop',1)*matMul('drop')*drinkMul('drop'))){const k=KEYS[Math.floor(Math.random()*KEYS.length)]; const n=Math.max(1,Math.floor(rnd(1,4)*(Math.max(t,P.champ,P.maxArea*(e.train?1:0),0)+1)*(c.secFruitX||1))); P.lastFruit=true;
       const fm=fruitGet(k,n); drop=`${KN[k]}の実(+${n})`; L.push(`<span class="g">${KN[k]}の実を拾った！ ${fm}</span>`);}
     gmDrop(e,t,L);
     gainExp(exp,L);
@@ -3010,7 +3119,7 @@ function simulate(e,t,fast){
 }
 function gainExp(e,L){
   P.exp+=e; let ups=0;
-  while(P.exp>=need(P.lv)){P.exp-=need(P.lv); P.lv++; P.pts+=3; ups++;
+  while(P.exp>=need(P.lv)){P.exp-=need(P.lv); P.lv++; P.pts+=PT_PER_LV; ups++;
     const g=JOBS[P.job].g; KEYS.forEach(k=>P.base[k]+=Math.max(0,Math.round(g[k]*rnd(.5,2.5))));
     if(ups>300) break;}
   P.maxLv=Math.max(P.maxLv||0,P.lv);
@@ -3101,7 +3210,7 @@ function showEnding(){
 // はじめての奇跡のお知らせ（#82）
 function mirIntroPopup(){ P.tips=P.tips||{}; P.tips.mir=TIP_MAX; save(); showPopup({title:'<span class="mir">★☆ 奇跡が起きた！ ☆★</span>',body:`<div class="small">ピンチのとき、ふしぎな力が${esc(P.name)}を救った。<br><br>
   <b>奇跡が起きると</b>：その攻撃のダメージ×100、HPとMPが全快する。<br>
-  <b>起きやすくなるもの</b>：運が高いほど起きやすい。装飾品「奇跡のロザリオ」、お酒「神酒」でも上がる。<br><br>ふだんはめったに起きない（はじめは0.4%くらい）。</div>`}); }
+  <b>起きやすくなるもの</b>：LUKが高いほど起きやすい。装飾品「奇跡のロザリオ」、お酒「神酒」でも上がる。<br><br>ふだんはめったに起きない（はじめは0.4%くらい）。</div>`}); }
 // ============ キャラ絵（#6 SVGの絵・#7 素材のドット絵） ============
 // 配布版にも入る。絵の切り替え（素材のドット絵／SVGの絵／旧ドット絵）は開発版のメニューから
 // SVG のパーツを、名前から作った乱数で組み合わせる。深い層ほど目・触手が増え、輪郭がゆがむ。

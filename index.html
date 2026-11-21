@@ -191,7 +191,7 @@ const JOBS={
   bishop:{rank:1,base:'priest',n:'神官',hue:55,main:'int',g:{str:.8,int:1.6,agi:.9,vit:2.1,luk:1.2},skill:{n:'ハイヒール',p:.25,heal:true},pass:{taken:.8},d:'高い回復力と守り。'},
   shark:{rank:1,base:'gambler',n:'勝負師',hue:340,main:'luk',g:{str:.9,int:.9,agi:1.1,vit:1,luk:2.9},skill:{n:'大勝負',p:.3,gamble:true},pass:{crit:.05,casino:2},d:'ルーレットの発動率アップ。会心も出やすい。ギャンブル場の儲け2倍。'},
   kenou:{rank:1,base:'fighter',n:'拳王',hue:20,main:'str',g:{str:1.9,int:.4,agi:1.8,vit:1.3,luk:.9},skill:{n:'百裂拳・極',p:.25,multi:2},d:'3〜8発の連打を叩き込む。'},
-  sniper:{rank:1,base:'hunter',n:'狙撃手',hue:100,main:'dex',g:{str:1.1,int:.8,agi:1.4,vit:.9,luk:1.6,dex:2.1},skill:{n:'一撃必殺',p:.2,sure:true,m:1.5},pass:{crit:.15},d:'会心率がさらに上がる。必中の狙撃。'},
+  sniper:{rank:1,base:'hunter',n:'狙撃手',hue:100,main:'dex',g:{str:1.1,int:.8,agi:1.4,vit:.9,luk:1.6,dex:2.1},skill:{n:'一撃必殺',p:.2,sure:true,m:1.5},pass:{crit:.15},d:'CRIがさらに上がる。必中の狙撃。'},
   paladin:{rank:1,base:'knight',n:'聖騎士',hue:200,main:'vit',g:{str:1.4,int:.9,agi:.7,vit:2.3,luk:.9},skill:{n:'聖盾撃',p:.2,m:3,drain:true},pass:{taken:.55},d:'鉄壁。技で与えたダメージの一部を回復。'},
   maiden:{rank:1,base:'dancer',n:'舞姫',hue:320,main:'agi',g:{str:.8,int:1.2,agi:2,vit:.9,luk:1.4},skill:{n:'幻惑の舞',p:.28,stun:true},pass:{eva:.18},d:'敵を止めて、ひらりとかわす。'},
   maestro:{rank:1,base:'bard',n:'楽聖',hue:170,main:'int',g:{str:.7,int:1.8,agi:1.1,vit:1,luk:1.5},skill:{n:'英雄の歌',p:.22,buff:true,bm:2},d:'歌うたびにATK×2（戦闘中ずっと重なる）。'},
@@ -259,7 +259,7 @@ function accVal(t,lv){ if(KEYS.includes(t)||t==='mpmax') return Math.pow(1.5,lv)
   if(t==='mpsave') return Math.min(.5,.05*lv); if(t==='mpregen') return .01*lv; if(t==='mprage') return 1.5+.1*lv; if(t==='crit') return Math.min(.6,.02*lv); if(t==='mir') return Math.min(.3,.004*lv); return 1+.5*lv; }
 function accDesc(t,lv){ if(KEYS.includes(t)) return `${KN[t]}×${fmtMul(accVal(t,lv))}`;
   if(t==='mpmax') return `最大MP×${fmtMul(accVal(t,lv))}`; if(t==='mpsave') return `技のMP消費−${Math.round(accVal(t,lv)*100)}%`; if(t==='mpregen') return `毎ターン MP+${Math.round(accVal(t,lv)*100)}%`;
-  if(t==='mprage') return `技のMP消費×2・技のダメージ×${accVal(t,lv).toFixed(1)}`; if(RES_T.includes(t)) return `${AILMENTS[AIL_KEYS[RES_T.indexOf(t)]].n}を${Math.round(accVal(t,lv)*100)}%防ぐ`; if(t==='dbl') return `${Math.round(accVal(t,lv)*100)}%で2回行動`; if(t==='first') return `先制攻撃+${Math.round(Math.min(.15,.1+.01*lv)*100)}%（最大65%）・バックアタック-2%・状態異常の先手を${Math.round(accVal(t,lv)*100)}%防ぐ`; if(t==='crit') return `会心率+${Math.round(accVal(t,lv)*100)}%`; if(t==='mir') return `奇跡率+${(accVal(t,lv)*100).toFixed(1)}%`;
+  if(t==='mprage') return `技のMP消費×2・技のダメージ×${accVal(t,lv).toFixed(1)}`; if(RES_T.includes(t)) return `${AILMENTS[AIL_KEYS[RES_T.indexOf(t)]].n}を${Math.round(accVal(t,lv)*100)}%防ぐ`; if(t==='dbl') return `${Math.round(accVal(t,lv)*100)}%で2回行動`; if(t==='first') return `先制攻撃+${Math.round(Math.min(.15,.1+.01*lv)*100)}%（最大65%）・バックアタック-2%・状態異常の先手を${Math.round(accVal(t,lv)*100)}%防ぐ`; if(t==='crit') return `CRI+${Math.round(accVal(t,lv)*100)}%`; if(t==='mir') return `奇跡率+${(accVal(t,lv)*100).toFixed(1)}%`;
   return `${({gold:'お金',exp:'経験値',drop:'実の入手率'})[t]}×${accVal(t,lv).toFixed(1)}`; }
 const accStat=k=>accEqs().reduce((m,a)=>a.t===k?m*accVal(k,a.lv):m,1);
 const accMir=()=>accEqs().reduce((m,a)=>a.t==='mir'?m+accVal('mir',a.lv):m,0);
@@ -363,6 +363,9 @@ function takashiCatchup(L){ if(P.tkCatch) return; P.tkCatch=true; const C=TK_CAT
 // ============ 更新ログ（#42）：プレイヤーに見える。隠し要素の名前は書かない ============
 // 配布版に出すときに、いちばん上に1版足す（新しい順）
 const CHANGELOG=[
+  {v:'1.15',d:'2026/11/21',items:[
+    '命中・回避・会心率の表記をHIT・FLEE・CRIに',
+  ]},
   {v:'1.14',d:'2026/11/21',items:[
     '能力をSTR・AGI・VIT・INT・DEX・LUKの6つに（DEXを追加）。DEXは命中と弓の攻撃に効く。レベルアップで4ptに',
     '攻撃力・防御力・魔法攻撃・魔法防御の表記をATK・DEF・MATK・MDEFに。くわしいステータスにMATK・MDEFを表示',
@@ -877,13 +880,13 @@ const LB_FORM=3, LB_COST=10;
 const lbOpen=()=>!!(P.final&&(P.final.best||0)>=LB_FORM);
 const lbReady=()=>GM_SP.every(g=>gmN(g.sp+'_s5')>=LB_COST);
 function limitBreak(){ if(limitOn()||!lbOpen()||!lbReady()) return; GM_SP.forEach(g=>{ P.gm[g.sp+'_s5']-=LB_COST; }); P.limitBreak=true; save(); renderStatus(); panel('reb');
-  showPopup({title:'<span class="mir">★ 限界突破 ★</span>',body:`<div class="small">${esc(P.name)}は、限界を越えた！<br><br>・能力ポイントの上限がなくなった<br>・命中の上限が255%に<br>・会心のLUKボーナスが最大+300%に<br><br>桁の神の第${LB_FORM+1}形態からは、敵の速さもさらに増していく。</div>`}); }
+  showPopup({title:'<span class="mir">★ 限界突破 ★</span>',body:`<div class="small">${esc(P.name)}は、限界を越えた！<br><br>・能力ポイントの上限がなくなった<br>・HITの上限が255%に<br>・CRIのLUKボーナスが最大+300%に<br><br>桁の神の第${LB_FORM+1}形態からは、敵の速さもさらに増していく。</div>`}); }
 function lbHTML(){ if(limitOn()) return `<div class="small mir" style="margin-top:8px">★ 限界突破済み ★</div>`; if(!lbOpen()) return '';
-  return `<div class="win" style="margin-top:8px;padding:6px 8px"><div class="y">限界突破</div><div class="small">能力ポイント・命中・会心の上限を外す。★5の素材を6系統それぞれ${LB_COST}個ささげる。</div>`+
+  return `<div class="win" style="margin-top:8px;padding:6px 8px"><div class="y">限界突破</div><div class="small">能力ポイント・HIT・CRIの上限を外す。★5の素材を6系統それぞれ${LB_COST}個ささげる。</div>`+
     `<div class="small">`+GM_SP.map(g=>`${g.n} ${Math.min(gmN(g.sp+'_s5'),LB_COST)}/${LB_COST}`).join('・')+`</div><button style="width:100%;margin-top:4px" ${lbReady()?'':'disabled'} onclick="limitBreak()">限界突破する</button></div>`; }
 // ステータス欄の命中・回避・会心（いちばん奥のエリアの敵が相手）
 function battleRatesHTML(){ const r=spdRatio({t:P.maxArea}), pc=x=>Math.round(x*100)+'%';
-  return `<div class="small">命中 ${pc(hitRate(r))}・回避 ${pc(evaRate(r))}・会心 ${pc(critRate())} <span style="color:#9ab">（${areaName(P.maxArea)}の敵に）</span></div>`; }
+  return `<div class="small">HIT ${pc(hitRate(r))}・FLEE ${pc(evaRate(r))}・CRI ${pc(critRate())} <span style="color:#9ab">（${areaName(P.maxArea)}の敵に）</span></div>`; }
 // ============ 冒険：固有ドロップ・図鑑・番人（#8） ============
 // 固有品：エリアの系統（12種。次元の彼方も同じ系統をくり返す）ごとに1つ。1個ごとに対応する値が×1.01（複利・最大999個）
 const MATS=[
@@ -2651,9 +2654,9 @@ function helpHTML(){
     ・MATK ＝（武器の半分＋10）× 転生倍率 × INTの係数 × 同じ補正<br>
     ・DEF ＝（防具＋5）× 転生倍率 × VITの係数、最大HPもVITの係数で決まる。MDEFはINTとVIT<br>
     ・係数 ＝ 転生倍率を掛ける前の能力 ÷ 10<br>
-    ・LUK・AGI・DEXは「6つの能力の中での割合」で効く（DEXは命中、AGIは回避・先制、LUKは会心など）。均等なら効き目は半分、6割を振るとほぼ最大<br>
-    ・会心率 ＝ 10% ×（1＋LUKのボーナス 最大+200%）＋装飾品。奇跡・実・技の出やすさもLUKで上がる<br>
-    ・命中 ＝ 命中値 − 敵の回避。命中値はDEXの割合と転生の回数で伸びる（最大200%）。いちばん奥のエリアの敵と互角で、浅い敵ほど当てやすく避けやすい<br>
+    ・LUK・AGI・DEXは「6つの能力の中での割合」で効く（DEXはHIT、AGIはFLEE・先制、LUKはCRIなど）。均等なら効き目は半分、6割を振るとほぼ最大<br>
+    ・CRI（会心率）＝ 10% ×（1＋LUKのボーナス 最大+200%）＋装飾品。奇跡・実・技の出やすさもLUKで上がる<br>
+    ・HIT（命中）＝ 命中値 − 敵のFLEE。命中値はDEXの割合と転生の回数で伸びる（最大200%）。FLEE（回避）はAGIで決まる。いちばん奥のエリアの敵と互角で、浅い敵ほど当てやすく避けやすい<br>
     ・はじめに「先制攻撃」（1回ただで攻撃）や「バックアタック」（敵が2回先に動く）が起きることがある。AGIで変わる<br>
     ・基礎値は、レベルアップと能力の実で上がり、転生しても減らない</div>`;
   h+=`<div class="y">武器の種類</div>`;
@@ -2815,7 +2818,7 @@ const JOB_SECRETS={
  fighter:  {n:'火事場のクソ力', hint:'',                                          type:'start', c:(c)=>!!c.kaji,                  fx:{},                    msg:''},
  hunter:   {n:'狩りの極み',    hint:'同じ狩場に通い続けると…',                   type:'start', c:()=>curRun>=100,                fx:{crit:1},              msg:'この狩場は知り尽くした…！ 会心100%'},
  knight:   {n:'完全防御',      hint:'万全の状態なら、最初の一撃は…',             type:'start', c:()=>true,                       fx:{zero:1},              msg:'盾を構えた… 最初の一撃は通さない', silentUntil:'zero'},
- dancer:   {n:'月下の舞',      hint:'夜になると…',                               type:'start', c:()=>isNight(),                  fx:{eva:.5},              msg:'月明かりの下で舞う… 回避+50%'},
+ dancer:   {n:'月下の舞',      hint:'夜になると…',                               type:'start', c:()=>isNight(),                  fx:{eva:.5},              msg:'月明かりの下で舞う… FLEE+50%'},
  bard:     {n:'酔いどれの歌',  hint:'酒が入ると歌声が変わるらしい',               type:'start', c:()=>drunkNow(),                 fx:{atk:5},               msg:'酒が入って歌声が冴える…！ ATK×5'},
  merchant: {n:'札束の壁',      hint:'金持ちになるほど…',                         type:'start', c:()=>P.gold>=1e16,               fx:{taken:.1},            msg:'札束を積み上げて壁にした！ 受けるダメージ1/10'},
  alchemist:{n:'賢者の閃き',    hint:'実を拾った直後は冴えているらしい',           type:'start', c:(c)=>!!c.fruitFresh,            fx:{drop:1},              msg:'さっきの実の味がひらめきを呼ぶ… 実を必ず拾う'},
@@ -2828,7 +2831,7 @@ const JOB_SECRETS={
  kenou:    {n:'火事場・極',    hint:'追い詰められると、拳王の何かが目覚めるらしい', type:'start', c:()=>P.gold===1,               fx:{atk:10,taken:.5},     msg:'所持金1G…！ 拳王の火事場が極まる！ さらにATK×10・被ダメ半分'},
  sniper:   {n:'千里眼',        hint:'同じ狩場に通い続けると…',                   type:'start', c:()=>curRun>=200,                fx:{crit:1,atk:10},       msg:'獲物の動きがすべて見える…！ 会心100%・ATK×10'},
  paladin:  {n:'聖なる三重盾',  hint:'万全の状態なら、最初の攻撃は…',             type:'start', c:()=>true,                       fx:{zero:3},              msg:'聖なる盾が三重に輝く… 最初の3回の攻撃を通さない', silentUntil:'zero'},
- maiden:   {n:'月影の舞',      hint:'夜になると…',                               type:'start', c:()=>isNight(),                  fx:{eva:.8},              msg:'月影の中で舞う… 回避+80%'},
+ maiden:   {n:'月影の舞',      hint:'夜になると…',                               type:'start', c:()=>isNight(),                  fx:{eva:.8},              msg:'月影の中で舞う… FLEE+80%'},
  maestro:  {n:'酩酊の交響曲',  hint:'酒が入ると歌声が変わるらしい',               type:'start', c:()=>drunkNow(),                 fx:{atk:20},              msg:'酔いが旋律を狂わせる…！ ATK×20'},
  tycoon:   {n:'金城鉄壁',      hint:'金持ちになるほど…',                         type:'start', c:()=>P.gold>=1e20,               fx:{taken:.01,gold:3},    msg:'財力で城を築いた！ 受けるダメージ1/100・お金×3'},
  grandalch:{n:'錬成の連鎖',    hint:'実を拾った直後は冴えているらしい',           type:'start', c:(c)=>!!c.fruitFresh,            fx:{drop:1,fruitX:10},    msg:'錬成が連鎖する… 実を必ず拾い、効果×10'},
@@ -2840,7 +2843,7 @@ const JOB_SECRETS={
  dragoon:  {n:'竜の目覚め',    hint:'同じ狩場に通い続け、万全で挑むと…',         type:'start', c:()=>curRun>=100,                fx:{zero:1,atk:100},      msg:'竜が目を覚ました…！ 最初の一撃を防ぎ、ATK×100'},
  phantom:  {n:'月夜の大怪盗',  hint:'夜、王者の前では…',                         type:'start', c:(c,e)=>isNight()&&!!e.champ,     fx:{gold:100},            msg:'月夜に大怪盗参上！ 王者の財宝をいただく… 賞金×100'},
  luckking: {n:'天運の極み',    hint:'大金持ちが縁起を担ぐと…',                   type:'start', c:()=>digits777()&&P.gold>=1e10,   fx:{atk:77777,gold:7},    msg:'天運が極まった！ ATK×77777・お金×7'},
- tennyo:   {n:'羽衣の月夜',    hint:'夜、酒が入ると…',                           type:'start', c:()=>isNight()&&drunkNow(),      fx:{eva:.9,atk:50},       msg:'月夜に羽衣が舞う… 回避+90%・ATK×50'},
+ tennyo:   {n:'羽衣の月夜',    hint:'夜、酒が入ると…',                           type:'start', c:()=>isNight()&&drunkNow(),      fx:{eva:.9,atk:50},       msg:'月夜に羽衣が舞う… FLEE+90%・ATK×50'},
  chrono:   {n:'時の酩酊',      hint:'酒と実の両方がそろうと…',                   type:'start', c:(c)=>drunkNow()&&!!c.fruitFresh, fx:{multi:1,drop:1},     msg:'時がゆがむ… 毎ターン2回攻撃・実を必ず拾う'},
  saint:    {n:'聖夜の祈り',    hint:'夜、神の前で祈ると…',                       type:'start', c:(c,e)=>isNight()&&!!e.secret,    fx:{taken:.01},           msg:'聖夜の祈りが神に届いた… 受けるダメージ1/100'},
  overlord: {n:'覇王の矜持',    hint:'一文無し寸前でも、万全なら…',               type:'start', c:()=>P.gold===1,                 fx:{atk:1e5,zero:1},      msg:'所持金1Gでも覇王は退かぬ…！ ATK×10万・最初の一撃を防ぐ'},
